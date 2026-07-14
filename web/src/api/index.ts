@@ -1,2 +1,7 @@
-export { GreetingClient } from "@/api/greetingClient"
-export type { GreetingResponse } from "@/api/types"
+export { AuthClient } from "@/api/authClient"
+export type {
+  AuthResponse,
+  LoginRequest,
+  RegisterRequest,
+  UserResponse,
+} from "@/api/types"

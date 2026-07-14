@@ -1,0 +1,14 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: quickapp
+      POSTGRES_USER: quickapp
+      POSTGRES_PASSWORD: quickapp
+    volumes:
+      - quickapp-postgres:/var/lib/postgresql/data
+
+volumes:
+  quickapp-postgres:
