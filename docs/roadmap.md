@@ -37,7 +37,7 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | food-catalog | planned | 2026-07-11 · initial | Starter food library + add household foods with large icons |
+| 1 | food-catalog | active | 2026-07-11 · initial | Starter food library + add household foods with large icons |
 | 2 | plan-tasting-session | planned | 2026-07-11 · initial | On web: schedule a session with date, two foods, familiarity level |
 | 3 | run-tasting-session | planned | 2026-07-11 · initial | On iPad: open planned session; parent-assisted icon form + free-text; mark “ate enough” |
 | 4 | session-history | planned | 2026-07-11 · initial | On web: browse past tries, answers, notes, and outcomes |
@@ -68,7 +68,7 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Branch | Spec |
 |----|--------|------|
-| — | — | — |
+| food-catalog | `food-catalog` | [active](specs/active/food-catalog.md) |
 
 ## Done
 
