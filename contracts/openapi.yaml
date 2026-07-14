@@ -1,42 +1,202 @@
 openapi: 3.0.3
 info:
   title: Quickapp API
-  version: 0.1.0
+  version: 0.2.0
   description: >
-    Contract-first API for quickapp. This spike documents the greeting
-    harness endpoint used to verify cross-stack networking.
+    Contract-first API for quickapp starter apps. Documents family-account auth:
+    email/password register and login, Bearer session tokens, and household-scoped
+    identity via /api/auth/me.
 servers:
   - url: http://localhost:8080
     description: Local development
 paths:
-  /api/greeting:
-    get:
-      operationId: getGreeting
-      summary: Return a greeting for the given name
-      parameters:
-        - name: name
-          in: query
-          required: true
-          schema:
-            type: string
-          description: Name to greet
-          example: Android
+  /api/auth/register:
+    post:
+      operationId: register
+      summary: Register a parent account and create a household
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+            example:
+              email: parent@example.com
+              password: password1
+              rememberMe: true
       responses:
-        "200":
-          description: Greeting message
+        "201":
+          description: Account created
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/GreetingResponse"
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+        "409":
+          description: Email already registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
               example:
-                message: Hello, Android, from a Spring Modulith module.
+                message: Email already registered
+  /api/auth/login:
+    post:
+      operationId: login
+      summary: Sign in with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+            example:
+              email: parent@example.com
+              password: password1
+              rememberMe: true
+      responses:
+        "200":
+          description: Signed in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+        "401":
+          description: Invalid email or password
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+              example:
+                message: Invalid email or password
+  /api/auth/logout:
+    post:
+      operationId: logout
+      summary: Invalidate the current Bearer session
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: Signed out
+        "401":
+          description: Missing or invalid session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+  /api/auth/me:
+    get:
+      operationId: me
+      summary: Return the current parent and household ids
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        "401":
+          description: Missing or invalid session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: opaque
+      description: Opaque server-side session token from register or login
   schemas:
-    GreetingResponse:
+    RegisterRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: parent@example.com
+        password:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 128
+          example: password1
+        rememberMe:
+          type: boolean
+          default: true
+          description: >
+            When true (default), session lasts 30 days and clients may persist the
+            token. When false, session lasts 12 hours and clients must not persist
+            across process death.
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: parent@example.com
+        password:
+          type: string
+          format: password
+          example: password1
+        rememberMe:
+          type: boolean
+          default: true
+          description: Same semantics as RegisterRequest.rememberMe
+    AuthResponse:
+      type: object
+      required:
+        - token
+        - user
+      properties:
+        token:
+          type: string
+          description: Opaque Bearer token for subsequent authenticated calls
+          example: "a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456"
+        user:
+          $ref: "#/components/schemas/UserResponse"
+    UserResponse:
+      type: object
+      required:
+        - id
+        - email
+        - householdId
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+          example: parent@example.com
+        householdId:
+          type: string
+          format: uuid
+    ErrorMessage:
       type: object
       required:
         - message
       properties:
         message:
           type: string
-          example: Hello, Android, from a Spring Modulith module.
+          example: Unauthorized

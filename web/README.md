@@ -35,6 +35,6 @@ Scripts: `dev`, `build`, `lint`, `test`.
 In `npm run dev`, `/api` is proxied to `http://localhost:8080` (avoids CORS).
 Override with `VITE_API_BASE_URL` when you need a different origin.
 
-With the backend running (`./gradlew :backend:bootRun` from the repo root), open
-the app and fetch a greeting — success text includes
-`from a Spring Modulith module.`
+With the backend running (`docker compose up -d postgres` then
+`./gradlew :backend:bootRun` from the repo root), open the app and create an
+account or sign in. Success shows **Signed in as …** for your email.

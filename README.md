@@ -1,8 +1,7 @@
-# quickapp
+# Food Investigators / quickapp
 
-**Spec-driven starter template** for full-stack products. Use this repository as a
-GitHub **Template** to spin up a new app — do not build the product inside this
-copy.
+Full-stack starter layout (backend, mobile, web, OpenAPI) with a living product
+roadmap. Auth (family account) is the current cross-stack smoke path.
 
 | Layer | Stack |
 |-------|--------|
@@ -12,35 +11,32 @@ copy.
 | Contract | OpenAPI (`contracts/openapi.yaml`) |
 | Workflow | `/roadmap` → `/spec` → `/implement` → `/pr` → merge |
 
-The `greeting` module and demo UI are **disposable harnesses** that prove the
-cross-stack path works. Real features get their own Modulith modules and specs
-in the **new** app repo.
+## Quick start (auth smoke test)
 
-## Start a new app from this template
-
-1. On GitHub: **Use this template** → create your app repository  
-   (details: [docs/using-as-template.md](docs/using-as-template.md)).
-2. Clone **that** repo; run the harness smoke test (backend + web at minimum).
-3. Rename demo identity when ready (checklist in the doc above).
-4. Fill `docs/roadmap.md` and run `/roadmap` (or `/spec` for one slice).
-5. After your first real feature is shipping, delete the greeting harness
-   (checklist in the same doc).
-
-## Quick start (harness smoke test)
+Postgres is required for the backend. From the repo root:
 
 ```bash
-# Backend (repo root) — leave running
-./gradlew :backend:bootRun
+docker compose up -d postgres
 
-# Verify API
-curl "http://localhost:8080/api/greeting?name=Android"
+# Backend — leave running
+./gradlew :backend:bootRun
 ```
 
-**Android:** open `mobile/` in Android Studio → run `androidApp` on an emulator.
+Register a parent account and confirm `/me`:
 
-**iOS:** open `mobile/iosApp/iosApp.xcodeproj` in Xcode → run on a simulator.
+```bash
+TOKEN=$(curl -s -X POST "http://localhost:8080/api/auth/register" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"parent@example.com","password":"password1","rememberMe":true}' \
+  | python3 -c "import sys,json; print(json.load(sys.stdin)['token'])")
 
-**Web:**
+curl -s "http://localhost:8080/api/auth/me" \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+Success returns JSON with `email` and `householdId` (proves persistence + auth).
+
+**Web** (sign in / create account UI):
 
 ```bash
 cd web
@@ -48,15 +44,22 @@ npm ci                 # Node >=20 locally; CI uses web/.nvmrc + packageManager
 npm run dev
 ```
 
-Success looks like a greeting ending in `from a Spring Modulith module.` (proves a
-real HTTP round-trip).
+Open the app, create an account (Keep me logged in on by default), and confirm
+“Signed in as …”.
+
+**iOS:** open `mobile/iosApp/iosApp.xcodeproj` in Xcode → run on a simulator →
+sign in with the same API (backend must be reachable; simulator uses
+`http://localhost:8080`).
+
+**Android:** open `mobile/` in Android Studio → run `androidApp` (auth UI is on
+iOS for this slice; sharedLogic still builds).
 
 ## Docs
 
 | Doc | Purpose |
 |-----|---------|
 | [AGENTS.md](AGENTS.md) | Constitution for humans and coding agents |
-| [docs/using-as-template.md](docs/using-as-template.md) | Template → new app, rename, delete greeting |
+| [docs/using-as-template.md](docs/using-as-template.md) | Template → new app, rename checklist |
 | [docs/roadmap.md](docs/roadmap.md) | Product backlog — carve-up, re-rank, Next up |
 | [docs/architecture.md](docs/architecture.md) | SDD workflow, module patterns, how to add features |
 | [docs/specs/](docs/specs/) | Planned stubs, active, and archived feature specs |
@@ -65,7 +68,7 @@ real HTTP round-trip).
 ## Tests
 
 ```bash
-# Backend
+# Backend (needs Docker for Testcontainers Postgres)
 ./gradlew :backend:test
 
 # Mobile (from mobile/) — needs Android SDK installed; local.properties is
@@ -80,10 +83,6 @@ npm test
 
 ## Status
 
-Verified starter: Modulith backend, KMP sharedLogic, cross-stack networking,
-path-filtered CI (backend / mobile / web), React web harness, pinned web
-toolchain, and `/roadmap` workflow. `main` is PR-protected.
-
-This repo stays a **clean template**. Product work happens in repos created from
-it. Optional follow-ups for the template itself: web OpenAPI codegen, contract
-lint, shared design tokens, iOS CI.
+Backend Modulith + Postgres/Flyway auth (`accounts`), KMP sharedLogic auth
+client, React web auth shell, iOS SwiftUI auth shell, path-filtered CI, and
+`/roadmap` workflow. `main` is PR-protected.
