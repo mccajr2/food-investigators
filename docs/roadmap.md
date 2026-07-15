@@ -1,7 +1,7 @@
 # Product roadmap
 
 Status: active  
-Updated: 2026-07-13
+Updated: 2026-07-14
 
 Living backlog for this product repo. **One roadmap ↔ many specs** (1:1 by
 kebab-case id). `/roadmap` updates and re-ranks; `/spec <id>` fleshes out the
@@ -37,15 +37,14 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | food-catalog | planned | 2026-07-11 · initial | Starter food library + add household foods with large icons |
-| 2 | plan-tasting-session | planned | 2026-07-11 · initial | On web: schedule a session with date, two foods, familiarity level |
-| 3 | run-tasting-session | planned | 2026-07-11 · initial | On iPad: open planned session; parent-assisted icon form + free-text; mark “ate enough” |
-| 4 | session-history | planned | 2026-07-11 · initial | On web: browse past tries, answers, notes, and outcomes |
-| 5 | therapist-printout | planned | 2026-07-11 · initial | Printable session history packet for doctor / food therapist |
-| 6 | reward-mini-games | planned | 2026-07-11 · initial | Curated mini-game templates; unlock when parent marks ate enough; food-themed skins |
-| 7 | pace-insights | planned | 2026-07-11 · initial | Parent dashboard: trends on what’s working; gentle suggestions you can ignore |
-| 8 | suggested-next-session | planned | 2026-07-11 · initial | App proposes next two foods + levels; parent approves or swaps |
-| 9 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
+| 1 | plan-tasting-session | planned | 2026-07-11 · initial | On web: schedule a session with date, two foods, familiarity level |
+| 2 | run-tasting-session | planned | 2026-07-11 · initial | On iPad: open planned session; parent-assisted icon form + free-text; mark “ate enough” |
+| 3 | session-history | planned | 2026-07-11 · initial | On web: browse past tries, answers, notes, and outcomes |
+| 4 | therapist-printout | planned | 2026-07-11 · initial | Printable session history packet for doctor / food therapist |
+| 5 | reward-mini-games | planned | 2026-07-11 · initial | Curated mini-game templates; unlock when parent marks ate enough; food-themed skins |
+| 6 | pace-insights | planned | 2026-07-11 · initial | Parent dashboard: trends on what’s working; gentle suggestions you can ignore |
+| 7 | suggested-next-session | planned | 2026-07-11 · initial | App proposes next two foods + levels; parent approves or swaps |
+| 8 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
 
 Status values: `parking` · `planned` · `active` · `done` · `cancelled`  
 Added: `YYYY-MM-DD · initial` | `enhancement` | `re-rank split`
@@ -68,12 +67,13 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Branch | Spec |
 |----|--------|------|
-| — | — | — |
+| _(none)_ | | |
 
 ## Done
 
 | Id | Completed | Spec |
 |----|-----------|------|
+| food-catalog | 2026-07-14 | [archive](specs/archive/food-catalog.md) |
 | family-account | 2026-07-13 | [archive](specs/archive/family-account.md) |
 | template-packaging | 2026-07-11 | [archive](specs/archive/template-packaging.md) |
 | path-filtered-ci | 2026-07-10 | [archive](specs/archive/path-filtered-ci.md) |
@@ -90,3 +90,4 @@ Only notable events (first carve-up, major re-rank, cancelled theme) — not eve
 | 2026-07-11 | Template packaging: Vision/non-goals clarify upstream is a starter template. |
 | 2026-07-11 | First product carve-up for Food Investigators (picky-eater tasting ritual). |
 | 2026-07-13 | family-account shipped (Postgres auth + web/iOS sign-in; greeting harness removed). |
+| 2026-07-14 | food-catalog shipped (starter library + household foods; web manage UI). |

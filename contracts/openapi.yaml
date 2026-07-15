@@ -1,11 +1,11 @@
 openapi: 3.0.3
 info:
   title: Quickapp API
-  version: 0.2.0
+  version: 0.3.0
   description: >
-    Contract-first API for quickapp starter apps. Documents family-account auth:
-    email/password register and login, Bearer session tokens, and household-scoped
-    identity via /api/auth/me.
+    Contract-first API for Food Investigators. Documents family-account auth
+    (email/password register and login, Bearer session tokens, /api/auth/me) and
+    the household food catalog (system starters + custom foods, archive).
 servers:
   - url: http://localhost:8080
     description: Local development
@@ -114,7 +114,164 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorMessage"
+  /api/foods:
+    get:
+      operationId: listFoods
+      summary: List system starters plus this household's foods
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: includeArchived
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+          description: >
+            When false (default), only active household foods are included with
+            system starters. When true, archived household foods are included too.
+      responses:
+        "200":
+          description: Foods for the current household
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FoodResponse"
+        "401":
+          description: Missing or invalid session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+    post:
+      operationId: createFood
+      summary: Create a household food
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFoodRequest"
+            example:
+              name: Extra apple mash
+              iconKey: apple
+      responses:
+        "201":
+          description: Food created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FoodResponse"
+        "400":
+          description: Invalid request or icon key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+              example:
+                message: Invalid icon key
+        "401":
+          description: Missing or invalid session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+  /api/foods/{foodId}:
+    put:
+      operationId: updateFood
+      summary: Update a household food name and/or icon
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/FoodId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateFoodRequest"
+            example:
+              name: Updated mash
+              iconKey: sweet_potato
+      responses:
+        "200":
+          description: Food updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FoodResponse"
+        "400":
+          description: Invalid request or icon key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+        "401":
+          description: Missing or invalid session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+        "403":
+          description: System starter foods cannot be changed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+              example:
+                message: System starter foods cannot be changed
+        "404":
+          description: Food not found for this household
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+  /api/foods/{foodId}/archive:
+    post:
+      operationId: archiveFood
+      summary: Soft-archive a household food
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/FoodId"
+      responses:
+        "200":
+          description: Food archived
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FoodResponse"
+        "401":
+          description: Missing or invalid session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+        "403":
+          description: System starter foods cannot be changed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+        "404":
+          description: Food not found for this household
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
 components:
+  parameters:
+    FoodId:
+      name: foodId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
   securitySchemes:
     bearerAuth:
       type: http
@@ -200,3 +357,66 @@ components:
         message:
           type: string
           example: Unauthorized
+    FoodIconKey:
+      type: string
+      maxLength: 64
+      description: >
+        Starter illustration key (e.g. apple, sweet_potato) or a generated
+        household key `custom_<slug>` derived from the food name (e.g.
+        custom_cucumber). Clients render custom keys from the name (emoji when
+        known, otherwise initials).
+      pattern: "^([a-z0-9_]+|custom_[a-z0-9]+(?:_[a-z0-9]+){0,15})$"
+      example: custom_cucumber
+    FoodResponse:
+      type: object
+      required:
+        - id
+        - name
+        - iconKey
+        - system
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Apples
+        iconKey:
+          $ref: "#/components/schemas/FoodIconKey"
+        householdId:
+          type: string
+          format: uuid
+          nullable: true
+          description: Null for system starter foods
+        system:
+          type: boolean
+          description: True when the food is a global starter (householdId is null)
+        archivedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Set when the household food is soft-archived; null when active
+    CreateFoodRequest:
+      type: object
+      required:
+        - name
+        - iconKey
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+          example: Extra apple mash
+        iconKey:
+          $ref: "#/components/schemas/FoodIconKey"
+    UpdateFoodRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+          example: Updated mash
+        iconKey:
+          $ref: "#/components/schemas/FoodIconKey"
+      description: Omit a field to leave it unchanged

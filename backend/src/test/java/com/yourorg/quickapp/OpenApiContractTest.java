@@ -29,6 +29,26 @@ class OpenApiContractTest {
     }
 
     @Test
+    void documentsFoodsEndpoints() throws IOException {
+        String yaml = Files.readString(resolveOpenApi());
+
+        assertThat(yaml).contains("/api/foods");
+        assertThat(yaml).contains("/api/foods/{foodId}");
+        assertThat(yaml).contains("/api/foods/{foodId}/archive");
+        assertThat(yaml).contains("listFoods");
+        assertThat(yaml).contains("createFood");
+        assertThat(yaml).contains("updateFood");
+        assertThat(yaml).contains("archiveFood");
+        assertThat(yaml).contains("FoodResponse");
+        assertThat(yaml).contains("CreateFoodRequest");
+        assertThat(yaml).contains("UpdateFoodRequest");
+        assertThat(yaml).contains("FoodIconKey");
+        assertThat(yaml).contains("includeArchived");
+        assertThat(yaml).contains("custom_");
+        assertThat(yaml).contains("custom_cucumber");
+    }
+
+    @Test
     void readmeSmokeUsesAuthNotGreeting() throws IOException {
         Path readme = resolveReadme();
         assertThat(readme).exists();

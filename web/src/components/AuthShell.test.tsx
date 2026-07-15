@@ -1,9 +1,25 @@
 import { render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { describe, expect, it, vi } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
-import type { AuthClient } from "@/api"
+import { AuthClient, FoodsClient } from "@/api"
 import { AuthShell } from "@/components/AuthShell"
+
+afterEach(() => {
+  vi.restoreAllMocks()
+})
+
+function mockFoodsClient(
+  overrides: Partial<FoodsClient> = {},
+): FoodsClient {
+  return {
+    list: vi.fn().mockResolvedValue([]),
+    create: vi.fn(),
+    update: vi.fn(),
+    archive: vi.fn(),
+    ...overrides,
+  } as FoodsClient
+}
 
 function mockClient(
   overrides: Partial<AuthClient> = {},
@@ -18,6 +34,18 @@ function mockClient(
   } as AuthClient
 }
 
+function renderShell(
+  authOverrides: Partial<AuthClient> = {},
+  foodsOverrides: Partial<FoodsClient> = {},
+) {
+  return render(
+    <AuthShell
+      client={mockClient(authOverrides)}
+      foodsClient={mockFoodsClient(foodsOverrides)}
+    />,
+  )
+}
+
 describe("AuthShell", () => {
   it("signs in and shows signed-in state", async () => {
     const user = userEvent.setup()
@@ -30,7 +58,7 @@ describe("AuthShell", () => {
       },
     })
 
-    render(<AuthShell client={mockClient({ login })} />)
+    renderShell({ login })
 
     await waitFor(() => {
       expect(
@@ -44,6 +72,7 @@ describe("AuthShell", () => {
     await user.click(screen.getByRole("button", { name: "Sign in" }))
 
     expect(await screen.findByText("Signed in as parent@example.com")).toBeInTheDocument()
+    expect(await screen.findByRole("heading", { name: "Foods" })).toBeInTheDocument()
     expect(login).toHaveBeenCalledWith("parent@example.com", "password1", true)
   })
 
@@ -58,7 +87,7 @@ describe("AuthShell", () => {
       },
     })
 
-    render(<AuthShell client={mockClient({ register })} />)
+    renderShell({ register })
 
     await waitFor(() => {
       expect(
@@ -80,7 +109,7 @@ describe("AuthShell", () => {
     const user = userEvent.setup()
     const login = vi.fn().mockRejectedValue(new Error("Invalid email or password"))
 
-    render(<AuthShell client={mockClient({ login })} />)
+    renderShell({ login })
 
     await waitFor(() => {
       expect(screen.getByLabelText("Email")).toBeInTheDocument()
@@ -102,18 +131,50 @@ describe("AuthShell", () => {
       householdId: "22222222-2222-2222-2222-222222222222",
     })
 
-    render(
-      <AuthShell
-        client={mockClient({
-          getStoredToken: () => "existing",
-          me,
-        })}
-      />,
+    const list = vi.fn().mockResolvedValue([])
+    renderShell(
+      {
+        getStoredToken: () => "existing",
+        me,
+      },
+      { list },
     )
 
     expect(
       await screen.findByText("Signed in as saved@example.com"),
     ).toBeInTheDocument()
+    expect(await screen.findByRole("heading", { name: "Foods" })).toBeInTheDocument()
     expect(me).toHaveBeenCalledOnce()
+    expect(list).toHaveBeenCalledOnce()
+  })
+
+  it("does not reload foods in a loop with default clients", async () => {
+    const listSpy = vi
+      .spyOn(FoodsClient.prototype, "list")
+      .mockResolvedValue([])
+    const meSpy = vi.spyOn(AuthClient.prototype, "me").mockResolvedValue({
+      id: "11111111-1111-1111-1111-111111111111",
+      email: "saved@example.com",
+      householdId: "22222222-2222-2222-2222-222222222222",
+    })
+    vi.spyOn(AuthClient.prototype, "getStoredToken").mockReturnValue("existing")
+
+    render(<AuthShell />)
+
+    expect(
+      await screen.findByText("Signed in as saved@example.com"),
+    ).toBeInTheDocument()
+    await waitFor(() => {
+      expect(listSpy).toHaveBeenCalled()
+    })
+
+    const listCalls = listSpy.mock.calls.length
+    const meCalls = meSpy.mock.calls.length
+    // Wait long enough that a client-identity render loop would add more calls.
+    await new Promise((resolve) => setTimeout(resolve, 100))
+    expect(listSpy).toHaveBeenCalledTimes(listCalls)
+    expect(meSpy).toHaveBeenCalledTimes(meCalls)
+    expect(listCalls).toBeLessThanOrEqual(2)
+    expect(meCalls).toBeLessThanOrEqual(2)
   })
 })
