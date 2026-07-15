@@ -1,8 +1,9 @@
 # Spec: food-catalog
 
-Status: in-progress  
+Status: done  
 Created: 2026-07-11  
-Parent: [docs/roadmap.md](../roadmap.md)  
+Completed: 2026-07-14  
+Parent: [docs/roadmap.md](../../roadmap.md)  
 Added: 2026-07-11 · initial
 
 ## Problem
@@ -16,7 +17,8 @@ the therapist-facing history can keep referencing foods that were later hidden.
 ## Non-goals
 
 - Nutrition facts, recipes, or grocery integration
-- Uploaded photos or AI-generated icons (extend the fixed `iconKey` set later)
+- Uploaded photos or AI-generated icons (client-side emoji/initials from the
+  name cover unknowns; starter SVGs stay a fixed set)
 - Familiarity / pace tracking UI (later slices)
 - iPad catalog management UI (web only; sharedLogic API client only)
 - Hard-delete of foods (archive only)
@@ -31,14 +33,16 @@ a global starter library.
 - **Data:** One `foods` table: `id`, `name`, `icon_key`, `household_id` (NULL =
   system starter), `archived_at` (NULL = active), `created_at` / `updated_at`.
   System rows are seeded via Flyway and are read-only via the API.
-- **Icons:** Allowlisted `iconKey` strings mapped to simple SVG (or equivalent)
-  assets on web. Store only the key in the DB — the set is extensible later by
-  adding assets + allowlist entries.
+- **Icons:** Starter foods use fixed allowlisted `iconKey` values mapped to SVG
+  assets on web. Household foods may reuse those keys **or** store
+  `custom_<slug>` derived from the food name; the web client renders customs
+  (emoji from a keyword map when known, otherwise initials). No uploads / AI.
 - **API (authenticated):** list (system + this household; optional
   `includeArchived`), create household food, update name/icon, archive
   (set `archived_at`). Reuse Bearer sessions from `accounts`.
 - **Web:** Signed-in Foods page after auth: browse starter (large icons) + My
-  foods; add/edit form with icon picker; archive action. No iPad manage UI.
+  foods; add/edit form defaults to “from name” icon generation, with optional
+  starter icon picker; archive action. No iPad manage UI.
 - **Mobile:** `sharedLogic` client matching OpenAPI; no SwiftUI catalog screen.
 
 ## Starter library (seed)
@@ -66,48 +70,53 @@ a global starter library.
 | Corn | `corn` | Sweeter veggie |
 | Sweet potato | `sweet_potato` | Sweeter veggie |
 
-Icon allowlist = the `iconKey` column above (household customs must pick from it).
+Icon allowlist above = starter illustrations. Household foods may use those keys
+or `custom_<slug>` (see Decisions).
 
 ## Acceptance criteria
 
-- [ ] Authenticated parent can **list** foods: all system starters + this
+- [x] Authenticated parent can **list** foods: all system starters + this
       household’s non-archived foods by default; `includeArchived=true` includes
       archived household foods.
-- [ ] Authenticated parent can **create** a household food with name + allowlisted
-      `iconKey`; response includes id and householdId.
-- [ ] Authenticated parent can **update** name and/or icon of their household food.
-- [ ] Authenticated parent can **archive** a household food; it disappears from
+- [x] Authenticated parent can **create** a household food with name + `iconKey`
+      (starter allowlist **or** `custom_<slug>`); response includes id and
+      householdId.
+- [x] Authenticated parent can **update** name and/or icon of their household food.
+- [x] Authenticated parent can **archive** a household food; it disappears from
       the default list but remains available with `includeArchived=true`.
-- [ ] System starter foods cannot be updated or archived (4xx).
-- [ ] Unauthenticated requests to food endpoints return 401.
-- [ ] Invalid `iconKey` on create/update returns 400.
-- [ ] Web (signed in): Foods page shows starter + My foods with large icons;
-      add, edit, archive work end-to-end.
-- [ ] Keep me logged in / session still works; Foods is only reachable when signed
+- [x] System starter foods cannot be updated or archived (4xx).
+- [x] Unauthenticated requests to food endpoints return 401.
+- [x] Invalid `iconKey` on create/update returns 400.
+- [x] Web (signed in): Foods page shows starter + My foods with large icons;
+      add defaults to icon-from-name (optional starter picker); edit/archive work
+      end-to-end.
+- [x] Keep me logged in / session still works; Foods is only reachable when signed
       in (redirect or gate to auth).
-- [ ] `contracts/openapi.yaml` documents the foods endpoints; web and sharedLogic
+- [x] `contracts/openapi.yaml` documents the foods endpoints; web and sharedLogic
       clients match in the same change.
-- [ ] Unit + integration tests cover list/create/update/archive and system
+- [x] Unit + integration tests cover list/create/update/archive and system
       immutability; `ModularityTests` passes.
-- [ ] No iPad catalog management UI in this PR.
+- [x] No iPad catalog management UI in this PR.
 
 ## Tasks
 
-- [ ] Backend: Flyway migration for `foods` + seed starter rows; icon-key
+- [x] Backend: Flyway migration for `foods` + seed starter rows; icon-key
       allowlist shared with validation.
-- [ ] Backend: `foods` Modulith module — list/create/update/archive endpoints,
+- [x] Backend: `foods` Modulith module — list/create/update/archive endpoints,
       household scoping, system immutability.
-- [ ] Contract: Add foods paths/schemas to `contracts/openapi.yaml`.
-- [ ] Web: Foods API client + Foods page (list, add/edit with icon picker,
+- [x] Contract: Add foods paths/schemas to `contracts/openapi.yaml`.
+- [x] Web: Foods API client + Foods page (list, add/edit with icon picker,
       archive); gate behind signed-in shell.
-- [ ] Mobile sharedLogic: Foods client matching OpenAPI (no SwiftUI catalog UI).
-- [ ] Tests: Module unit + API integration + web component tests; sharedLogic
+- [x] Mobile sharedLogic: Foods client matching OpenAPI (no SwiftUI catalog UI).
+- [x] Tests: Module unit + API integration + web component tests; sharedLogic
       client tests; keep `ModularityTests` green.
 
 ## Decisions (locked)
 
 - Web manages catalog; iPad sessions consume API later — no catalog UI on iOS now.
-- Fixed extensible `iconKey` set (no uploads / AI in v1).
+- Starter foods use a fixed `iconKey` illustration set. Household foods may use
+  those keys **or** `custom_<slug>` generated from the name (client renders
+  emoji-from-text or initials — no uploads / AI).
 - Add / edit / archive (soft); no hard delete.
 - Starter = go-tos + gentle ring + carrot / corn / sweet potato.
 

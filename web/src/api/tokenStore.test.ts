@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest"
 
-import { createBrowserTokenStore } from "@/api/tokenStore"
+import {
+  createBrowserTokenStore,
+  defaultBrowserTokenStore,
+} from "@/api/tokenStore"
 
 describe("createBrowserTokenStore", () => {
   it("persists remember-me tokens in localStorage only", () => {
@@ -25,6 +28,10 @@ describe("createBrowserTokenStore", () => {
     expect(session.getItem("quickapp.auth.token.session")).toBe("session-token")
     expect(local.getItem("quickapp.auth.token")).toBeNull()
     expect(store.get()).toBe("session-token")
+  })
+
+  it("reuses one shared default browser token store", () => {
+    expect(defaultBrowserTokenStore()).toBe(defaultBrowserTokenStore())
   })
 })
 

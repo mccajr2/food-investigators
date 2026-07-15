@@ -31,3 +31,16 @@ export function createBrowserTokenStore(
     },
   }
 }
+
+let sharedBrowserTokenStore: TokenStore | null = null
+
+/**
+ * Single shared store for AuthClient + FoodsClient defaults so they always
+ * read/write the same browser session.
+ */
+export function defaultBrowserTokenStore(): TokenStore {
+  if (!sharedBrowserTokenStore) {
+    sharedBrowserTokenStore = createBrowserTokenStore()
+  }
+  return sharedBrowserTokenStore
+}

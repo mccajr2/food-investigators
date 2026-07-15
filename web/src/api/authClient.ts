@@ -1,5 +1,5 @@
 import { apiBaseUrl } from "@/config"
-import { createBrowserTokenStore, type TokenStore } from "@/api/tokenStore"
+import { defaultBrowserTokenStore, type TokenStore } from "@/api/tokenStore"
 import type {
   AuthResponse,
   ErrorMessage,
@@ -16,7 +16,7 @@ export class AuthClient {
   constructor(
     baseUrl: string = apiBaseUrl,
     fetchFn: typeof fetch = globalThis.fetch.bind(globalThis),
-    tokens: TokenStore = createBrowserTokenStore(),
+    tokens: TokenStore = defaultBrowserTokenStore(),
   ) {
     this.baseUrl = baseUrl
     this.fetchFn = fetchFn

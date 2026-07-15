@@ -1,7 +1,10 @@
-import { useEffect, useState, type FormEvent } from "react"
+import { useCallback, useEffect, useState, type FormEvent } from "react"
 
-import { AuthClient } from "@/api"
+import { AuthClient, FoodsClient } from "@/api"
+import { apiBaseUrl } from "@/config"
+import { defaultBrowserTokenStore } from "@/api/tokenStore"
 import type { UserResponse } from "@/api/types"
+import { FoodsPage } from "@/components/food/FoodsPage"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -22,9 +25,34 @@ type Status =
 
 type AuthShellProps = {
   client?: AuthClient
+  foodsClient?: FoodsClient
 }
 
-export function AuthShell({ client = new AuthClient() }: AuthShellProps) {
+export function AuthShell({
+  client: clientProp,
+  foodsClient: foodsClientProp,
+}: AuthShellProps) {
+  // Create clients once. Share one token store so auth + foods see the same session.
+  const [client] = useState(() => {
+    if (clientProp) {
+      return clientProp
+    }
+    return new AuthClient(
+      apiBaseUrl,
+      globalThis.fetch.bind(globalThis),
+      defaultBrowserTokenStore(),
+    )
+  })
+  const [foodsClient] = useState(() => {
+    if (foodsClientProp) {
+      return foodsClientProp
+    }
+    return new FoodsClient(
+      apiBaseUrl,
+      globalThis.fetch.bind(globalThis),
+      defaultBrowserTokenStore(),
+    )
+  })
   const [mode, setMode] = useState<AuthMode>("sign-in")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -93,6 +121,14 @@ export function AuthShell({ client = new AuthClient() }: AuthShellProps) {
     }
   }
 
+  const onSessionExpired = useCallback(() => {
+    setUser(null)
+    setStatus({
+      kind: "error",
+      message: "Session expired. Please sign in again.",
+    })
+  }, [])
+
   if (status.kind === "bootstrapping") {
     return (
       <Card>
@@ -111,20 +147,14 @@ export function AuthShell({ client = new AuthClient() }: AuthShellProps) {
 
   if (user) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>quickapp</CardTitle>
-          <CardDescription>Family account</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          <p role="status" className="text-sm text-foreground">
-            Signed in as {user.email}
-          </p>
-          {status.kind === "error" ? (
-            <p role="alert" className="text-sm text-destructive">
-              {status.message}
+      <div className="flex w-full flex-col gap-8">
+        <header className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-lg font-semibold tracking-tight">quickapp</p>
+            <p role="status" className="text-sm text-muted-foreground">
+              Signed in as {user.email}
             </p>
-          ) : null}
+          </div>
           <Button
             type="button"
             variant="outline"
@@ -133,8 +163,14 @@ export function AuthShell({ client = new AuthClient() }: AuthShellProps) {
           >
             {status.kind === "loading" ? "Signing out…" : "Sign out"}
           </Button>
-        </CardContent>
-      </Card>
+        </header>
+        {status.kind === "error" ? (
+          <p role="alert" className="text-sm text-destructive">
+            {status.message}
+          </p>
+        ) : null}
+        <FoodsPage client={foodsClient} onUnauthorized={onSessionExpired} />
+      </div>
     )
   }
 
