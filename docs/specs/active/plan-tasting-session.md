@@ -77,7 +77,7 @@ sessions, backed by the existing `foods` catalog and `accounts` Bearer auth.
 - [x] Backend: Flyway migration for `tasting_sessions` + `tasting_session_foods`;
       Modulith `sessions` module — create/list/get/update/cancel with household
       scoping and food validation.
-- [ ] Contract: Add session paths/schemas to `contracts/openapi.yaml`.
+- [x] Contract: Add session paths/schemas to `contracts/openapi.yaml`.
 - [ ] Web: Sessions API client + Plan page (create form, upcoming list, edit,
       cancel); gate behind signed-in shell; navigate alongside Foods.
 - [ ] Mobile sharedLogic: Sessions client matching OpenAPI (no SwiftUI plan UI).
