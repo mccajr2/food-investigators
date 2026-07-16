@@ -1,7 +1,7 @@
 # Product roadmap
 
 Status: active  
-Updated: 2026-07-14
+Updated: 2026-07-15
 
 Living backlog for this product repo. **One roadmap ↔ many specs** (1:1 by
 kebab-case id). `/roadmap` updates and re-ranks; `/spec <id>` fleshes out the
@@ -37,7 +37,7 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | plan-tasting-session | planned | 2026-07-11 · initial | On web: schedule a session with date, two foods, familiarity level |
+| 1 | plan-tasting-session | active | 2026-07-11 · initial | On web: schedule a session with date, two foods, familiarity level |
 | 2 | run-tasting-session | planned | 2026-07-11 · initial | On iPad: open planned session; parent-assisted icon form + free-text; mark “ate enough” |
 | 3 | session-history | planned | 2026-07-11 · initial | On web: browse past tries, answers, notes, and outcomes |
 | 4 | therapist-printout | planned | 2026-07-11 · initial | Printable session history packet for doctor / food therapist |
@@ -67,7 +67,7 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Branch | Spec |
 |----|--------|------|
-| _(none)_ | | |
+| plan-tasting-session | `plan-tasting-session` | [active](specs/active/plan-tasting-session.md) |
 
 ## Done
 
