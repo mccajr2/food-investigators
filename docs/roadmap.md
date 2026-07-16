@@ -37,13 +37,14 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | run-tasting-session | planned | 2026-07-11 · initial | On iPad: open planned session; parent-assisted icon form + free-text; mark “ate enough” |
-| 2 | session-history | planned | 2026-07-11 · initial | On web: browse past tries, answers, notes, and outcomes |
-| 3 | therapist-printout | planned | 2026-07-11 · initial | Printable session history packet for doctor / food therapist |
-| 4 | reward-mini-games | planned | 2026-07-11 · initial | Curated mini-game templates; unlock when parent marks ate enough; food-themed skins |
-| 5 | pace-insights | planned | 2026-07-11 · initial | Parent dashboard: trends on what’s working; gentle suggestions you can ignore |
-| 6 | suggested-next-session | planned | 2026-07-11 · initial | App proposes next two foods + levels; parent approves or swaps |
-| 7 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
+| 1 | run-tasting-session | active | 2026-07-11 · initial · 2026-07-15 · re-rank split | iPad-optimized **web** runner: icon prompts + mic why/change notes; mark ate enough; complete session |
+| 2 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
+| 3 | session-history | planned | 2026-07-11 · initial | On web: browse past tries, answers, notes, and outcomes |
+| 4 | therapist-printout | planned | 2026-07-11 · initial | Printable session history packet for doctor / food therapist |
+| 5 | reward-mini-games | planned | 2026-07-11 · initial | Curated mini-game templates; unlock when parent marks ate enough; food-themed skins |
+| 6 | pace-insights | planned | 2026-07-11 · initial | Parent dashboard: trends on what’s working; gentle suggestions you can ignore |
+| 7 | suggested-next-session | planned | 2026-07-11 · initial | App proposes next two foods + levels; parent approves or swaps |
+| 8 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
 
 Status values: `parking` · `planned` · `active` · `done` · `cancelled`  
 Added: `YYYY-MM-DD · initial` | `enhancement` | `re-rank split`
@@ -66,7 +67,7 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Branch | Spec |
 |----|--------|------|
-| — | — | — |
+| run-tasting-session | `run-tasting-session` | [active](specs/active/run-tasting-session.md) |
 
 ## Done
 
@@ -92,3 +93,4 @@ Only notable events (first carve-up, major re-rank, cancelled theme) — not eve
 | 2026-07-13 | family-account shipped (Postgres auth + web/iOS sign-in; greeting harness removed). |
 | 2026-07-14 | food-catalog shipped (starter library + household foods; web manage UI). |
 | 2026-07-15 | plan-tasting-session shipped (web plan create/list/edit/cancel; sessions API). |
+| 2026-07-15 | run-tasting-session split: web iPad-optimized first; native iOS deferred (`run-tasting-session-ios`). |
