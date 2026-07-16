@@ -74,7 +74,7 @@ sessions, backed by the existing `foods` catalog and `accounts` Bearer auth.
 
 ## Tasks
 
-- [ ] Backend: Flyway migration for `tasting_sessions` + `tasting_session_foods`;
+- [x] Backend: Flyway migration for `tasting_sessions` + `tasting_session_foods`;
       Modulith `sessions` module — create/list/get/update/cancel with household
       scoping and food validation.
 - [ ] Contract: Add session paths/schemas to `contracts/openapi.yaml`.
