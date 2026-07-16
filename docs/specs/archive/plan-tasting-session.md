@@ -1,8 +1,9 @@
 # Spec: plan-tasting-session
 
-Status: draft  
+Status: done  
 Created: 2026-07-11  
-Parent: [docs/roadmap.md](../roadmap.md)  
+Completed: 2026-07-15  
+Parent: [docs/roadmap.md](../../roadmap.md)  
 Added: 2026-07-11 · initial
 
 ## Problem
@@ -49,28 +50,28 @@ sessions, backed by the existing `foods` catalog and `accounts` Bearer auth.
 
 ## Acceptance criteria
 
-- [ ] Authenticated parent can **create** a planned session with a calendar date
+- [x] Authenticated parent can **create** a planned session with a calendar date
       and exactly two foods; each food has familiarity
       (`likes` | `familiar_but_new` | `truly_new`) and optional `variantNote`
       (≤200 chars).
-- [ ] Create rejects wrong food count, missing familiarity, unknown/archived
+- [x] Create rejects wrong food count, missing familiarity, unknown/archived
       foods, or invalid familiarity with 4xx.
-- [ ] Authenticated parent can **list upcoming** planned sessions for their
+- [x] Authenticated parent can **list upcoming** planned sessions for their
       household (earliest date first); cancelled sessions are not listed by
       default.
-- [ ] Authenticated parent can **update** a still-planned session (date, foods,
+- [x] Authenticated parent can **update** a still-planned session (date, foods,
       familiarity, variant notes).
-- [ ] Authenticated parent can **cancel** a planned session; it leaves the
+- [x] Authenticated parent can **cancel** a planned session; it leaves the
       upcoming list and cannot be updated further (4xx).
-- [ ] Unauthenticated session requests return 401; other households’ sessions
+- [x] Unauthenticated session requests return 401; other households’ sessions
       are not visible or mutable (404).
-- [ ] Web (signed in): Plan page supports create, list upcoming, edit, and
+- [x] Web (signed in): Plan page supports create, list upcoming, edit, and
       cancel end-to-end; food pickers use the household food catalog.
-- [ ] `contracts/openapi.yaml` documents session endpoints; web and sharedLogic
+- [x] `contracts/openapi.yaml` documents session endpoints; web and sharedLogic
       clients match in the same change.
-- [ ] Unit + API integration + web component tests; sharedLogic client tests;
+- [x] Unit + API integration + web component tests; sharedLogic client tests;
       `ModularityTests` green.
-- [ ] No iPad/Android plan management UI in this PR.
+- [x] No iPad/Android plan management UI in this PR.
 
 ## Tasks
 
@@ -81,7 +82,7 @@ sessions, backed by the existing `foods` catalog and `accounts` Bearer auth.
 - [x] Web: Sessions API client + Plan page (create form, upcoming list, edit,
       cancel); gate behind signed-in shell; navigate alongside Foods.
 - [x] Mobile sharedLogic: Sessions client matching OpenAPI (no SwiftUI plan UI).
-- [ ] Tests: Module unit + API integration + web component tests; sharedLogic
+- [x] Tests: Module unit + API integration + web component tests; sharedLogic
       client tests; keep `ModularityTests` green.
 
 ## Decisions (locked)
