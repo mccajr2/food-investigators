@@ -1,0 +1,197 @@
+package org.example.project
+
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.respond
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpMethod
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.headersOf
+import io.ktor.serialization.kotlinx.json.json
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.Json
+
+class SessionsClientTest {
+
+    @Test
+    fun listUpcomingSendsBearerAndParsesSessions() =
+        runTest {
+            val store = InMemoryTokenStore()
+            store.saveToken("tok", rememberMe = true)
+            var sawAuth: String? = null
+            val engine =
+                MockEngine { request ->
+                    assertEquals(HttpMethod.Get, request.method)
+                    assertEquals("/api/sessions", request.url.encodedPath)
+                    sawAuth = request.headers[HttpHeaders.Authorization]
+                    respond(
+                        content = sampleSessionJsonArray(),
+                        status = HttpStatusCode.OK,
+                        headers = headersOf(HttpHeaders.ContentType, "application/json"),
+                    )
+                }
+
+            val client = SessionsClient("http://localhost:8080", httpClient(engine), store)
+            val sessions = client.listUpcoming()
+
+            assertEquals(1, sessions.size)
+            assertEquals("2026-07-20", sessions[0].scheduledOn)
+            assertEquals("planned", sessions[0].status)
+            assertEquals(2, sessions[0].foods.size)
+            assertEquals("Honeycrisp", sessions[0].foods[0].variantNote)
+            assertEquals("Bearer tok", sawAuth)
+        }
+
+    @Test
+    fun createGetUpdateCancelHitExpectedPaths() =
+        runTest {
+            val store = InMemoryTokenStore()
+            store.saveToken("tok", rememberMe = true)
+            val paths = mutableListOf<String>()
+            val engine =
+                MockEngine { request ->
+                    paths += "${request.method.value} ${request.url.encodedPath}"
+                    val status =
+                        if (request.method == HttpMethod.Post &&
+                            request.url.encodedPath == "/api/sessions"
+                        ) {
+                            HttpStatusCode.Created
+                        } else {
+                            HttpStatusCode.OK
+                        }
+                    respond(
+                        content = sampleSessionJson(),
+                        status = status,
+                        headers = headersOf(HttpHeaders.ContentType, "application/json"),
+                    )
+                }
+
+            val client = SessionsClient("http://localhost:8080", httpClient(engine), store)
+            val request =
+                CreateSessionRequest(
+                    scheduledOn = "2026-07-20",
+                    foods =
+                        listOf(
+                            SessionFoodRequest(
+                                foodId = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa04",
+                                familiarity = "likes",
+                                variantNote = "Honeycrisp",
+                            ),
+                            SessionFoodRequest(
+                                foodId = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa05",
+                                familiarity = "truly_new",
+                            ),
+                        ),
+                )
+            client.create(request)
+            client.get("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee")
+            client.update(
+                "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+                UpdateSessionRequest(
+                    scheduledOn = "2026-07-22",
+                    foods = request.foods,
+                ),
+            )
+            client.cancel("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee")
+
+            assertEquals(
+                listOf(
+                    "POST /api/sessions",
+                    "GET /api/sessions/eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+                    "PUT /api/sessions/eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+                    "POST /api/sessions/eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee/cancel",
+                ),
+                paths,
+            )
+        }
+
+    @Test
+    fun invalidFoodsSurfaceApiMessage() =
+        runTest {
+            val store = InMemoryTokenStore()
+            store.saveToken("tok", rememberMe = true)
+            val engine =
+                MockEngine {
+                    respond(
+                        content =
+                            """{"message":"Food is unknown, archived, or not in this household catalog"}""",
+                        status = HttpStatusCode.BadRequest,
+                        headers = headersOf(HttpHeaders.ContentType, "application/json"),
+                    )
+                }
+
+            val client = SessionsClient("http://localhost:8080", httpClient(engine), store)
+            val error =
+                assertFailsWith<SessionsException> {
+                    client.create(
+                        CreateSessionRequest(
+                            scheduledOn = "2026-07-20",
+                            foods =
+                                listOf(
+                                    SessionFoodRequest(
+                                        foodId = "ffffffff-ffff-ffff-ffff-ffffffffffff",
+                                        familiarity = "likes",
+                                    ),
+                                    SessionFoodRequest(
+                                        foodId = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa04",
+                                        familiarity = "likes",
+                                    ),
+                                ),
+                        ),
+                    )
+                }
+            assertEquals(
+                "Food is unknown, archived, or not in this household catalog",
+                error.message,
+            )
+        }
+
+    @Test
+    fun requiresSignedInToken() =
+        runTest {
+            val client =
+                SessionsClient(
+                    "http://localhost:8080",
+                    httpClient(MockEngine { error("unreachable") }),
+                    InMemoryTokenStore(),
+                )
+            val error = assertFailsWith<SessionsException> { client.listUpcoming() }
+            assertEquals("Not signed in", error.message)
+        }
+
+    private fun sampleSessionJson(): String =
+        """
+        {"id":"eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+         "scheduledOn":"2026-07-20",
+         "status":"planned",
+         "foods":[
+           {"foodId":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa04",
+            "name":"Apples",
+            "iconKey":"apple",
+            "familiarity":"likes",
+            "variantNote":"Honeycrisp",
+            "position":1},
+           {"foodId":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa05",
+            "name":"Strawberries",
+            "iconKey":"strawberry",
+            "familiarity":"truly_new",
+            "variantNote":null,
+            "position":2}
+         ],
+         "createdAt":"2026-07-15T00:00:00Z",
+         "updatedAt":"2026-07-15T00:00:00Z"}
+        """.trimIndent()
+
+    private fun sampleSessionJsonArray(): String = "[${sampleSessionJson()}]"
+
+    private fun httpClient(engine: MockEngine): HttpClient =
+        HttpClient(engine) {
+            install(ContentNegotiation) {
+                json(Json { ignoreUnknownKeys = true })
+            }
+        }
+}
