@@ -84,7 +84,7 @@ parent can **run** a still-`planned` session in an **iPad-optimized web** UI
 
 ## Tasks
 
-- [ ] Backend: Persist food outcomes + `completed` status; run/complete (or
+- [x] Backend: Persist food outcomes + `completed` status; run/complete (or
       equivalent) endpoints with household scoping and status guards.
 - [ ] Contract: Document outcome fields and run/complete paths in
       `contracts/openapi.yaml`.

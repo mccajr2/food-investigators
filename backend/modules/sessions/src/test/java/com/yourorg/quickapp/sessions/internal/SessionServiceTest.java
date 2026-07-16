@@ -8,14 +8,20 @@ import static org.mockito.Mockito.when;
 
 import com.yourorg.quickapp.foods.CatalogFood;
 import com.yourorg.quickapp.foods.FoodCatalog;
+import com.yourorg.quickapp.sessions.CompleteSessionRequest;
 import com.yourorg.quickapp.sessions.CreateSessionRequest;
 import com.yourorg.quickapp.sessions.Familiarity;
+import com.yourorg.quickapp.sessions.FoodOutcomeRequest;
 import com.yourorg.quickapp.sessions.InvalidSessionFoodException;
+import com.yourorg.quickapp.sessions.Liked;
 import com.yourorg.quickapp.sessions.SessionFoodRequest;
 import com.yourorg.quickapp.sessions.SessionNotEditableException;
 import com.yourorg.quickapp.sessions.SessionNotFoundException;
 import com.yourorg.quickapp.sessions.SessionResponse;
 import com.yourorg.quickapp.sessions.SessionStatus;
+import com.yourorg.quickapp.sessions.Smell;
+import com.yourorg.quickapp.sessions.Temperature;
+import com.yourorg.quickapp.sessions.Texture;
 import com.yourorg.quickapp.sessions.UpdateSessionRequest;
 import java.time.Clock;
 import java.time.Instant;
@@ -55,6 +61,8 @@ class SessionServiceTest {
     void createPersistsPlannedSessionWithTwoFoods() {
         stubSelectable(foodA, "Apples", "apple");
         stubSelectable(foodB, "Bananas", "banana");
+        stubVisible(foodA, "Apples", "apple");
+        stubVisible(foodB, "Bananas", "banana");
         when(sessions.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         SessionResponse created =
@@ -173,18 +181,94 @@ class SessionServiceTest {
         when(sessions.findByIdAndHouseholdId(session.getId(), householdId))
                 .thenReturn(Optional.of(session));
         when(sessions.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
-        when(foodCatalog.findVisible(householdId, foodA))
-                .thenReturn(Optional.of(new CatalogFood(foodA, "Apples", "apple")));
-        when(foodCatalog.findVisible(householdId, foodB))
-                .thenReturn(Optional.of(new CatalogFood(foodB, "Bananas", "banana")));
+        stubVisible(foodA, "Apples", "apple");
+        stubVisible(foodB, "Bananas", "banana");
 
         SessionResponse cancelled = service.cancel(householdId, session.getId());
 
         assertThat(cancelled.status()).isEqualTo(SessionStatus.cancelled);
     }
 
+    @Test
+    void completeRecordsOutcomesAndMarksCompleted() {
+        TastingSession session = TastingSession.planned(householdId, LocalDate.of(2026, 7, 20), now);
+        session.replaceFoods(
+                List.of(
+                        TastingSessionFood.of(foodA, Familiarity.likes, null, 1),
+                        TastingSessionFood.of(foodB, Familiarity.truly_new, null, 2)),
+                now);
+        when(sessions.findByIdAndHouseholdId(session.getId(), householdId))
+                .thenReturn(Optional.of(session));
+        when(sessions.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        stubVisible(foodA, "Apples", "apple");
+        stubVisible(foodB, "Bananas", "banana");
+
+        SessionResponse completed =
+                service.complete(
+                        householdId,
+                        session.getId(),
+                        new CompleteSessionRequest(
+                                List.of(
+                                        new FoodOutcomeRequest(
+                                                1,
+                                                Liked.like,
+                                                Texture.crunchy,
+                                                Temperature.cold,
+                                                Smell.mild,
+                                                "  crunchy  ",
+                                                "less peel",
+                                                true),
+                                        new FoodOutcomeRequest(
+                                                2,
+                                                Liked.so_so,
+                                                null,
+                                                Temperature.warm,
+                                                null,
+                                                null,
+                                                null,
+                                                false))));
+
+        assertThat(completed.status()).isEqualTo(SessionStatus.completed);
+        assertThat(completed.foods().get(0).liked()).isEqualTo(Liked.like);
+        assertThat(completed.foods().get(0).texture()).isEqualTo(Texture.crunchy);
+        assertThat(completed.foods().get(0).whyNote()).isEqualTo("crunchy");
+        assertThat(completed.foods().get(0).changeNote()).isEqualTo("less peel");
+        assertThat(completed.foods().get(0).ateEnough()).isTrue();
+        assertThat(completed.foods().get(1).liked()).isEqualTo(Liked.so_so);
+        assertThat(completed.foods().get(1).ateEnough()).isFalse();
+    }
+
+    @Test
+    void completeRejectsCancelledOrCompletedSessions() {
+        TastingSession cancelled =
+                TastingSession.planned(householdId, LocalDate.of(2026, 7, 20), now);
+        cancelled.cancel(now);
+        when(sessions.findByIdAndHouseholdId(cancelled.getId(), householdId))
+                .thenReturn(Optional.of(cancelled));
+
+        assertThatThrownBy(
+                        () ->
+                                service.complete(
+                                        householdId,
+                                        cancelled.getId(),
+                                        new CompleteSessionRequest(
+                                                List.of(
+                                                        new FoodOutcomeRequest(
+                                                                1, null, null, null, null, null,
+                                                                null, true),
+                                                        new FoodOutcomeRequest(
+                                                                2, null, null, null, null, null,
+                                                                null, true)))))
+                .isInstanceOf(SessionNotEditableException.class);
+    }
+
     private void stubSelectable(UUID foodId, String name, String iconKey) {
         when(foodCatalog.findSelectable(householdId, foodId))
+                .thenReturn(Optional.of(new CatalogFood(foodId, name, iconKey)));
+    }
+
+    private void stubVisible(UUID foodId, String name, String iconKey) {
+        when(foodCatalog.findVisible(householdId, foodId))
                 .thenReturn(Optional.of(new CatalogFood(foodId, name, iconKey)));
     }
 
@@ -196,9 +280,7 @@ class SessionServiceTest {
                             TastingSessionFood.of(foodB, Familiarity.truly_new, null, 2)),
                     now);
         }
-        when(foodCatalog.findVisible(householdId, foodA))
-                .thenReturn(Optional.of(new CatalogFood(foodA, "Apples", "apple")));
-        when(foodCatalog.findVisible(householdId, foodB))
-                .thenReturn(Optional.of(new CatalogFood(foodB, "Bananas", "banana")));
+        stubVisible(foodA, "Apples", "apple");
+        stubVisible(foodB, "Bananas", "banana");
     }
 }

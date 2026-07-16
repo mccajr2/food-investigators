@@ -182,6 +182,88 @@ class SessionsApiIntegrationTest {
                 .andExpect(status().isBadRequest());
     }
 
+    @Test
+    void completePersistsOutcomesAndLeavesUpcomingList() throws Exception {
+        String token = register("sessions-run-" + System.nanoTime() + "@example.com");
+
+        MvcResult createResult =
+                mockMvc.perform(
+                                post("/api/sessions")
+                                        .header("Authorization", "Bearer " + token)
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(
+                                                """
+                                                {
+                                                  "scheduledOn":"2026-07-21",
+                                                  "foods":[
+                                                    {"foodId":"%s","familiarity":"likes"},
+                                                    {"foodId":"%s","familiarity":"truly_new"}
+                                                  ]
+                                                }
+                                                """
+                                                        .formatted(APPLES, STRAWBERRIES)))
+                        .andExpect(status().isCreated())
+                        .andReturn();
+        String sessionId = idFrom(createResult);
+
+        mockMvc.perform(
+                        post("/api/sessions/" + sessionId + "/complete")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                                        {
+                                          "foods":[
+                                            {
+                                              "position":1,
+                                              "liked":"like",
+                                              "texture":"crunchy",
+                                              "temperature":"cold",
+                                              "smell":"mild",
+                                              "whyNote":"crunchy",
+                                              "changeNote":"less peel",
+                                              "ateEnough":true
+                                            },
+                                            {
+                                              "position":2,
+                                              "liked":"no",
+                                              "texture":"wet",
+                                              "temperature":"warm",
+                                              "ateEnough":false
+                                            }
+                                          ]
+                                        }
+                                        """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("completed"))
+                .andExpect(jsonPath("$.foods[0].liked").value("like"))
+                .andExpect(jsonPath("$.foods[0].texture").value("crunchy"))
+                .andExpect(jsonPath("$.foods[0].whyNote").value("crunchy"))
+                .andExpect(jsonPath("$.foods[0].changeNote").value("less peel"))
+                .andExpect(jsonPath("$.foods[0].ateEnough").value(true))
+                .andExpect(jsonPath("$.foods[1].liked").value("no"))
+                .andExpect(jsonPath("$.foods[1].ateEnough").value(false));
+
+        mockMvc.perform(get("/api/sessions").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
+
+        mockMvc.perform(
+                        post("/api/sessions/" + sessionId + "/complete")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                                        {
+                                          "foods":[
+                                            {"position":1,"ateEnough":true},
+                                            {"position":2,"ateEnough":true}
+                                          ]
+                                        }
+                                        """))
+                .andExpect(status().isConflict());
+    }
+
     private String register(String email) throws Exception {
         MvcResult result =
                 mockMvc.perform(

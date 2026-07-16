@@ -1,6 +1,5 @@
 package com.yourorg.quickapp.sessions.internal;
 
-import com.yourorg.quickapp.sessions.Familiarity;
 import com.yourorg.quickapp.sessions.SessionStatus;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -105,6 +104,11 @@ class TastingSession {
 
     void cancel(Instant now) {
         this.status = SessionStatus.cancelled;
+        this.updatedAt = now;
+    }
+
+    void complete(Instant now) {
+        this.status = SessionStatus.completed;
         this.updatedAt = now;
     }
 }
