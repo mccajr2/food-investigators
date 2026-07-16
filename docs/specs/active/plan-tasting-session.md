@@ -78,7 +78,7 @@ sessions, backed by the existing `foods` catalog and `accounts` Bearer auth.
       Modulith `sessions` module — create/list/get/update/cancel with household
       scoping and food validation.
 - [x] Contract: Add session paths/schemas to `contracts/openapi.yaml`.
-- [ ] Web: Sessions API client + Plan page (create form, upcoming list, edit,
+- [x] Web: Sessions API client + Plan page (create form, upcoming list, edit,
       cancel); gate behind signed-in shell; navigate alongside Foods.
 - [ ] Mobile sharedLogic: Sessions client matching OpenAPI (no SwiftUI plan UI).
 - [ ] Tests: Module unit + API integration + web component tests; sharedLogic

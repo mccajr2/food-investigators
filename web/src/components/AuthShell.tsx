@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react"
 
-import { AuthClient, FoodsClient } from "@/api"
+import { AuthClient, FoodsClient, SessionsClient } from "@/api"
 import { apiBaseUrl } from "@/config"
 import { defaultBrowserTokenStore } from "@/api/tokenStore"
 import type { UserResponse } from "@/api/types"
 import { FoodsPage } from "@/components/food/FoodsPage"
+import { PlanPage } from "@/components/plan/PlanPage"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -16,6 +17,7 @@ import {
 import { Input } from "@/components/ui/input"
 
 type AuthMode = "sign-in" | "register"
+type SignedInView = "plan" | "foods"
 
 type Status =
   | { kind: "idle" }
@@ -26,13 +28,16 @@ type Status =
 type AuthShellProps = {
   client?: AuthClient
   foodsClient?: FoodsClient
+  sessionsClient?: SessionsClient
 }
 
 export function AuthShell({
   client: clientProp,
   foodsClient: foodsClientProp,
+  sessionsClient: sessionsClientProp,
 }: AuthShellProps) {
-  // Create clients once. Share one token store so auth + foods see the same session.
+  // Create clients once. Share one token store so auth + foods + sessions see
+  // the same session.
   const [client] = useState(() => {
     if (clientProp) {
       return clientProp
@@ -53,7 +58,18 @@ export function AuthShell({
       defaultBrowserTokenStore(),
     )
   })
+  const [sessionsClient] = useState(() => {
+    if (sessionsClientProp) {
+      return sessionsClientProp
+    }
+    return new SessionsClient(
+      apiBaseUrl,
+      globalThis.fetch.bind(globalThis),
+      defaultBrowserTokenStore(),
+    )
+  })
   const [mode, setMode] = useState<AuthMode>("sign-in")
+  const [view, setView] = useState<SignedInView>("plan")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [rememberMe, setRememberMe] = useState(true)
@@ -169,7 +185,37 @@ export function AuthShell({
             {status.message}
           </p>
         ) : null}
-        <FoodsPage client={foodsClient} onUnauthorized={onSessionExpired} />
+        <nav aria-label="Signed-in sections" className="flex gap-2">
+          <Button
+            type="button"
+            role="tab"
+            aria-selected={view === "plan"}
+            variant={view === "plan" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setView("plan")}
+          >
+            Plan
+          </Button>
+          <Button
+            type="button"
+            role="tab"
+            aria-selected={view === "foods"}
+            variant={view === "foods" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setView("foods")}
+          >
+            Foods
+          </Button>
+        </nav>
+        {view === "plan" ? (
+          <PlanPage
+            sessionsClient={sessionsClient}
+            foodsClient={foodsClient}
+            onUnauthorized={onSessionExpired}
+          />
+        ) : (
+          <FoodsPage client={foodsClient} onUnauthorized={onSessionExpired} />
+        )}
       </div>
     )
   }
