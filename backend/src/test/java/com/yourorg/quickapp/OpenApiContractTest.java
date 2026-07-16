@@ -49,6 +49,32 @@ class OpenApiContractTest {
     }
 
     @Test
+    void documentsSessionEndpoints() throws IOException {
+        String yaml = Files.readString(resolveOpenApi());
+
+        assertThat(yaml).contains("/api/sessions");
+        assertThat(yaml).contains("/api/sessions/{sessionId}");
+        assertThat(yaml).contains("/api/sessions/{sessionId}/cancel");
+        assertThat(yaml).contains("listUpcomingSessions");
+        assertThat(yaml).contains("createSession");
+        assertThat(yaml).contains("getSession");
+        assertThat(yaml).contains("updateSession");
+        assertThat(yaml).contains("cancelSession");
+        assertThat(yaml).contains("SessionResponse");
+        assertThat(yaml).contains("CreateSessionRequest");
+        assertThat(yaml).contains("UpdateSessionRequest");
+        assertThat(yaml).contains("SessionFoodRequest");
+        assertThat(yaml).contains("SessionFoodResponse");
+        assertThat(yaml).contains("Familiarity");
+        assertThat(yaml).contains("SessionStatus");
+        assertThat(yaml).contains("likes");
+        assertThat(yaml).contains("familiar_but_new");
+        assertThat(yaml).contains("truly_new");
+        assertThat(yaml).contains("variantNote");
+        assertThat(yaml).contains("scheduledOn");
+    }
+
+    @Test
     void readmeSmokeUsesAuthNotGreeting() throws IOException {
         Path readme = resolveReadme();
         assertThat(readme).exists();

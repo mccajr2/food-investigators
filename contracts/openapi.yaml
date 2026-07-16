@@ -1,11 +1,12 @@
 openapi: 3.0.3
 info:
   title: Quickapp API
-  version: 0.3.0
+  version: 0.4.0
   description: >
     Contract-first API for Food Investigators. Documents family-account auth
-    (email/password register and login, Bearer session tokens, /api/auth/me) and
-    the household food catalog (system starters + custom foods, archive).
+    (email/password register and login, Bearer session tokens, /api/auth/me),
+    the household food catalog (system starters + custom foods, archive), and
+    planned tasting sessions (create, list upcoming, get, update, cancel).
 servers:
   - url: http://localhost:8080
     description: Local development
@@ -263,10 +264,195 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorMessage"
+  /api/sessions:
+    get:
+      operationId: listUpcomingSessions
+      summary: List planned tasting sessions for this household (earliest date first)
+      description: >
+        Returns sessions with status `planned`, ordered by `scheduledOn` ascending.
+        Cancelled sessions are omitted.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Upcoming planned sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SessionResponse"
+        "401":
+          description: Missing or invalid session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+    post:
+      operationId: createSession
+      summary: Create a planned tasting session with exactly two foods
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSessionRequest"
+            example:
+              scheduledOn: "2026-07-20"
+              foods:
+                - foodId: aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa04
+                  familiarity: likes
+                  variantNote: Honeycrisp
+                - foodId: aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa05
+                  familiarity: truly_new
+      responses:
+        "201":
+          description: Session created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionResponse"
+        "400":
+          description: >
+            Invalid request — wrong food count, missing familiarity, unknown or
+            archived foods, or invalid familiarity
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+        "401":
+          description: Missing or invalid session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+  /api/sessions/{sessionId}:
+    get:
+      operationId: getSession
+      summary: Get one tasting session for this household
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/SessionId"
+      responses:
+        "200":
+          description: Session found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionResponse"
+        "401":
+          description: Missing or invalid session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+        "404":
+          description: Session not found for this household
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+    put:
+      operationId: updateSession
+      summary: Update a still-planned tasting session
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/SessionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSessionRequest"
+            example:
+              scheduledOn: "2026-07-22"
+              foods:
+                - foodId: aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa05
+                  familiarity: familiar_but_new
+                  variantNote: "TJ's"
+                - foodId: aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa13
+                  familiarity: likes
+      responses:
+        "200":
+          description: Session updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionResponse"
+        "400":
+          description: Invalid request or foods not selectable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+        "401":
+          description: Missing or invalid session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+        "404":
+          description: Session not found for this household
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+        "409":
+          description: Session is cancelled and cannot be edited
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+              example:
+                message: Session cannot be edited
+  /api/sessions/{sessionId}/cancel:
+    post:
+      operationId: cancelSession
+      summary: Soft-cancel a planned tasting session
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/SessionId"
+      responses:
+        "200":
+          description: Session cancelled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionResponse"
+        "401":
+          description: Missing or invalid session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+        "404":
+          description: Session not found for this household
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+        "409":
+          description: Session is already cancelled and cannot be edited
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
 components:
   parameters:
     FoodId:
       name: foodId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    SessionId:
+      name: sessionId
       in: path
       required: true
       schema:
@@ -420,3 +606,122 @@ components:
         iconKey:
           $ref: "#/components/schemas/FoodIconKey"
       description: Omit a field to leave it unchanged
+    Familiarity:
+      type: string
+      enum:
+        - likes
+        - familiar_but_new
+        - truly_new
+      description: How familiar the child is with this planned food
+    SessionStatus:
+      type: string
+      enum:
+        - planned
+        - cancelled
+    SessionFoodRequest:
+      type: object
+      required:
+        - foodId
+        - familiarity
+      properties:
+        foodId:
+          type: string
+          format: uuid
+          description: Must be a catalog food visible to this household and not archived
+        familiarity:
+          $ref: "#/components/schemas/Familiarity"
+        variantNote:
+          type: string
+          maxLength: 200
+          nullable: true
+          description: Optional free-text brand, variety, or prep note
+          example: Honeycrisp
+    CreateSessionRequest:
+      type: object
+      required:
+        - scheduledOn
+        - foods
+      properties:
+        scheduledOn:
+          type: string
+          format: date
+          example: "2026-07-20"
+        foods:
+          type: array
+          minItems: 2
+          maxItems: 2
+          items:
+            $ref: "#/components/schemas/SessionFoodRequest"
+    UpdateSessionRequest:
+      type: object
+      required:
+        - scheduledOn
+        - foods
+      properties:
+        scheduledOn:
+          type: string
+          format: date
+          example: "2026-07-22"
+        foods:
+          type: array
+          minItems: 2
+          maxItems: 2
+          items:
+            $ref: "#/components/schemas/SessionFoodRequest"
+    SessionFoodResponse:
+      type: object
+      required:
+        - foodId
+        - name
+        - iconKey
+        - familiarity
+        - position
+      properties:
+        foodId:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Apples
+        iconKey:
+          $ref: "#/components/schemas/FoodIconKey"
+        familiarity:
+          $ref: "#/components/schemas/Familiarity"
+        variantNote:
+          type: string
+          maxLength: 200
+          nullable: true
+        position:
+          type: integer
+          enum: [1, 2]
+    SessionResponse:
+      type: object
+      required:
+        - id
+        - scheduledOn
+        - status
+        - foods
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        scheduledOn:
+          type: string
+          format: date
+          example: "2026-07-20"
+        status:
+          $ref: "#/components/schemas/SessionStatus"
+        foods:
+          type: array
+          minItems: 2
+          maxItems: 2
+          items:
+            $ref: "#/components/schemas/SessionFoodResponse"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time

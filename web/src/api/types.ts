@@ -73,3 +73,41 @@ export type UpdateFoodRequest = {
   name?: string
   iconKey?: FoodIconKey | string
 }
+
+export type Familiarity = "likes" | "familiar_but_new" | "truly_new"
+
+export type SessionStatus = "planned" | "cancelled"
+
+export type SessionFoodRequest = {
+  foodId: string
+  familiarity: Familiarity
+  variantNote?: string | null
+}
+
+export type CreateSessionRequest = {
+  scheduledOn: string
+  foods: [SessionFoodRequest, SessionFoodRequest]
+}
+
+export type UpdateSessionRequest = {
+  scheduledOn: string
+  foods: [SessionFoodRequest, SessionFoodRequest]
+}
+
+export type SessionFoodResponse = {
+  foodId: string
+  name: string
+  iconKey: FoodIconKey | string
+  familiarity: Familiarity
+  variantNote?: string | null
+  position: 1 | 2
+}
+
+export type SessionResponse = {
+  id: string
+  scheduledOn: string
+  status: SessionStatus
+  foods: SessionFoodResponse[]
+  createdAt: string
+  updatedAt: string
+}
