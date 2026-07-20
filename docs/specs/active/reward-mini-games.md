@@ -63,7 +63,7 @@ the runner offers a **Catch** mini-game themed to an ate-enough food.
 
 - [x] Web: Post-complete reward flow (encourage / pick / Catch) wired from
       `RunSessionPage` after successful complete.
-- [ ] Web: Catch mini-game component (food-themed skin from chosen session
+- [x] Web: Catch mini-game component (food-themed skin from chosen session
       food; short round; Done → Plan).
 - [ ] Tests: Run/reward branching (0/1/2) + Catch component smoke; keep run
       complete tests green.
