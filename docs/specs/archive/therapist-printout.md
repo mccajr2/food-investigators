@@ -1,8 +1,8 @@
 # Spec: therapist-printout
 
-Status: approved  
-
+Status: done  
 Created: 2026-07-11  
+Completed: 2026-07-19  
 Parent: [docs/roadmap.md](../../roadmap.md)  
 Added: 2026-07-11 · initial
 
@@ -44,8 +44,7 @@ parent can **download a PDF** of completed sessions (optionally date-filtered).
   familiarity, variant notes), and run outcomes (liked / texture / temperature /
   smell / whyNote / changeNote / ateEnough), showing blanks/dashes for nulls.
   Empty range → still a valid PDF with header + empty-state line (not 404).
-- **PDF generation:** Implement in the sessions module. **Ask before adding**
-  any new PDF library (none in the repo today).
+- **PDF generation:** Implement in the sessions module with Apache PDFBox.
 - **Web:** On History — optional from/to date inputs; **client-side** filter of
   the already-loaded history list (preview). **Download PDF** calls the new
   endpoint with the same `from`/`to` (omit when cleared). Keep existing
@@ -55,24 +54,24 @@ parent can **download a PDF** of completed sessions (optionally date-filtered).
 
 ## Acceptance criteria
 
-- [ ] Authenticated parent can **download a PDF** of completed sessions for
+- [x] Authenticated parent can **download a PDF** of completed sessions for
       their household (newest first); `planned` and `cancelled` are omitted.
-- [ ] Omitting `from`/`to` includes **all** completed sessions; providing either
+- [x] Omitting `from`/`to` includes **all** completed sessions; providing either
       or both filters inclusively on `scheduledOn`.
-- [ ] PDF header is generic (product title + generated date + range label) —
+- [x] PDF header is generic (product title + generated date + range label) —
       **no** parent email or household id.
-- [ ] Each included session in the PDF shows both foods’ familiarity, variant
+- [x] Each included session in the PDF shows both foods’ familiarity, variant
       notes, and outcomes (including nulls as blank/dash).
-- [ ] Empty filtered set → **200** PDF with empty-state copy (not 404).
-- [ ] Unauthenticated → 401; invalid date query → 400.
-- [ ] Web History: from/to filter updates the on-screen list client-side;
+- [x] Empty filtered set → **200** PDF with empty-state copy (not 404).
+- [x] Unauthenticated → 401; invalid date query → 400.
+- [x] Web History: from/to filter updates the on-screen list client-side;
       Download PDF uses the same range; clear filter restores full list /
       full-history download.
-- [ ] `contracts/openapi.yaml` documents the PDF path + params; web and
+- [x] `contracts/openapi.yaml` documents the PDF path + params; web and
       sharedLogic clients match in the same change.
-- [ ] Unit + API integration + web History tests for filter/download;
+- [x] Unit + API integration + web History tests for filter/download;
       sharedLogic client tests; `ModularityTests` green.
-- [ ] No native print UI; no change to upcoming Plan list behavior.
+- [x] No native print UI; no change to upcoming Plan list behavior.
 
 ## Tasks
 
@@ -83,7 +82,7 @@ parent can **download a PDF** of completed sessions (optionally date-filtered).
 - [x] Web: History from/to filter (client-side) + Download PDF via sessions
       client.
 - [x] Mobile sharedLogic: PDF download method (no SwiftUI UI).
-- [ ] Tests: Module unit + API integration + web History filter/download tests;
+- [x] Tests: Module unit + API integration + web History filter/download tests;
       sharedLogic client tests; keep `ModularityTests` green.
 
 ## Decisions (locked)
@@ -98,4 +97,4 @@ parent can **download a PDF** of completed sessions (optionally date-filtered).
 
 ## Open questions
 
-_(none — ready for implementation)_
+_(none)_
