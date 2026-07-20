@@ -264,6 +264,147 @@ class SessionsApiIntegrationTest {
                 .andExpect(status().isConflict());
     }
 
+    @Test
+    void listHistoryReturnsCompletedNewestFirstAndSkipsPlannedOrCancelled() throws Exception {
+        String token = register("sessions-history-" + System.nanoTime() + "@example.com");
+
+        mockMvc.perform(get("/api/sessions/history")).andExpect(status().isUnauthorized());
+
+        String olderId =
+                idFrom(
+                        mockMvc.perform(
+                                        post("/api/sessions")
+                                                .header("Authorization", "Bearer " + token)
+                                                .contentType(MediaType.APPLICATION_JSON)
+                                                .content(
+                                                        """
+                                                        {
+                                                          "scheduledOn":"2026-07-10",
+                                                          "foods":[
+                                                            {"foodId":"%s","familiarity":"likes"},
+                                                            {"foodId":"%s","familiarity":"truly_new"}
+                                                          ]
+                                                        }
+                                                        """
+                                                                .formatted(APPLES, STRAWBERRIES)))
+                                .andExpect(status().isCreated())
+                                .andReturn());
+        String newerId =
+                idFrom(
+                        mockMvc.perform(
+                                        post("/api/sessions")
+                                                .header("Authorization", "Bearer " + token)
+                                                .contentType(MediaType.APPLICATION_JSON)
+                                                .content(
+                                                        """
+                                                        {
+                                                          "scheduledOn":"2026-07-21",
+                                                          "foods":[
+                                                            {"foodId":"%s","familiarity":"likes","variantNote":"Honeycrisp"},
+                                                            {"foodId":"%s","familiarity":"familiar_but_new"}
+                                                          ]
+                                                        }
+                                                        """
+                                                                .formatted(APPLES, BLUEBERRIES)))
+                                .andExpect(status().isCreated())
+                                .andReturn());
+        String cancelledId =
+                idFrom(
+                        mockMvc.perform(
+                                        post("/api/sessions")
+                                                .header("Authorization", "Bearer " + token)
+                                                .contentType(MediaType.APPLICATION_JSON)
+                                                .content(
+                                                        """
+                                                        {
+                                                          "scheduledOn":"2026-07-15",
+                                                          "foods":[
+                                                            {"foodId":"%s","familiarity":"likes"},
+                                                            {"foodId":"%s","familiarity":"likes"}
+                                                          ]
+                                                        }
+                                                        """
+                                                                .formatted(STRAWBERRIES, BLUEBERRIES)))
+                                .andExpect(status().isCreated())
+                                .andReturn());
+        String plannedId =
+                idFrom(
+                        mockMvc.perform(
+                                        post("/api/sessions")
+                                                .header("Authorization", "Bearer " + token)
+                                                .contentType(MediaType.APPLICATION_JSON)
+                                                .content(
+                                                        """
+                                                        {
+                                                          "scheduledOn":"2026-07-30",
+                                                          "foods":[
+                                                            {"foodId":"%s","familiarity":"likes"},
+                                                            {"foodId":"%s","familiarity":"truly_new"}
+                                                          ]
+                                                        }
+                                                        """
+                                                                .formatted(APPLES, STRAWBERRIES)))
+                                .andExpect(status().isCreated())
+                                .andReturn());
+
+        completeSession(token, olderId, "like", true);
+        completeSession(token, newerId, "so_so", false);
+
+        mockMvc.perform(
+                        post("/api/sessions/" + cancelledId + "/cancel")
+                                .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/sessions/history").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].id").value(newerId))
+                .andExpect(jsonPath("$[0].status").value("completed"))
+                .andExpect(jsonPath("$[0].scheduledOn").value("2026-07-21"))
+                .andExpect(jsonPath("$[0].foods[0].variantNote").value("Honeycrisp"))
+                .andExpect(jsonPath("$[0].foods[0].liked").value("so_so"))
+                .andExpect(jsonPath("$[0].foods[0].ateEnough").value(false))
+                .andExpect(jsonPath("$[1].id").value(olderId))
+                .andExpect(jsonPath("$[1].foods[0].liked").value("like"))
+                .andExpect(jsonPath("$[1].foods[0].ateEnough").value(true));
+
+        mockMvc.perform(get("/api/sessions/" + newerId).header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("completed"))
+                .andExpect(jsonPath("$.foods[0].liked").value("so_so"));
+
+        mockMvc.perform(get("/api/sessions").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].id").value(plannedId));
+
+        String otherToken = register("sessions-history-other-" + System.nanoTime() + "@example.com");
+        mockMvc.perform(get("/api/sessions/history").header("Authorization", "Bearer " + otherToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
+        mockMvc.perform(get("/api/sessions/" + newerId).header("Authorization", "Bearer " + otherToken))
+                .andExpect(status().isNotFound());
+    }
+
+    private void completeSession(String token, String sessionId, String liked, boolean ateEnough)
+            throws Exception {
+        mockMvc.perform(
+                        post("/api/sessions/" + sessionId + "/complete")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                                        {
+                                          "foods":[
+                                            {"position":1,"liked":"%s","ateEnough":%s},
+                                            {"position":2,"liked":"no","ateEnough":true}
+                                          ]
+                                        }
+                                        """
+                                                .formatted(liked, ateEnough)))
+                .andExpect(status().isOk());
+    }
+
     private String register(String email) throws Exception {
         MvcResult result =
                 mockMvc.perform(

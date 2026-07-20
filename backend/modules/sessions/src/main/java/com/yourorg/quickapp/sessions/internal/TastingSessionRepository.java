@@ -11,5 +11,8 @@ interface TastingSessionRepository extends JpaRepository<TastingSession, UUID> {
     List<TastingSession> findByHouseholdIdAndStatusOrderByScheduledOnAscCreatedAtAsc(
             UUID householdId, SessionStatus status);
 
+    List<TastingSession> findByHouseholdIdAndStatusOrderByScheduledOnDescUpdatedAtDesc(
+            UUID householdId, SessionStatus status);
+
     Optional<TastingSession> findByIdAndHouseholdId(UUID id, UUID householdId);
 }

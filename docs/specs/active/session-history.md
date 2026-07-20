@@ -63,7 +63,7 @@ can **browse completed sessions** on the laptop.
 
 ## Tasks
 
-- [ ] Backend: `listHistory` (completed, newest first) on sessions service /
+- [x] Backend: `listHistory` (completed, newest first) on sessions service /
       controller; household scoping; leave upcoming list unchanged.
 - [ ] Contract: Document `GET /api/sessions/history` (and any related notes) in
       `contracts/openapi.yaml`.
