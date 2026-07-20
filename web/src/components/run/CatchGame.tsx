@@ -153,13 +153,13 @@ export function CatchGame({
         <div className="flex min-w-0 items-center gap-3">
           <FoodIcon iconKey={food.iconKey} name={food.name} className="size-12 shrink-0" />
           <div className="min-w-0">
-            <h2 className="text-xl font-semibold tracking-tight">Catch</h2>
+            <h2 className="run-prompt text-xl md:text-2xl">Catch</h2>
             <p className="truncate text-sm text-muted-foreground">
               Theme: {themeLabel}
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-4 text-sm font-medium">
+        <div className="run-prompt flex items-center gap-4 text-base font-medium md:text-lg">
           <p aria-live="polite">Caught: {board.score}</p>
           <p aria-live="polite">
             {finished ? "Time!" : `${remainingSec}s`}
@@ -169,10 +169,10 @@ export function CatchGame({
 
       {finished ? (
         <div
-          className="flex flex-1 flex-col items-center justify-center gap-4 text-center"
+          className="run-enter flex flex-1 flex-col items-center justify-center gap-4 text-center"
           aria-label="Catch finished"
         >
-          <p className="text-2xl font-semibold">Nice catching!</p>
+          <p className="run-prompt text-3xl md:text-4xl">Nice catching!</p>
           <p className="text-lg text-muted-foreground">
             You caught {board.score} {food.name.toLowerCase()}
             {board.score === 1 ? "" : "s"}.
@@ -189,7 +189,7 @@ export function CatchGame({
       ) : (
         <>
           <div
-            className="relative min-h-[280px] flex-1 overflow-hidden rounded-2xl border border-border bg-muted/40"
+            className="run-play-frame relative min-h-[280px] flex-1 overflow-hidden"
             role="application"
             aria-label="Catch play area"
             onPointerMove={(event) =>
@@ -218,7 +218,7 @@ export function CatchGame({
               </div>
             ))}
             <div
-              className="absolute bottom-3 h-10 rounded-xl border-2 border-primary bg-primary/20"
+              className="run-catcher absolute bottom-3 h-10"
               style={{
                 left: `${catcherX}%`,
                 width: `${CATCHER_WIDTH}%`,

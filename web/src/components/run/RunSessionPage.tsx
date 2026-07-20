@@ -13,6 +13,7 @@ import type {
 import { FoodIcon } from "@/components/food/FoodIcon"
 import { RewardFlow } from "@/components/run/RewardFlow"
 import { IconChoiceStep, SpeechNoteStep } from "@/components/run/RunSteps"
+import { RUN_THEME } from "@/components/run/runTheme"
 import {
   initialRewardPhase,
   type RewardPhase,
@@ -269,8 +270,9 @@ export function RunSessionPage({
       role="dialog"
       aria-label="Run tasting session"
       aria-modal="true"
+      data-theme={RUN_THEME}
     >
-      <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
+      <header className="run-header flex items-center justify-between gap-3 border-b border-border px-4 py-3">
         <div className="flex min-w-0 items-center gap-3">
           {!inReward && currentFood ? (
             <FoodIcon
@@ -281,13 +283,13 @@ export function RunSessionPage({
           ) : null}
           <div className="min-w-0">
             {inReward ? (
-              <p className="truncate text-lg font-semibold">Reward</p>
+              <p className="run-prompt truncate text-lg font-semibold">Reward</p>
             ) : (
               <>
                 <p className="truncate text-sm text-muted-foreground">
                   Food {foodIndex + 1} of 2
                 </p>
-                <p className="truncate text-lg font-semibold">
+                <p className="run-prompt truncate text-lg font-semibold">
                   {currentFood?.name ?? "Tasting"}
                   {currentFood?.variantNote
                     ? ` (${currentFood.variantNote})`

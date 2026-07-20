@@ -23,12 +23,15 @@ export function IconChoiceStep<T extends string>({
   showSkip = true,
 }: IconChoiceStepProps<T>) {
   return (
-    <div className="flex min-h-[60vh] flex-col items-center justify-center gap-8 px-4 py-8">
-      <h2 className="text-center text-3xl font-semibold leading-tight md:text-4xl">
+    <div
+      key={prompt}
+      className="run-enter flex min-h-[60vh] flex-col items-center justify-center gap-8 px-4 py-8"
+    >
+      <h2 className="run-prompt text-center text-3xl leading-tight md:text-4xl lg:text-5xl">
         {prompt}
       </h2>
       <div
-        className="grid w-full max-w-2xl grid-cols-2 gap-4 md:grid-cols-3"
+        className="grid w-full max-w-2xl grid-cols-2 gap-5 md:grid-cols-3"
         role="listbox"
         aria-label={prompt}
       >
@@ -38,13 +41,13 @@ export function IconChoiceStep<T extends string>({
             type="button"
             role="option"
             aria-label={option.label}
-            className="flex min-h-32 flex-col items-center justify-center gap-3 rounded-2xl border-2 border-border bg-card p-4 text-center transition hover:border-primary hover:bg-accent active:scale-[0.98] md:min-h-40"
+            className="run-placemat flex min-h-36 flex-col items-center justify-center gap-3 p-5 text-center hover:brightness-[1.03] md:min-h-44"
             onClick={() => onChoose(option.value)}
           >
             <span className="text-5xl md:text-6xl" aria-hidden>
               {option.symbol}
             </span>
-            <span className="text-xl font-medium md:text-2xl">{option.label}</span>
+            <span className="run-prompt text-xl md:text-2xl">{option.label}</span>
           </button>
         ))}
       </div>
@@ -79,8 +82,11 @@ export function SpeechNoteStep({
   onSkip,
 }: SpeechNoteStepProps) {
   return (
-    <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6 px-4 py-8">
-      <h2 className="max-w-2xl text-center text-3xl font-semibold leading-tight md:text-4xl">
+    <div
+      key={prompt}
+      className="run-enter flex min-h-[60vh] flex-col items-center justify-center gap-6 px-4 py-8"
+    >
+      <h2 className="run-prompt max-w-2xl text-center text-3xl leading-tight md:text-4xl lg:text-5xl">
         {prompt}
       </h2>
       {speechSupported ? (
@@ -104,7 +110,7 @@ export function SpeechNoteStep({
         value={note}
         onChange={(event) => onNoteChange(event.target.value)}
         placeholder="What did you say?"
-        className="max-w-2xl text-lg"
+        className="run-placemat max-w-2xl border-[3px] text-lg"
         maxLength={500}
       />
       <div className="flex flex-wrap justify-center gap-3">

@@ -51,7 +51,13 @@ describe("CatchGame", () => {
     expect(screen.getByLabelText("Catch game: Apples")).toBeInTheDocument()
     expect(screen.getByText(/Theme: Apples \(Honeycrisp\)/)).toBeInTheDocument()
     expect(screen.getByLabelText("Catch play area")).toBeInTheDocument()
-    expect(screen.getByTestId("catcher")).toBeInTheDocument()
+    expect(screen.getByLabelText("Catch play area").className).toContain(
+      "run-play-frame",
+    )
+    expect(screen.getByTestId("catcher").className).toContain("run-catcher")
+    expect(screen.getByRole("heading", { name: "Catch" }).className).toContain(
+      "run-prompt",
+    )
 
     await user.click(screen.getByRole("button", { name: "Move basket right" }))
     await user.click(screen.getByRole("button", { name: "Done" }))
