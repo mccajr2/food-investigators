@@ -82,7 +82,7 @@ parent can **download a PDF** of completed sessions (optionally date-filtered).
       `contracts/openapi.yaml`.
 - [x] Web: History from/to filter (client-side) + Download PDF via sessions
       client.
-- [ ] Mobile sharedLogic: PDF download method (no SwiftUI UI).
+- [x] Mobile sharedLogic: PDF download method (no SwiftUI UI).
 - [ ] Tests: Module unit + API integration + web History filter/download tests;
       sharedLogic client tests; keep `ModularityTests` green.
 
