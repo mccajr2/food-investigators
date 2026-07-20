@@ -5,6 +5,7 @@ import { apiBaseUrl } from "@/config"
 import { defaultBrowserTokenStore } from "@/api/tokenStore"
 import type { UserResponse } from "@/api/types"
 import { FoodsPage } from "@/components/food/FoodsPage"
+import { HistoryPage } from "@/components/history/HistoryPage"
 import { PlanPage } from "@/components/plan/PlanPage"
 import { Button } from "@/components/ui/button"
 import {
@@ -17,7 +18,7 @@ import {
 import { Input } from "@/components/ui/input"
 
 type AuthMode = "sign-in" | "register"
-type SignedInView = "plan" | "foods"
+type SignedInView = "plan" | "history" | "foods"
 
 type Status =
   | { kind: "idle" }
@@ -199,6 +200,16 @@ export function AuthShell({
           <Button
             type="button"
             role="tab"
+            aria-selected={view === "history"}
+            variant={view === "history" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setView("history")}
+          >
+            History
+          </Button>
+          <Button
+            type="button"
+            role="tab"
             aria-selected={view === "foods"}
             variant={view === "foods" ? "default" : "outline"}
             size="sm"
@@ -213,9 +224,16 @@ export function AuthShell({
             foodsClient={foodsClient}
             onUnauthorized={onSessionExpired}
           />
-        ) : (
+        ) : null}
+        {view === "history" ? (
+          <HistoryPage
+            sessionsClient={sessionsClient}
+            onUnauthorized={onSessionExpired}
+          />
+        ) : null}
+        {view === "foods" ? (
           <FoodsPage client={foodsClient} onUnauthorized={onSessionExpired} />
-        )}
+        ) : null}
       </div>
     )
   }

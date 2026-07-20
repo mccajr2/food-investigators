@@ -26,10 +26,12 @@ function mockSessionsClient(
 ): SessionsClient {
   return {
     listUpcoming: vi.fn().mockResolvedValue([]),
+    listHistory: vi.fn().mockResolvedValue([]),
     get: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
     cancel: vi.fn(),
+    complete: vi.fn(),
     ...overrides,
   } as SessionsClient
 }
@@ -96,6 +98,9 @@ describe("AuthShell", () => {
 
     await user.click(screen.getByRole("tab", { name: "Foods" }))
     expect(await screen.findByRole("heading", { name: "Foods" })).toBeInTheDocument()
+
+    await user.click(screen.getByRole("tab", { name: "History" }))
+    expect(await screen.findByRole("heading", { name: "History" })).toBeInTheDocument()
   })
 
   it("registers with keep-me-logged-in unchecked", async () => {

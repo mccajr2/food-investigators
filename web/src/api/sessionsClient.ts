@@ -32,6 +32,14 @@ export class SessionsClient {
     return (await response.json()) as SessionResponse[]
   }
 
+  async listHistory(): Promise<SessionResponse[]> {
+    const response = await this.authorized("/api/sessions/history")
+    if (!response.ok) {
+      throw new Error(await readErrorMessage(response, "List history failed"))
+    }
+    return (await response.json()) as SessionResponse[]
+  }
+
   async get(sessionId: string): Promise<SessionResponse> {
     const response = await this.authorized(`/api/sessions/${sessionId}`)
     if (!response.ok) {

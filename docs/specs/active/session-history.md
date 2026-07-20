@@ -67,7 +67,7 @@ can **browse completed sessions** on the laptop.
       controller; household scoping; leave upcoming list unchanged.
 - [x] Contract: Document `GET /api/sessions/history` (and any related notes) in
       `contracts/openapi.yaml`.
-- [ ] Web: Sessions client `listHistory`; History page (list + read-only detail);
+- [x] Web: Sessions client `listHistory`; History page (list + read-only detail);
       AuthShell nav tab.
 - [ ] Mobile sharedLogic: Sessions client history method (no SwiftUI UI).
 - [ ] Tests: Module unit + API integration + web History component tests;
