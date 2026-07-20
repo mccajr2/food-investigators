@@ -11,7 +11,12 @@ import type {
   Texture,
 } from "@/api/types"
 import { FoodIcon } from "@/components/food/FoodIcon"
+import { RewardFlow } from "@/components/run/RewardFlow"
 import { IconChoiceStep, SpeechNoteStep } from "@/components/run/RunSteps"
+import {
+  initialRewardPhase,
+  type RewardPhase,
+} from "@/components/run/rewardFoods"
 import { Button } from "@/components/ui/button"
 import {
   createSpeechRecognition,
@@ -147,6 +152,10 @@ export function RunSessionPage({
   const [noteDraft, setNoteDraft] = useState("")
   const [listening, setListening] = useState(false)
   const [status, setStatus] = useState<RunStatus>({ kind: "running" })
+  const [completedSession, setCompletedSession] = useState<SessionResponse | null>(
+    null,
+  )
+  const [rewardPhase, setRewardPhase] = useState<RewardPhase | null>(null)
   const speechSupported = isSpeechRecognitionSupported()
   const recognitionRef = useRef<ReturnType<typeof createSpeechRecognition>>(null)
   const onUnauthorizedRef = useRef(onUnauthorized)
@@ -157,6 +166,7 @@ export function RunSessionPage({
     session.foods[foodIndex]
   const step = RUN_STEPS[stepIndex] ?? "liked"
   const currentDraft = outcomes[foodIndex]
+  const inReward = rewardPhase !== null && completedSession !== null
 
   function advance(nextOutcomes?: [FoodOutcomeDraft, FoodOutcomeDraft]) {
     if (stepIndex < RUN_STEPS.length - 1) {
@@ -178,7 +188,9 @@ export function RunSessionPage({
     try {
       const request = buildCompleteRequest(nextOutcomes ?? outcomes)
       const completed = await sessionsClient.complete(session.id, request)
-      onComplete(completed)
+      setCompletedSession(completed)
+      setRewardPhase(initialRewardPhase(completed))
+      setStatus({ kind: "running" })
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Could not finish session"
@@ -187,6 +199,12 @@ export function RunSessionPage({
         return
       }
       setStatus({ kind: "error", message })
+    }
+  }
+
+  function finishReward() {
+    if (completedSession) {
+      onComplete(completedSession)
     }
   }
 
@@ -253,7 +271,7 @@ export function RunSessionPage({
     >
       <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
         <div className="flex min-w-0 items-center gap-3">
-          {currentFood ? (
+          {!inReward && currentFood ? (
             <FoodIcon
               iconKey={currentFood.iconKey}
               name={currentFood.name}
@@ -261,13 +279,21 @@ export function RunSessionPage({
             />
           ) : null}
           <div className="min-w-0">
-            <p className="truncate text-sm text-muted-foreground">
-              Food {foodIndex + 1} of 2
-            </p>
-            <p className="truncate text-lg font-semibold">
-              {currentFood?.name ?? "Tasting"}
-              {currentFood?.variantNote ? ` (${currentFood.variantNote})` : ""}
-            </p>
+            {inReward ? (
+              <p className="truncate text-lg font-semibold">Reward</p>
+            ) : (
+              <>
+                <p className="truncate text-sm text-muted-foreground">
+                  Food {foodIndex + 1} of 2
+                </p>
+                <p className="truncate text-lg font-semibold">
+                  {currentFood?.name ?? "Tasting"}
+                  {currentFood?.variantNote
+                    ? ` (${currentFood.variantNote})`
+                    : ""}
+                </p>
+              </>
+            )}
           </div>
         </div>
         <Button
@@ -282,13 +308,21 @@ export function RunSessionPage({
       </header>
 
       <main className="flex-1 overflow-y-auto">
-        {status.kind === "error" ? (
+        {inReward && rewardPhase ? (
+          <RewardFlow
+            phase={rewardPhase}
+            onPick={(food) => setRewardPhase({ kind: "catch", food })}
+            onFinished={finishReward}
+          />
+        ) : null}
+
+        {!inReward && status.kind === "error" ? (
           <p role="alert" className="px-4 py-3 text-sm text-destructive">
             {status.message}
           </p>
         ) : null}
 
-        {step === "liked" ? (
+        {!inReward && step === "liked" ? (
           <IconChoiceStep
             prompt="Did you like it?"
             options={LIKED_OPTIONS}
@@ -304,7 +338,7 @@ export function RunSessionPage({
           />
         ) : null}
 
-        {step === "texture" ? (
+        {!inReward && step === "texture" ? (
           <IconChoiceStep
             prompt="What was the texture?"
             options={TEXTURE_OPTIONS}
@@ -319,7 +353,7 @@ export function RunSessionPage({
           />
         ) : null}
 
-        {step === "temperature" ? (
+        {!inReward && step === "temperature" ? (
           <IconChoiceStep
             prompt="What was the temperature?"
             options={TEMPERATURE_OPTIONS}
@@ -334,7 +368,7 @@ export function RunSessionPage({
           />
         ) : null}
 
-        {step === "smell" ? (
+        {!inReward && step === "smell" ? (
           <IconChoiceStep
             prompt="How did it smell?"
             options={SMELL_OPTIONS}
@@ -349,7 +383,7 @@ export function RunSessionPage({
           />
         ) : null}
 
-        {step === "why" ? (
+        {!inReward && step === "why" ? (
           <SpeechNoteStep
             prompt={whyPrompt(currentDraft.liked)}
             note={noteDraft}
@@ -362,7 +396,7 @@ export function RunSessionPage({
           />
         ) : null}
 
-        {step === "change" ? (
+        {!inReward && step === "change" ? (
           <SpeechNoteStep
             prompt="Is there something we could change next time?"
             note={noteDraft}
@@ -375,7 +409,7 @@ export function RunSessionPage({
           />
         ) : null}
 
-        {step === "ateEnough" ? (
+        {!inReward && step === "ateEnough" ? (
           <IconChoiceStep
             prompt="Did they eat enough?"
             options={ATE_ENOUGH_OPTIONS}
