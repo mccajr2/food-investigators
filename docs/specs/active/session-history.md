@@ -65,7 +65,7 @@ can **browse completed sessions** on the laptop.
 
 - [x] Backend: `listHistory` (completed, newest first) on sessions service /
       controller; household scoping; leave upcoming list unchanged.
-- [ ] Contract: Document `GET /api/sessions/history` (and any related notes) in
+- [x] Contract: Document `GET /api/sessions/history` (and any related notes) in
       `contracts/openapi.yaml`.
 - [ ] Web: Sessions client `listHistory`; History page (list + read-only detail);
       AuthShell nav tab.

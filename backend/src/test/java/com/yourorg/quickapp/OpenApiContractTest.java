@@ -54,10 +54,12 @@ class OpenApiContractTest {
         String yaml = Files.readString(resolveOpenApi());
 
         assertThat(yaml).contains("/api/sessions");
+        assertThat(yaml).contains("/api/sessions/history");
         assertThat(yaml).contains("/api/sessions/{sessionId}");
         assertThat(yaml).contains("/api/sessions/{sessionId}/cancel");
         assertThat(yaml).contains("/api/sessions/{sessionId}/complete");
         assertThat(yaml).contains("listUpcomingSessions");
+        assertThat(yaml).contains("listSessionHistory");
         assertThat(yaml).contains("createSession");
         assertThat(yaml).contains("getSession");
         assertThat(yaml).contains("updateSession");
