@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
 import { SessionsClient } from "@/api"
 import type {
@@ -11,10 +11,16 @@ import type {
   Texture,
 } from "@/api/types"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 
 type Status =
   | { kind: "loading" }
   | { kind: "ready" }
+  | { kind: "error"; message: string }
+
+type DownloadStatus =
+  | { kind: "idle" }
+  | { kind: "downloading" }
   | { kind: "error"; message: string }
 
 type HistoryPageProps = {
@@ -61,7 +67,12 @@ export function HistoryPage({
   )
   const [sessions, setSessions] = useState<SessionResponse[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [fromDate, setFromDate] = useState("")
+  const [toDate, setToDate] = useState("")
   const [status, setStatus] = useState<Status>({ kind: "loading" })
+  const [downloadStatus, setDownloadStatus] = useState<DownloadStatus>({
+    kind: "idle",
+  })
   const onUnauthorizedRef = useRef(onUnauthorized)
   onUnauthorizedRef.current = onUnauthorized
 
@@ -95,8 +106,43 @@ export function HistoryPage({
     }
   }, [sessionsClient])
 
+  const rangeInvalid = Boolean(fromDate && toDate && fromDate > toDate)
+
+  const filteredSessions = useMemo(
+    () => filterSessionsByScheduledOn(sessions, fromDate, toDate),
+    [sessions, fromDate, toDate],
+  )
+
   const selected =
-    sessions.find((session) => session.id === selectedId) ?? null
+    filteredSessions.find((session) => session.id === selectedId) ?? null
+
+  async function onDownloadPdf() {
+    if (rangeInvalid || downloadStatus.kind === "downloading") {
+      return
+    }
+    setDownloadStatus({ kind: "downloading" })
+    try {
+      const blob = await sessionsClient.downloadHistoryPdf({
+        ...(fromDate ? { from: fromDate } : {}),
+        ...(toDate ? { to: toDate } : {}),
+      })
+      triggerPdfDownload(blob, "tasting-history.pdf")
+      setDownloadStatus({ kind: "idle" })
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Could not download PDF"
+      if (isUnauthorizedMessage(message)) {
+        onUnauthorizedRef.current?.()
+      }
+      setDownloadStatus({ kind: "error", message })
+    }
+  }
+
+  function onClearFilter() {
+    setFromDate("")
+    setToDate("")
+    setSelectedId(null)
+  }
 
   return (
     <section aria-labelledby="history-heading" className="flex flex-col gap-6">
@@ -108,6 +154,65 @@ export function HistoryPage({
           Past tasting nights and what was answered — read only.
         </p>
       </div>
+
+      {status.kind !== "loading" && status.kind !== "error" ? (
+        <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4">
+          <p className="text-sm font-medium">Date range</p>
+          <div className="flex flex-wrap items-end gap-3">
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="text-muted-foreground">From</span>
+              <Input
+                aria-label="From date"
+                type="date"
+                value={fromDate}
+                onChange={(event) => {
+                  setFromDate(event.target.value)
+                  setSelectedId(null)
+                }}
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="text-muted-foreground">To</span>
+              <Input
+                aria-label="To date"
+                type="date"
+                value={toDate}
+                onChange={(event) => {
+                  setToDate(event.target.value)
+                  setSelectedId(null)
+                }}
+              />
+            </label>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClearFilter}
+              disabled={!fromDate && !toDate}
+            >
+              Clear
+            </Button>
+            <Button
+              type="button"
+              onClick={() => void onDownloadPdf()}
+              disabled={rangeInvalid || downloadStatus.kind === "downloading"}
+            >
+              {downloadStatus.kind === "downloading"
+                ? "Downloading…"
+                : "Download PDF"}
+            </Button>
+          </div>
+          {rangeInvalid ? (
+            <p role="alert" className="text-sm text-destructive">
+              From date must be on or before To date.
+            </p>
+          ) : null}
+          {downloadStatus.kind === "error" ? (
+            <p role="alert" className="text-sm text-destructive">
+              {downloadStatus.message}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
 
       {status.kind === "loading" ? (
         <p role="status" className="text-sm text-muted-foreground">
@@ -121,16 +226,18 @@ export function HistoryPage({
         </p>
       ) : null}
 
-      {status.kind === "ready" && sessions.length === 0 ? (
+      {status.kind === "ready" && filteredSessions.length === 0 ? (
         <p className="text-sm text-muted-foreground">
-          No completed nights yet. Run a planned session to see it here.
+          {sessions.length === 0
+            ? "No completed nights yet. Run a planned session to see it here."
+            : "No completed nights in this date range."}
         </p>
       ) : null}
 
-      {sessions.length > 0 ? (
+      {filteredSessions.length > 0 ? (
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
           <ul className="flex flex-col gap-3" aria-label="Completed sessions">
-            {sessions.map((session) => {
+            {filteredSessions.map((session) => {
               const isSelected = session.id === selectedId
               return (
                 <li key={session.id}>
@@ -255,6 +362,34 @@ function DetailRow({
       <dd className="font-medium">{value}</dd>
     </div>
   )
+}
+
+function filterSessionsByScheduledOn(
+  sessions: SessionResponse[],
+  fromDate: string,
+  toDate: string,
+): SessionResponse[] {
+  return sessions.filter((session) => {
+    if (fromDate && session.scheduledOn < fromDate) {
+      return false
+    }
+    if (toDate && session.scheduledOn > toDate) {
+      return false
+    }
+    return true
+  })
+}
+
+function triggerPdfDownload(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement("a")
+  anchor.href = url
+  anchor.download = filename
+  anchor.rel = "noopener"
+  document.body.appendChild(anchor)
+  anchor.click()
+  anchor.remove()
+  URL.revokeObjectURL(url)
 }
 
 function sortedFoods(session: SessionResponse): SessionFoodResponse[] {
