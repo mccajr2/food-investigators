@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest"
 
 import { SessionsClient } from "@/api/sessionsClient"
 import type { TokenStore } from "@/api/tokenStore"
-import type { SessionResponse } from "@/api/types"
+import type { CompleteSessionRequest, SessionResponse } from "@/api/types"
 
 function memoryStore(token: string | null = "tok"): TokenStore {
   let stored = token
@@ -190,23 +190,23 @@ describe("SessionsClient", () => {
       fetchFn,
       memoryStore(),
     )
-    const request = {
+    const request: CompleteSessionRequest = {
       foods: [
         {
-          position: 1 as const,
-          liked: "like" as const,
-          texture: "crunchy" as const,
-          temperature: "cold" as const,
-          smell: "mild" as const,
+          position: 1,
+          liked: "like",
+          texture: "crunchy",
+          temperature: "cold",
+          smell: "mild",
           whyNote: "crunchy",
           changeNote: "less peel",
           ateEnough: true,
         },
         {
-          position: 2 as const,
-          liked: "no" as const,
+          position: 2,
+          liked: "no",
           texture: null,
-          temperature: "warm" as const,
+          temperature: "warm",
           smell: null,
           whyNote: null,
           changeNote: null,

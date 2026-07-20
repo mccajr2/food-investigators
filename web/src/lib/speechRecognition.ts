@@ -13,7 +13,7 @@ export type SpeechRecognitionLike = {
 }
 
 export type SpeechRecognitionEventLike = {
-  results: { [index: number]: { [index: number]: { transcript: string } } }
+  results: ArrayLike<{ 0?: { transcript: string } }>
 }
 
 type SpeechWindow = Window & {
