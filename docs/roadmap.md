@@ -37,7 +37,7 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | therapist-printout | planned | 2026-07-11 · initial | Printable session history packet for doctor / food therapist |
+| 1 | therapist-printout | active | 2026-07-11 · initial | Printable session history packet for doctor / food therapist |
 | 2 | reward-mini-games | planned | 2026-07-11 · initial | Curated mini-game templates; unlock when parent marks ate enough; food-themed skins |
 | 3 | pace-insights | planned | 2026-07-11 · initial | Parent dashboard: trends on what’s working; gentle suggestions you can ignore |
 | 4 | suggested-next-session | planned | 2026-07-11 · initial | App proposes next two foods + levels; parent approves or swaps |
@@ -63,7 +63,9 @@ Unranked ideas. Promote into **Upcoming** with `/roadmap` (re-rank).
 
 In-progress work (locked for re-rank — finish, amend, or abandon before reshuffle).
 
-_(none)_
+| Id | Branch | Spec |
+|----|--------|------|
+| therapist-printout | `therapist-printout` | [active](specs/active/therapist-printout.md) |
 
 ## Done
 
