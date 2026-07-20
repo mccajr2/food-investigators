@@ -37,11 +37,10 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | reward-mini-games | planned | 2026-07-11 · initial | Curated mini-game templates; unlock when parent marks ate enough; food-themed skins |
-| 2 | pace-insights | planned | 2026-07-11 · initial | Parent dashboard: trends on what’s working; gentle suggestions you can ignore |
-| 3 | suggested-next-session | planned | 2026-07-11 · initial | App proposes next two foods + levels; parent approves or swaps |
-| 4 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
-| 5 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
+| 1 | pace-insights | planned | 2026-07-11 · initial | Parent dashboard: trends on what’s working; gentle suggestions you can ignore |
+| 2 | suggested-next-session | planned | 2026-07-11 · initial | App proposes next two foods + levels; parent approves or swaps |
+| 3 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
+| 4 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
 
 Status values: `parking` · `planned` · `active` · `done` · `cancelled`  
 Added: `YYYY-MM-DD · initial` | `enhancement` | `re-rank split`
@@ -68,6 +67,7 @@ _(none)_
 
 | Id | Completed | Spec |
 |----|-----------|------|
+| reward-mini-games | 2026-07-19 | [archive](specs/archive/reward-mini-games.md) |
 | therapist-printout | 2026-07-19 | [archive](specs/archive/therapist-printout.md) |
 | session-history | 2026-07-19 | [archive](specs/archive/session-history.md) |
 | run-tasting-session | 2026-07-19 | [archive](specs/archive/run-tasting-session.md) |
@@ -95,3 +95,4 @@ Only notable events (first carve-up, major re-rank, cancelled theme) — not eve
 | 2026-07-19 | run-tasting-session shipped (web runner + complete API). Re-rank: `session-history` Next up; native iOS dropped below rewards/insights until device install is worth it. |
 | 2026-07-19 | session-history shipped (web History tab + `GET /api/sessions/history`). Next up: `therapist-printout`. |
 | 2026-07-19 | therapist-printout shipped (History PDF download + date filter). Next up: `reward-mini-games`. |
+| 2026-07-19 | reward-mini-games shipped (post-complete Catch reward on web runner). Next up: `pace-insights`. |

@@ -40,6 +40,8 @@ function mockSessionsClient(
 ): SessionsClient {
   return {
     listUpcoming: vi.fn(),
+    listHistory: vi.fn(),
+    downloadHistoryPdf: vi.fn(),
     get: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
@@ -150,6 +152,91 @@ describe("RunSessionPage", () => {
         ],
       })
     })
+    expect(onComplete).not.toHaveBeenCalled()
+    expect(
+      await screen.findByLabelText("Catch game: Apples"),
+    ).toBeInTheDocument()
+    expect(screen.getByText(/Theme: Apples/)).toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "Done" }))
+    expect(onComplete).toHaveBeenCalledWith(completed)
+  })
+
+  it("shows pick then Catch when both foods ate enough", async () => {
+    const user = userEvent.setup()
+    const completed: SessionResponse = {
+      ...sampleSession,
+      status: "completed",
+      foods: sampleSession.foods.map((food) => ({
+        ...food,
+        ateEnough: true,
+      })),
+    }
+    const onComplete = vi.fn()
+
+    render(
+      <RunSessionPage
+        session={sampleSession}
+        sessionsClient={mockSessionsClient({
+          complete: vi.fn().mockResolvedValue(completed),
+        })}
+        onComplete={onComplete}
+        onExit={vi.fn()}
+      />,
+    )
+
+    await skipAllOptionalSteps(user)
+    await user.click(screen.getByRole("option", { name: "Yes" }))
+    await skipAllOptionalSteps(user)
+    await user.click(screen.getByRole("option", { name: "Yes" }))
+
+    expect(
+      await screen.findByLabelText("Pick food for game"),
+    ).toBeInTheDocument()
+    await user.click(
+      screen.getByRole("button", { name: /Strawberries/ }),
+    )
+    expect(
+      await screen.findByLabelText("Catch game: Strawberries"),
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "Done" }))
+    expect(onComplete).toHaveBeenCalledWith(completed)
+  })
+
+  it("shows encouragement when neither food ate enough", async () => {
+    const user = userEvent.setup()
+    const completed: SessionResponse = {
+      ...sampleSession,
+      status: "completed",
+      foods: sampleSession.foods.map((food) => ({
+        ...food,
+        ateEnough: false,
+      })),
+    }
+    const onComplete = vi.fn()
+
+    render(
+      <RunSessionPage
+        session={sampleSession}
+        sessionsClient={mockSessionsClient({
+          complete: vi.fn().mockResolvedValue(completed),
+        })}
+        onComplete={onComplete}
+        onExit={vi.fn()}
+      />,
+    )
+
+    await skipAllOptionalSteps(user)
+    await user.click(screen.getByRole("option", { name: "No" }))
+    await skipAllOptionalSteps(user)
+    await user.click(screen.getByRole("option", { name: "No" }))
+
+    expect(await screen.findByLabelText("Encouragement")).toBeInTheDocument()
+    expect(screen.getByText(/try again another night/i)).toBeInTheDocument()
+    expect(screen.queryByLabelText(/Catch game/)).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "Back to Plan" }))
     expect(onComplete).toHaveBeenCalledWith(completed)
   })
 
@@ -158,6 +245,10 @@ describe("RunSessionPage", () => {
     const complete = vi.fn().mockResolvedValue({
       ...sampleSession,
       status: "completed",
+      foods: sampleSession.foods.map((food) => ({
+        ...food,
+        ateEnough: true,
+      })),
     })
 
     render(
@@ -197,6 +288,9 @@ describe("RunSessionPage", () => {
         }),
       )
     })
+    expect(
+      await screen.findByLabelText("Pick food for game"),
+    ).toBeInTheDocument()
   })
 
   it("exits when Exit is pressed", async () => {
