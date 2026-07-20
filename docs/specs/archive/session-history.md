@@ -1,8 +1,8 @@
 # Spec: session-history
 
-Status: approved  
-
+Status: done  
 Created: 2026-07-11  
+Completed: 2026-07-19  
 Parent: [docs/roadmap.md](../../roadmap.md)  
 Added: 2026-07-11 · initial
 
@@ -45,21 +45,21 @@ can **browse completed sessions** on the laptop.
 
 ## Acceptance criteria
 
-- [ ] Authenticated parent can **list completed** sessions for their household
+- [x] Authenticated parent can **list completed** sessions for their household
       (newest first); `planned` and `cancelled` are not included.
-- [ ] Authenticated parent can **open one completed** session and see both foods’
+- [x] Authenticated parent can **open one completed** session and see both foods’
       familiarity, variant notes, and run outcomes (liked / texture / temperature /
       smell / whyNote / changeNote / ateEnough), including nulls for skipped
       fields.
-- [ ] Unauthenticated history requests → 401; other household’s sessions → 404
+- [x] Unauthenticated history requests → 401; other household’s sessions → 404
       on get; upcoming list endpoint behavior unchanged.
-- [ ] Web (signed in): History nav + list + read-only detail (and empty state);
+- [x] Web (signed in): History nav + list + read-only detail (and empty state);
       no edit/save controls on past outcomes.
-- [ ] `contracts/openapi.yaml` documents the history list path; web and
+- [x] `contracts/openapi.yaml` documents the history list path; web and
       sharedLogic clients match in the same change.
-- [ ] Unit + API integration + web component tests; sharedLogic client tests;
+- [x] Unit + API integration + web component tests; sharedLogic client tests;
       `ModularityTests` green.
-- [ ] No native iOS/Android history UI; no print UI in this PR.
+- [x] No native iOS/Android history UI; no print UI in this PR.
 
 ## Tasks
 
@@ -69,8 +69,8 @@ can **browse completed sessions** on the laptop.
       `contracts/openapi.yaml`.
 - [x] Web: Sessions client `listHistory`; History page (list + read-only detail);
       AuthShell nav tab.
-- [ ] Mobile sharedLogic: Sessions client history method (no SwiftUI UI).
-- [ ] Tests: Module unit + API integration + web History component tests;
+- [x] Mobile sharedLogic: Sessions client history method (no SwiftUI UI).
+- [x] Tests: Module unit + API integration + web History component tests;
       sharedLogic client tests; keep `ModularityTests` green.
 
 ## Decisions (locked)
