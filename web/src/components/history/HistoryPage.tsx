@@ -54,8 +54,9 @@ const TEMPERATURE_LABELS: Record<Temperature, string> = {
 }
 
 const SMELL_LABELS: Record<Smell, string> = {
-  mild: "Mild",
-  strong: "Strong",
+  like: "Like",
+  so_so: "So-so",
+  no: "No",
 }
 
 export function HistoryPage({

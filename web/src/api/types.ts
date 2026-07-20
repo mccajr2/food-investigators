@@ -84,7 +84,7 @@ export type Texture = "soft" | "crunchy" | "chewy" | "wet"
 
 export type Temperature = "cold" | "warm" | "hot"
 
-export type Smell = "mild" | "strong"
+export type Smell = "like" | "so_so" | "no"
 
 export type SessionFoodRequest = {
   foodId: string

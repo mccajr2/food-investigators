@@ -75,8 +75,9 @@ const TEMPERATURE_OPTIONS = [
 ]
 
 const SMELL_OPTIONS = [
-  { value: "mild" as const, label: "Mild", symbol: "🌸" },
-  { value: "strong" as const, label: "Strong", symbol: "💨" },
+  { value: "like" as const, label: "Like", symbol: "😊" },
+  { value: "so_so" as const, label: "So-so", symbol: "😐" },
+  { value: "no" as const, label: "No", symbol: "👎" },
 ]
 
 const ATE_ENOUGH_OPTIONS = [

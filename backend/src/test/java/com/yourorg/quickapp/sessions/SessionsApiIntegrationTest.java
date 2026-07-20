@@ -222,7 +222,7 @@ class SessionsApiIntegrationTest {
                                               "liked":"like",
                                               "texture":"crunchy",
                                               "temperature":"cold",
-                                              "smell":"mild",
+                                              "smell":"like",
                                               "whyNote":"crunchy",
                                               "changeNote":"less peel",
                                               "ateEnough":true

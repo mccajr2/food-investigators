@@ -21,7 +21,7 @@ const completedSession: SessionResponse = {
       liked: "like",
       texture: "crunchy",
       temperature: "cold",
-      smell: "mild",
+      smell: "like",
       whyNote: "crunchy",
       changeNote: "less peel",
       ateEnough: true,
@@ -101,7 +101,7 @@ describe("HistoryPage", () => {
     await user.click(screen.getByRole("button", { name: /Honeycrisp/ }))
 
     const detail = screen.getByLabelText("Food 1: Apples")
-    expect(within(detail).getByText("Like")).toBeInTheDocument()
+    expect(within(detail).getAllByText("Like").length).toBe(2)
     expect(within(detail).getByText("Crunchy")).toBeInTheDocument()
     expect(within(detail).getByText("crunchy")).toBeInTheDocument()
     expect(within(detail).getByText("less peel")).toBeInTheDocument()

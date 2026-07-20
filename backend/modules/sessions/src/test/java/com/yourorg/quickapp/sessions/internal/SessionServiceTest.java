@@ -218,7 +218,7 @@ class SessionServiceTest {
                                                 Liked.like,
                                                 Texture.crunchy,
                                                 Temperature.cold,
-                                                Smell.mild,
+                                                Smell.like,
                                                 "  crunchy  ",
                                                 "less peel",
                                                 true),
