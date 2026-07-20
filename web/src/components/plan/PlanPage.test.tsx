@@ -65,6 +65,7 @@ function mockSessionsClient(
     create: vi.fn(),
     update: vi.fn(),
     cancel: vi.fn(),
+    complete: vi.fn(),
     ...overrides,
   } as SessionsClient
 }
@@ -223,6 +224,25 @@ describe("PlanPage", () => {
     await waitFor(() => {
       expect(screen.queryByText(/TJ's/)).not.toBeInTheDocument()
     })
+  })
+
+  it("opens the runner from upcoming", async () => {
+    const user = userEvent.setup()
+
+    render(
+      <PlanPage
+        sessionsClient={mockSessionsClient({
+          listUpcoming: vi.fn().mockResolvedValue([sampleSession]),
+        })}
+        foodsClient={mockFoodsClient()}
+      />,
+    )
+
+    expect(await screen.findByText(/Honeycrisp/)).toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: "Run" }))
+    expect(
+      screen.getByRole("dialog", { name: "Run tasting session" }),
+    ).toBeInTheDocument()
   })
 
   it("surfaces load errors", async () => {

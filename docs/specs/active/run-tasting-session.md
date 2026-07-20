@@ -88,11 +88,11 @@ parent can **run** a still-`planned` session in an **iPad-optimized web** UI
       equivalent) endpoints with household scoping and status guards.
 - [x] Contract: Document outcome fields and run/complete paths in
       `contracts/openapi.yaml`.
-- [ ] Web: iPad-optimized session runner (icon steps, two mic prompts, ate
+- [x] Web: iPad-optimized session runner (icon steps, two mic prompts, ate
       enough, skip); **Run** from Plan upcoming; wire client to new API.
-- [ ] Mobile sharedLogic: Sessions client methods for outcomes/complete (no
+- [x] Mobile sharedLogic: Sessions client methods for outcomes/complete (no
       SwiftUI run UI).
-- [ ] Tests: Module unit + API integration + web runner component tests;
+- [x] Tests: Module unit + API integration + web runner component tests;
       sharedLogic client tests; keep `ModularityTests` green.
 
 ## Decisions (locked)

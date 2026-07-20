@@ -169,6 +169,63 @@ describe("SessionsClient", () => {
     )
   })
 
+  it("completes a session with outcomes", async () => {
+    const completed = {
+      ...sampleSession,
+      status: "completed" as const,
+      foods: sampleSession.foods.map((food, index) => ({
+        ...food,
+        liked: index === 0 ? ("like" as const) : null,
+        ateEnough: index === 0,
+      })),
+    }
+    const fetchFn = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify(completed), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    )
+    const client = new SessionsClient(
+      "http://localhost:8080",
+      fetchFn,
+      memoryStore(),
+    )
+    const request = {
+      foods: [
+        {
+          position: 1 as const,
+          liked: "like" as const,
+          texture: "crunchy" as const,
+          temperature: "cold" as const,
+          smell: "mild" as const,
+          whyNote: "crunchy",
+          changeNote: "less peel",
+          ateEnough: true,
+        },
+        {
+          position: 2 as const,
+          liked: "no" as const,
+          texture: null,
+          temperature: "warm" as const,
+          smell: null,
+          whyNote: null,
+          changeNote: null,
+          ateEnough: false,
+        },
+      ],
+    }
+
+    const result = await client.complete(sampleSession.id, request)
+
+    expect(result.status).toBe("completed")
+    const init = fetchFn.mock.calls[0]?.[1] as RequestInit
+    expect(init.method).toBe("POST")
+    expect(String(fetchFn.mock.calls[0]?.[0])).toBe(
+      `http://localhost:8080/api/sessions/${sampleSession.id}/complete`,
+    )
+    expect(init.body).toBe(JSON.stringify(request))
+  })
+
   it("surfaces API errors and requires a token", async () => {
     const fetchFn = vi.fn().mockResolvedValue(
       new Response(JSON.stringify({ message: "Exactly two foods are required" }), {

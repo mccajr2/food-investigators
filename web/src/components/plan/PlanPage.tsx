@@ -7,6 +7,7 @@ import type {
   SessionFoodRequest,
   SessionResponse,
 } from "@/api/types"
+import { RunSessionPage } from "@/components/run/RunSessionPage"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
@@ -61,6 +62,9 @@ export function PlanPage({
   const [scheduledOn, setScheduledOn] = useState("")
   const [slot1, setSlot1] = useState<FoodSlot>(emptySlot)
   const [slot2, setSlot2] = useState<FoodSlot>(emptySlot)
+  const [runningSession, setRunningSession] = useState<SessionResponse | null>(
+    null,
+  )
   const onUnauthorizedRef = useRef(onUnauthorized)
   onUnauthorizedRef.current = onUnauthorized
 
@@ -203,8 +207,22 @@ export function PlanPage({
 
   const busy = status.kind === "loading" || status.kind === "saving"
 
+  function onRunComplete(completed: SessionResponse) {
+    setRunningSession(null)
+    setSessions((current) => current.filter((item) => item.id !== completed.id))
+  }
+
   return (
     <section aria-labelledby="plan-heading" className="flex flex-col gap-6">
+      {runningSession ? (
+        <RunSessionPage
+          session={runningSession}
+          sessionsClient={sessionsClient}
+          onComplete={onRunComplete}
+          onExit={() => setRunningSession(null)}
+          onUnauthorized={onUnauthorized}
+        />
+      ) : null}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 id="plan-heading" className="text-xl font-semibold tracking-tight">
@@ -313,6 +331,14 @@ export function PlanPage({
                     </ul>
                   </div>
                   <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => setRunningSession(session)}
+                      disabled={busy}
+                    >
+                      Run
+                    </Button>
                     <Button
                       type="button"
                       size="sm"
