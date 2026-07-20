@@ -46,6 +46,7 @@ class OpenApiContractTest {
         assertThat(yaml).contains("includeArchived");
         assertThat(yaml).contains("custom_");
         assertThat(yaml).contains("custom_cucumber");
+        assertThat(yaml).contains("A food with that name already exists");
     }
 
     @Test

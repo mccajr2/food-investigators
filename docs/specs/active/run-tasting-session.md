@@ -65,22 +65,22 @@ parent can **run** a still-`planned` session in an **iPad-optimized web** UI
 
 ## Acceptance criteria
 
-- [ ] Authenticated parent can open a **planned** session and complete the
+- [x] Authenticated parent can open a **planned** session and complete the
       per-food icon + mic + ate-enough flow for both foods on an iPad-sized web
       viewport (icons primary, large labels).
-- [ ] Kid screens support **Skip**; mic prompts support tap-to-talk → editable
+- [x] Kid screens support **Skip**; mic prompts support tap-to-talk → editable
       transcript → parent confirm, with parent **type** fallback when speech is
       unavailable.
-- [ ] Saving outcomes persists liked / texture / temperature / smell / whyNote /
+- [x] Saving outcomes persists liked / texture / temperature / smell / whyNote /
       changeNote / ateEnough per food; finishing both foods marks the session
       `completed` and it leaves the default upcoming list.
-- [ ] Cannot run or mutate outcomes for `cancelled` or already `completed`
+- [x] Cannot run or mutate outcomes for `cancelled` or already `completed`
       sessions (4xx); unauthenticated → 401; other household → 404.
-- [ ] `contracts/openapi.yaml` documents run/outcome/complete shapes; web and
+- [x] `contracts/openapi.yaml` documents run/outcome/complete shapes; web and
       sharedLogic clients match in the same change.
-- [ ] Unit + API integration + web component tests; sharedLogic client tests;
+- [x] Unit + API integration + web component tests; sharedLogic client tests;
       `ModularityTests` green.
-- [ ] No native iOS/Android run UI in this PR.
+- [x] No native iOS/Android run UI in this PR.
 
 ## Tasks
 

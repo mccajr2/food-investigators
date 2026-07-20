@@ -15,6 +15,12 @@ public class FoodExceptionHandler {
         return ResponseEntity.badRequest().body(Map.of("message", "Invalid icon key"));
     }
 
+    @ExceptionHandler(DuplicateFoodNameException.class)
+    ResponseEntity<Map<String, String>> duplicateName(DuplicateFoodNameException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of("message", "A food with that name already exists"));
+    }
+
     @ExceptionHandler(SystemFoodImmutableException.class)
     ResponseEntity<Map<String, String>> systemImmutable(SystemFoodImmutableException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)

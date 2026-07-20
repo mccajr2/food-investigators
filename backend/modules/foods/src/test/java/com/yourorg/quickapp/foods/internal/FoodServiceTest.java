@@ -7,6 +7,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.yourorg.quickapp.foods.CreateFoodRequest;
+import com.yourorg.quickapp.foods.DuplicateFoodNameException;
 import com.yourorg.quickapp.foods.FoodNotFoundException;
 import com.yourorg.quickapp.foods.FoodResponse;
 import com.yourorg.quickapp.foods.InvalidFoodIconKeyException;
@@ -64,6 +65,7 @@ class FoodServiceTest {
 
     @Test
     void createPersistsHouseholdFood() {
+        when(foods.existsVisibleName(householdId, "Extra apple", null)).thenReturn(false);
         when(foods.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         FoodResponse created =
@@ -77,6 +79,47 @@ class FoodServiceTest {
         ArgumentCaptor<Food> captor = ArgumentCaptor.forClass(Food.class);
         verify(foods).save(captor.capture());
         assertThat(captor.getValue().getName()).isEqualTo("Extra apple");
+    }
+
+    @Test
+    void createRejectsDuplicateVisibleName() {
+        when(foods.existsVisibleName(householdId, "watermelon", null)).thenReturn(true);
+
+        assertThatThrownBy(
+                        () ->
+                                service.create(
+                                        householdId, new CreateFoodRequest("watermelon", "apple")))
+                .isInstanceOf(DuplicateFoodNameException.class);
+    }
+
+    @Test
+    void updateRejectsRenameToDuplicateVisibleName() {
+        Food mine = Food.household(householdId, "My mash", "apple", now);
+        when(foods.findById(mine.getId())).thenReturn(Optional.of(mine));
+        when(foods.existsVisibleName(householdId, "Apples", mine.getId())).thenReturn(true);
+
+        assertThatThrownBy(
+                        () ->
+                                service.update(
+                                        householdId,
+                                        mine.getId(),
+                                        new UpdateFoodRequest("Apples", null)))
+                .isInstanceOf(DuplicateFoodNameException.class);
+    }
+
+    @Test
+    void updateAllowsKeepingSameName() {
+        Food mine = Food.household(householdId, "My mash", "apple", now);
+        when(foods.findById(mine.getId())).thenReturn(Optional.of(mine));
+        when(foods.existsVisibleName(householdId, "My mash", mine.getId())).thenReturn(false);
+        when(foods.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        FoodResponse updated =
+                service.update(
+                        householdId, mine.getId(), new UpdateFoodRequest("My mash", "banana"));
+
+        assertThat(updated.name()).isEqualTo("My mash");
+        assertThat(updated.iconKey()).isEqualTo("banana");
     }
 
     @Test
@@ -112,6 +155,7 @@ class FoodServiceTest {
     void updateAndArchiveHouseholdFood() {
         Food mine = Food.household(householdId, "My mash", "apple", now);
         when(foods.findById(mine.getId())).thenReturn(Optional.of(mine));
+        when(foods.existsVisibleName(householdId, "Renamed", mine.getId())).thenReturn(false);
         when(foods.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         FoodResponse updated =

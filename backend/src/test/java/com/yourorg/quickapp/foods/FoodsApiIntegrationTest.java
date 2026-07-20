@@ -174,6 +174,82 @@ class FoodsApiIntegrationTest {
                 .andExpect(status().isNotFound());
     }
 
+    @Test
+    void createAndRenameRejectDuplicateVisibleNames() throws Exception {
+        String token = register("foods-dup-" + System.nanoTime() + "@example.com");
+
+        mockMvc.perform(
+                        post("/api/foods")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                                        {"name":"Watermelon","iconKey":"custom_watermelon"}
+                                        """))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(
+                        post("/api/foods")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                                        {"name":"watermelon","iconKey":"custom_watermelon"}
+                                        """))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("A food with that name already exists"));
+
+        mockMvc.perform(
+                        post("/api/foods")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                                        {"name":"Apples","iconKey":"apple"}
+                                        """))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("A food with that name already exists"));
+
+        MvcResult createResult =
+                mockMvc.perform(
+                                post("/api/foods")
+                                        .header("Authorization", "Bearer " + token)
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(
+                                                """
+                                                {"name":"Cucumber","iconKey":"custom_cucumber"}
+                                                """))
+                        .andExpect(status().isCreated())
+                        .andReturn();
+        String foodId = idFrom(createResult);
+
+        mockMvc.perform(
+                        put("/api/foods/" + foodId)
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                                        {"name":"WATERMELON"}
+                                        """))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("A food with that name already exists"));
+
+        mockMvc.perform(
+                        post("/api/foods/" + foodId + "/archive")
+                                .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(
+                        post("/api/foods")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                                        {"name":"Cucumber","iconKey":"custom_cucumber"}
+                                        """))
+                .andExpect(status().isCreated());
+    }
+
     private String register(String email) throws Exception {
         MvcResult result =
                 mockMvc.perform(

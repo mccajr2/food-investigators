@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Quickapp API
-  version: 0.5.0
+  version: 0.5.1
   description: >
     Contract-first API for Food Investigators. Documents family-account auth
     (email/password register and login, Bearer session tokens, /api/auth/me),
@@ -182,6 +182,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorMessage"
+        "409":
+          description: Name already used by a starter or active household food
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+              example:
+                message: A food with that name already exists
   /api/foods/{foodId}:
     put:
       operationId: updateFood
@@ -232,6 +240,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorMessage"
+        "409":
+          description: Name already used by a starter or active household food
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+              example:
+                message: A food with that name already exists
   /api/foods/{foodId}/archive:
     post:
       operationId: archiveFood

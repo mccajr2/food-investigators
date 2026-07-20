@@ -123,6 +123,23 @@ describe("FoodsClient", () => {
     ).rejects.toThrow("Invalid icon key")
   })
 
+  it("surfaces duplicate name conflicts", async () => {
+    const fetchFn = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({ message: "A food with that name already exists" }),
+        {
+          status: 409,
+          headers: { "Content-Type": "application/json" },
+        },
+      ),
+    )
+    const client = new FoodsClient("http://localhost:8080", fetchFn, memoryStore())
+
+    await expect(
+      client.create({ name: "Watermelon", iconKey: "custom_watermelon" }),
+    ).rejects.toThrow("A food with that name already exists")
+  })
+
   it("requires a signed-in token", async () => {
     const client = new FoodsClient(
       "http://localhost:8080",
