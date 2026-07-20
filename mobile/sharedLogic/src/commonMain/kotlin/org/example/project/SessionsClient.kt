@@ -94,6 +94,14 @@ class SessionsClient(
         return response.body()
     }
 
+    suspend fun listHistory(): List<SessionResponse> {
+        val response = authorizedGet("$baseUrl/api/sessions/history")
+        if (!response.status.isSuccess()) {
+            throw SessionsException(readError(response))
+        }
+        return response.body()
+    }
+
     suspend fun get(sessionId: String): SessionResponse {
         val response = authorizedGet("$baseUrl/api/sessions/$sessionId")
         if (!response.status.isSuccess()) {

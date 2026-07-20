@@ -47,6 +47,36 @@ class SessionsClientTest {
         }
 
     @Test
+    fun listHistorySendsBearerAndParsesCompletedSessions() =
+        runTest {
+            val store = InMemoryTokenStore()
+            store.saveToken("tok", rememberMe = true)
+            var sawAuth: String? = null
+            val engine =
+                MockEngine { request ->
+                    assertEquals(HttpMethod.Get, request.method)
+                    assertEquals("/api/sessions/history", request.url.encodedPath)
+                    sawAuth = request.headers[HttpHeaders.Authorization]
+                    respond(
+                        content = "[${completedSessionJson()}]",
+                        status = HttpStatusCode.OK,
+                        headers = headersOf(HttpHeaders.ContentType, "application/json"),
+                    )
+                }
+
+            val client = SessionsClient("http://localhost:8080", httpClient(engine), store)
+            val history = client.listHistory()
+
+            assertEquals(1, history.size)
+            assertEquals("completed", history[0].status)
+            assertEquals("2026-07-20", history[0].scheduledOn)
+            assertEquals("like", history[0].foods[0].liked)
+            assertEquals("crunchy", history[0].foods[0].whyNote)
+            assertEquals(false, history[0].foods[1].ateEnough)
+            assertEquals("Bearer tok", sawAuth)
+        }
+
+    @Test
     fun createGetUpdateCancelHitExpectedPaths() =
         runTest {
             val store = InMemoryTokenStore()

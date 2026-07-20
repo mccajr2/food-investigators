@@ -67,6 +67,29 @@ describe("SessionsClient", () => {
     expect(new Headers(init.headers).get("Authorization")).toBe("Bearer tok")
   })
 
+  it("lists completed session history", async () => {
+    const completed = { ...sampleSession, status: "completed" as const }
+    const fetchFn = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify([completed]), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    )
+    const client = new SessionsClient(
+      "http://localhost:8080",
+      fetchFn,
+      memoryStore(),
+    )
+
+    const history = await client.listHistory()
+
+    expect(history).toHaveLength(1)
+    expect(history[0].status).toBe("completed")
+    expect(String(fetchFn.mock.calls[0]?.[0])).toBe(
+      "http://localhost:8080/api/sessions/history",
+    )
+  })
+
   it("creates a planned session", async () => {
     const fetchFn = vi.fn().mockResolvedValue(
       new Response(JSON.stringify(sampleSession), {

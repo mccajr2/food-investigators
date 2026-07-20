@@ -1,13 +1,13 @@
 openapi: 3.0.3
 info:
   title: Quickapp API
-  version: 0.5.1
+  version: 0.6.0
   description: >
     Contract-first API for Food Investigators. Documents family-account auth
     (email/password register and login, Bearer session tokens, /api/auth/me),
     the household food catalog (system starters + custom foods, archive), and
-    planned tasting sessions (create, list upcoming, get, update, cancel,
-    complete with run outcomes).
+    tasting sessions (create, list upcoming, history of completed, get, update,
+    cancel, complete with run outcomes).
 servers:
   - url: http://localhost:8080
     description: Local development
@@ -339,6 +339,32 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorMessage"
+        "401":
+          description: Missing or invalid session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+  /api/sessions/history:
+    get:
+      operationId: listSessionHistory
+      summary: List completed tasting sessions for this household (newest first)
+      description: >
+        Returns sessions with status `completed`, ordered by `scheduledOn`
+        descending then `updatedAt` descending. Planned and cancelled sessions
+        are omitted. Each item reuses `SessionResponse` including per-food
+        run outcomes. Read-only — use get by id for a single completed session.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Completed session history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SessionResponse"
         "401":
           description: Missing or invalid session
           content:

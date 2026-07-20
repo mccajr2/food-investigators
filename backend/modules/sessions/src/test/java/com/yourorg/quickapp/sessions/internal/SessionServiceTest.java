@@ -239,6 +239,48 @@ class SessionServiceTest {
     }
 
     @Test
+    void listHistoryReturnsCompletedNewestFirstWithOutcomes() {
+        Instant earlier = Instant.parse("2026-07-10T12:00:00Z");
+        Instant later = Instant.parse("2026-07-15T12:00:00Z");
+        TastingSession older = TastingSession.planned(householdId, LocalDate.of(2026, 7, 10), earlier);
+        older.replaceFoods(
+                List.of(
+                        TastingSessionFood.of(foodA, Familiarity.likes, null, 1),
+                        TastingSessionFood.of(foodB, Familiarity.truly_new, null, 2)),
+                earlier);
+        older.getFoods().get(0).recordOutcome(Liked.like, null, null, null, "yay", null, true);
+        older.getFoods().get(1).recordOutcome(Liked.no, null, null, null, null, null, false);
+        older.complete(earlier);
+
+        TastingSession newer = TastingSession.planned(householdId, LocalDate.of(2026, 7, 20), later);
+        newer.replaceFoods(
+                List.of(
+                        TastingSessionFood.of(foodA, Familiarity.likes, "Honeycrisp", 1),
+                        TastingSessionFood.of(foodB, Familiarity.familiar_but_new, null, 2)),
+                later);
+        newer.getFoods().get(0).recordOutcome(Liked.so_so, Texture.soft, null, null, null, null, true);
+        newer.getFoods().get(1).recordOutcome(null, null, null, null, null, null, true);
+        newer.complete(later);
+
+        when(sessions.findByHouseholdIdAndStatusOrderByScheduledOnDescUpdatedAtDesc(
+                        householdId, SessionStatus.completed))
+                .thenReturn(List.of(newer, older));
+        stubVisible(foodA, "Apples", "apple");
+        stubVisible(foodB, "Bananas", "banana");
+
+        List<SessionResponse> history = service.listHistory(householdId);
+
+        assertThat(history).hasSize(2);
+        assertThat(history.get(0).scheduledOn()).isEqualTo(LocalDate.of(2026, 7, 20));
+        assertThat(history.get(0).status()).isEqualTo(SessionStatus.completed);
+        assertThat(history.get(0).foods().get(0).liked()).isEqualTo(Liked.so_so);
+        assertThat(history.get(0).foods().get(0).variantNote()).isEqualTo("Honeycrisp");
+        assertThat(history.get(1).scheduledOn()).isEqualTo(LocalDate.of(2026, 7, 10));
+        assertThat(history.get(1).foods().get(0).whyNote()).isEqualTo("yay");
+        assertThat(history.get(1).foods().get(1).ateEnough()).isFalse();
+    }
+
+    @Test
     void completeRejectsCancelledOrCompletedSessions() {
         TastingSession cancelled =
                 TastingSession.planned(householdId, LocalDate.of(2026, 7, 20), now);

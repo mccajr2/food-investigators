@@ -57,6 +57,16 @@ public class SessionService {
     }
 
     @Transactional(readOnly = true)
+    public List<SessionResponse> listHistory(UUID householdId) {
+        return sessions
+                .findByHouseholdIdAndStatusOrderByScheduledOnDescUpdatedAtDesc(
+                        householdId, SessionStatus.completed)
+                .stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public SessionResponse get(UUID householdId, UUID sessionId) {
         return toResponse(requireSession(householdId, sessionId));
     }

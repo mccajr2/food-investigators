@@ -40,6 +40,11 @@ public class SessionController {
         return sessionService.listUpcoming(requireHouseholdId(principal));
     }
 
+    @GetMapping("/history")
+    public List<SessionResponse> listHistory(@AuthenticationPrincipal AccountPrincipal principal) {
+        return sessionService.listHistory(requireHouseholdId(principal));
+    }
+
     @GetMapping("/{sessionId}")
     public SessionResponse get(
             @AuthenticationPrincipal AccountPrincipal principal,
