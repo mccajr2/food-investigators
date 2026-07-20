@@ -1,13 +1,13 @@
 openapi: 3.0.3
 info:
   title: Quickapp API
-  version: 0.6.0
+  version: 0.7.0
   description: >
     Contract-first API for Food Investigators. Documents family-account auth
     (email/password register and login, Bearer session tokens, /api/auth/me),
     the household food catalog (system starters + custom foods, archive), and
-    tasting sessions (create, list upcoming, history of completed, get, update,
-    cancel, complete with run outcomes).
+    tasting sessions (create, list upcoming, history of completed, download
+    history PDF, get, update, cancel, complete with run outcomes).
 servers:
   - url: http://localhost:8080
     description: Local development
@@ -365,6 +365,63 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/SessionResponse"
+        "401":
+          description: Missing or invalid session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+  /api/sessions/history.pdf:
+    get:
+      operationId: exportSessionHistoryPdf
+      summary: Download completed tasting history as a PDF
+      description: >
+        Returns a PDF packet of sessions with status `completed`, ordered by
+        `scheduledOn` descending then `updatedAt` descending (same as history
+        list). Optional `from` and `to` (ISO-8601 dates) filter inclusively on
+        `scheduledOn`. Omit both for the full completed history. Empty filtered
+        results still return 200 with a PDF that states no sessions matched.
+        Packet header is generic (product title + generated date + range) —
+        no parent email or household id. Planned and cancelled sessions are
+        omitted.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: from
+          in: query
+          required: false
+          description: Inclusive start date on scheduledOn (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: false
+          description: Inclusive end date on scheduledOn (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: PDF tasting-history packet
+          headers:
+            Content-Disposition:
+              description: Attachment filename for the PDF download
+              schema:
+                type: string
+                example: attachment; filename="tasting-history.pdf"
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        "400":
+          description: >
+            Invalid request — malformed date, or `from` after `to`
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
         "401":
           description: Missing or invalid session
           content:

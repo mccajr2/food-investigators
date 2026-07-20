@@ -55,11 +55,13 @@ class OpenApiContractTest {
 
         assertThat(yaml).contains("/api/sessions");
         assertThat(yaml).contains("/api/sessions/history");
+        assertThat(yaml).contains("/api/sessions/history.pdf");
         assertThat(yaml).contains("/api/sessions/{sessionId}");
         assertThat(yaml).contains("/api/sessions/{sessionId}/cancel");
         assertThat(yaml).contains("/api/sessions/{sessionId}/complete");
         assertThat(yaml).contains("listUpcomingSessions");
         assertThat(yaml).contains("listSessionHistory");
+        assertThat(yaml).contains("exportSessionHistoryPdf");
         assertThat(yaml).contains("createSession");
         assertThat(yaml).contains("getSession");
         assertThat(yaml).contains("updateSession");
@@ -87,6 +89,8 @@ class OpenApiContractTest {
         assertThat(yaml).contains("truly_new");
         assertThat(yaml).contains("variantNote");
         assertThat(yaml).contains("scheduledOn");
+        assertThat(yaml).contains("application/pdf");
+        assertThat(yaml).contains("tasting-history.pdf");
     }
 
     @Test

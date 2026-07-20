@@ -78,7 +78,7 @@ parent can **download a PDF** of completed sessions (optionally date-filtered).
 
 - [x] Backend: PDF export on sessions service/controller (`from`/`to` on
       `scheduledOn`); household scoping; empty-range PDF.
-- [ ] Contract: Document `GET /api/sessions/history.pdf` in
+- [x] Contract: Document `GET /api/sessions/history.pdf` in
       `contracts/openapi.yaml`.
 - [ ] Web: History from/to filter (client-side) + Download PDF via sessions
       client.
