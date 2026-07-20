@@ -32,6 +32,11 @@ public class SessionExceptionHandler {
         return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
     }
 
+    @ExceptionHandler(InvalidHistoryPdfRequestException.class)
+    ResponseEntity<Map<String, String>> invalidHistoryPdf(InvalidHistoryPdfRequestException ex) {
+        return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     ResponseEntity<Map<String, String>> validation(MethodArgumentNotValidException ex) {
         return ResponseEntity.badRequest().body(Map.of("message", "Invalid request"));

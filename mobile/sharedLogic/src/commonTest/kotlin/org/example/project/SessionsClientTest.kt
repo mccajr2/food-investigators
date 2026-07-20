@@ -77,6 +77,53 @@ class SessionsClientTest {
         }
 
     @Test
+    fun downloadHistoryPdfSendsBearerAndOptionalDateRange() =
+        runTest {
+            val store = InMemoryTokenStore()
+            store.saveToken("tok", rememberMe = true)
+            val pdfBytes = byteArrayOf(0x25, 0x50, 0x44, 0x46)
+            val paths = mutableListOf<String>()
+            var sawAuth: String? = null
+            val engine =
+                MockEngine { request ->
+                    assertEquals(HttpMethod.Get, request.method)
+                    paths +=
+                        buildString {
+                            append(request.url.encodedPath)
+                            val query = request.url.encodedQuery
+                            if (query.isNotEmpty()) {
+                                append("?")
+                                append(query)
+                            }
+                        }
+                    sawAuth = request.headers[HttpHeaders.Authorization]
+                    respond(
+                        content = pdfBytes,
+                        status = HttpStatusCode.OK,
+                        headers = headersOf(HttpHeaders.ContentType, "application/pdf"),
+                    )
+                }
+
+            val client = SessionsClient("http://localhost:8080", httpClient(engine), store)
+
+            val full = client.downloadHistoryPdf()
+            assertEquals(pdfBytes.toList(), full.toList())
+
+            client.downloadHistoryPdf(from = "2026-07-01", to = "2026-07-31")
+            client.downloadHistoryPdf(from = "2026-07-15")
+
+            assertEquals(
+                listOf(
+                    "/api/sessions/history.pdf",
+                    "/api/sessions/history.pdf?from=2026-07-01&to=2026-07-31",
+                    "/api/sessions/history.pdf?from=2026-07-15",
+                ),
+                paths,
+            )
+            assertEquals("Bearer tok", sawAuth)
+        }
+
+    @Test
     fun createGetUpdateCancelHitExpectedPaths() =
         runTest {
             val store = InMemoryTokenStore()

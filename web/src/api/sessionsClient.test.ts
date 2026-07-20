@@ -90,6 +90,39 @@ describe("SessionsClient", () => {
     )
   })
 
+  it("downloads history PDF with optional from/to query params", async () => {
+    const pdfBytes = new Uint8Array([0x25, 0x50, 0x44, 0x46])
+    const fetchFn = vi.fn().mockImplementation(() =>
+      Promise.resolve(
+        new Response(pdfBytes, {
+          status: 200,
+          headers: { "Content-Type": "application/pdf" },
+        }),
+      ),
+    )
+    const client = new SessionsClient(
+      "http://localhost:8080",
+      fetchFn,
+      memoryStore(),
+    )
+
+    const full = await client.downloadHistoryPdf()
+    expect(String(fetchFn.mock.calls[0]?.[0])).toBe(
+      "http://localhost:8080/api/sessions/history.pdf",
+    )
+    expect(new Uint8Array(await full.arrayBuffer())).toEqual(pdfBytes)
+
+    await client.downloadHistoryPdf({ from: "2026-07-01", to: "2026-07-31" })
+    expect(String(fetchFn.mock.calls[1]?.[0])).toBe(
+      "http://localhost:8080/api/sessions/history.pdf?from=2026-07-01&to=2026-07-31",
+    )
+
+    await client.downloadHistoryPdf({ from: "2026-07-15" })
+    expect(String(fetchFn.mock.calls[2]?.[0])).toBe(
+      "http://localhost:8080/api/sessions/history.pdf?from=2026-07-15",
+    )
+  })
+
   it("creates a planned session", async () => {
     const fetchFn = vi.fn().mockResolvedValue(
       new Response(JSON.stringify(sampleSession), {

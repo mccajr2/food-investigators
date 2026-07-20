@@ -12,6 +12,7 @@ import com.yourorg.quickapp.sessions.CompleteSessionRequest;
 import com.yourorg.quickapp.sessions.CreateSessionRequest;
 import com.yourorg.quickapp.sessions.Familiarity;
 import com.yourorg.quickapp.sessions.FoodOutcomeRequest;
+import com.yourorg.quickapp.sessions.InvalidHistoryPdfRequestException;
 import com.yourorg.quickapp.sessions.InvalidSessionFoodException;
 import com.yourorg.quickapp.sessions.Liked;
 import com.yourorg.quickapp.sessions.SessionFoodRequest;
@@ -30,6 +31,9 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.text.PDFTextStripper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -281,6 +285,73 @@ class SessionServiceTest {
     }
 
     @Test
+    void exportHistoryPdfIncludesCompletedSessionsAndFiltersByScheduledOn() throws Exception {
+        Instant earlier = Instant.parse("2026-07-10T12:00:00Z");
+        Instant later = Instant.parse("2026-07-15T12:00:00Z");
+        TastingSession older = TastingSession.planned(householdId, LocalDate.of(2026, 7, 10), earlier);
+        older.replaceFoods(
+                List.of(
+                        TastingSessionFood.of(foodA, Familiarity.likes, null, 1),
+                        TastingSessionFood.of(foodB, Familiarity.truly_new, null, 2)),
+                earlier);
+        older.getFoods().get(0).recordOutcome(Liked.like, Texture.crunchy, null, null, "yay", null, true);
+        older.getFoods().get(1).recordOutcome(Liked.no, null, null, null, null, null, false);
+        older.complete(earlier);
+
+        TastingSession newer = TastingSession.planned(householdId, LocalDate.of(2026, 7, 20), later);
+        newer.replaceFoods(
+                List.of(
+                        TastingSessionFood.of(foodA, Familiarity.likes, "Honeycrisp", 1),
+                        TastingSessionFood.of(foodB, Familiarity.familiar_but_new, null, 2)),
+                later);
+        newer.getFoods().get(0).recordOutcome(Liked.so_so, null, null, null, null, null, true);
+        newer.getFoods().get(1).recordOutcome(null, null, null, null, null, null, true);
+        newer.complete(later);
+
+        when(sessions.findByHouseholdIdAndStatusOrderByScheduledOnDescUpdatedAtDesc(
+                        householdId, SessionStatus.completed))
+                .thenReturn(List.of(newer, older));
+        stubVisible(foodA, "Apples", "apple");
+        stubVisible(foodB, "Bananas", "banana");
+
+        byte[] fullPdf = service.exportHistoryPdf(householdId, null, null);
+        String fullText = pdfText(fullPdf);
+        assertThat(fullText).contains("Food Investigators - tasting history");
+        assertThat(fullText).contains("Generated: 2026-07-15");
+        assertThat(fullText).contains("Range: All completed sessions");
+        assertThat(fullText).contains("Session: 2026-07-20");
+        assertThat(fullText).contains("Session: 2026-07-10");
+        assertThat(fullText).contains("Honeycrisp");
+        assertThat(fullText).contains("yay");
+        assertThat(fullText).doesNotContain("bbbbbbbb");
+
+        byte[] filteredPdf =
+                service.exportHistoryPdf(
+                        householdId, LocalDate.of(2026, 7, 15), LocalDate.of(2026, 7, 31));
+        String filteredText = pdfText(filteredPdf);
+        assertThat(filteredText).contains("2026-07-15 to 2026-07-31");
+        assertThat(filteredText).contains("Session: 2026-07-20");
+        assertThat(filteredText).doesNotContain("Session: 2026-07-10");
+
+        byte[] emptyPdf =
+                service.exportHistoryPdf(
+                        householdId, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 31));
+        assertThat(pdfText(emptyPdf)).contains("No completed tasting sessions in this range.");
+    }
+
+    @Test
+    void exportHistoryPdfRejectsFromAfterTo() {
+        assertThatThrownBy(
+                        () ->
+                                service.exportHistoryPdf(
+                                        householdId,
+                                        LocalDate.of(2026, 7, 20),
+                                        LocalDate.of(2026, 7, 10)))
+                .isInstanceOf(InvalidHistoryPdfRequestException.class)
+                .hasMessageContaining("'from' must be on or before 'to'");
+    }
+
+    @Test
     void completeRejectsCancelledOrCompletedSessions() {
         TastingSession cancelled =
                 TastingSession.planned(householdId, LocalDate.of(2026, 7, 20), now);
@@ -312,6 +383,12 @@ class SessionServiceTest {
     private void stubVisible(UUID foodId, String name, String iconKey) {
         when(foodCatalog.findVisible(householdId, foodId))
                 .thenReturn(Optional.of(new CatalogFood(foodId, name, iconKey)));
+    }
+
+    private static String pdfText(byte[] pdf) throws Exception {
+        try (PDDocument document = Loader.loadPDF(pdf)) {
+            return new PDFTextStripper().getText(document);
+        }
     }
 
     private void stubVisibleFoods(TastingSession... sessionList) {

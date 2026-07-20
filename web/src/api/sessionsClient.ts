@@ -40,6 +40,30 @@ export class SessionsClient {
     return (await response.json()) as SessionResponse[]
   }
 
+  async downloadHistoryPdf(range?: {
+    from?: string
+    to?: string
+  }): Promise<Blob> {
+    const params = new URLSearchParams()
+    if (range?.from) {
+      params.set("from", range.from)
+    }
+    if (range?.to) {
+      params.set("to", range.to)
+    }
+    const query = params.toString()
+    const path = query
+      ? `/api/sessions/history.pdf?${query}`
+      : "/api/sessions/history.pdf"
+    const response = await this.authorized(path)
+    if (!response.ok) {
+      throw new Error(
+        await readErrorMessage(response, "Download history PDF failed"),
+      )
+    }
+    return response.blob()
+  }
+
   async get(sessionId: string): Promise<SessionResponse> {
     const response = await this.authorized(`/api/sessions/${sessionId}`)
     if (!response.ok) {

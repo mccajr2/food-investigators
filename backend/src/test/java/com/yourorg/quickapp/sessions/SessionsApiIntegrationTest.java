@@ -1,12 +1,15 @@
 package com.yourorg.quickapp.sessions;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.yourorg.quickapp.support.PostgresTestcontainersConfiguration;
+import java.nio.charset.StandardCharsets;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
@@ -384,6 +387,104 @@ class SessionsApiIntegrationTest {
                 .andExpect(jsonPath("$.length()").value(0));
         mockMvc.perform(get("/api/sessions/" + newerId).header("Authorization", "Bearer " + otherToken))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void exportHistoryPdfReturnsPdfFilteredByDateAndRejectsBadRange() throws Exception {
+        String token = register("sessions-pdf-" + System.nanoTime() + "@example.com");
+
+        mockMvc.perform(get("/api/sessions/history.pdf")).andExpect(status().isUnauthorized());
+
+        String olderId =
+                idFrom(
+                        mockMvc.perform(
+                                        post("/api/sessions")
+                                                .header("Authorization", "Bearer " + token)
+                                                .contentType(MediaType.APPLICATION_JSON)
+                                                .content(
+                                                        """
+                                                        {
+                                                          "scheduledOn":"2026-07-10",
+                                                          "foods":[
+                                                            {"foodId":"%s","familiarity":"likes"},
+                                                            {"foodId":"%s","familiarity":"truly_new"}
+                                                          ]
+                                                        }
+                                                        """
+                                                                .formatted(APPLES, STRAWBERRIES)))
+                                .andExpect(status().isCreated())
+                                .andReturn());
+        String newerId =
+                idFrom(
+                        mockMvc.perform(
+                                        post("/api/sessions")
+                                                .header("Authorization", "Bearer " + token)
+                                                .contentType(MediaType.APPLICATION_JSON)
+                                                .content(
+                                                        """
+                                                        {
+                                                          "scheduledOn":"2026-07-21",
+                                                          "foods":[
+                                                            {"foodId":"%s","familiarity":"likes","variantNote":"Honeycrisp"},
+                                                            {"foodId":"%s","familiarity":"familiar_but_new"}
+                                                          ]
+                                                        }
+                                                        """
+                                                                .formatted(APPLES, BLUEBERRIES)))
+                                .andExpect(status().isCreated())
+                                .andReturn());
+
+        completeSession(token, olderId, "like", true);
+        completeSession(token, newerId, "so_so", false);
+
+        MvcResult fullResult =
+                mockMvc.perform(
+                                get("/api/sessions/history.pdf")
+                                        .header("Authorization", "Bearer " + token))
+                        .andExpect(status().isOk())
+                        .andExpect(header().string("Content-Type", "application/pdf"))
+                        .andExpect(
+                                header().string(
+                                                "Content-Disposition",
+                                                "attachment; filename=\"tasting-history.pdf\""))
+                        .andReturn();
+        byte[] fullPdf = fullResult.getResponse().getContentAsByteArray();
+        assertThat(fullPdf).startsWith("%PDF".getBytes(StandardCharsets.US_ASCII));
+
+        MvcResult filteredResult =
+                mockMvc.perform(
+                                get("/api/sessions/history.pdf")
+                                        .param("from", "2026-07-15")
+                                        .param("to", "2026-07-31")
+                                        .header("Authorization", "Bearer " + token))
+                        .andExpect(status().isOk())
+                        .andReturn();
+        byte[] filteredPdf = filteredResult.getResponse().getContentAsByteArray();
+        assertThat(filteredPdf).startsWith("%PDF".getBytes(StandardCharsets.US_ASCII));
+
+        MvcResult emptyResult =
+                mockMvc.perform(
+                                get("/api/sessions/history.pdf")
+                                        .param("from", "2026-01-01")
+                                        .param("to", "2026-01-31")
+                                        .header("Authorization", "Bearer " + token))
+                        .andExpect(status().isOk())
+                        .andReturn();
+        assertThat(emptyResult.getResponse().getContentAsByteArray())
+                .startsWith("%PDF".getBytes(StandardCharsets.US_ASCII));
+
+        mockMvc.perform(
+                        get("/api/sessions/history.pdf")
+                                .param("from", "2026-07-31")
+                                .param("to", "2026-07-01")
+                                .header("Authorization", "Bearer " + token))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(
+                        get("/api/sessions/history.pdf")
+                                .param("from", "not-a-date")
+                                .header("Authorization", "Bearer " + token))
+                .andExpect(status().isBadRequest());
     }
 
     private void completeSession(String token, String sessionId, String liked, boolean ateEnough)

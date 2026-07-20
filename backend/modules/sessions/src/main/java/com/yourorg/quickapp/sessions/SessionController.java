@@ -3,9 +3,13 @@ package com.yourorg.quickapp.sessions;
 import com.yourorg.quickapp.accounts.AccountPrincipal;
 import com.yourorg.quickapp.sessions.internal.SessionService;
 import jakarta.validation.Valid;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,6 +18,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -43,6 +48,24 @@ public class SessionController {
     @GetMapping("/history")
     public List<SessionResponse> listHistory(@AuthenticationPrincipal AccountPrincipal principal) {
         return sessionService.listHistory(requireHouseholdId(principal));
+    }
+
+    @GetMapping(value = "/history.pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<byte[]> exportHistoryPdf(
+            @AuthenticationPrincipal AccountPrincipal principal,
+            @RequestParam(value = "from", required = false)
+                    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+                    LocalDate from,
+            @RequestParam(value = "to", required = false)
+                    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+                    LocalDate to) {
+        byte[] pdf = sessionService.exportHistoryPdf(requireHouseholdId(principal), from, to);
+        return ResponseEntity.ok()
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"tasting-history.pdf\"")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
     }
 
     @GetMapping("/{sessionId}")

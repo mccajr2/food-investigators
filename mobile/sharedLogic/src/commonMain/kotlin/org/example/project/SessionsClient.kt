@@ -102,6 +102,17 @@ class SessionsClient(
         return response.body()
     }
 
+    suspend fun downloadHistoryPdf(
+        from: String? = null,
+        to: String? = null,
+    ): ByteArray {
+        val response = authorizedGet(historyPdfUrl(from, to))
+        if (!response.status.isSuccess()) {
+            throw SessionsException(readError(response))
+        }
+        return response.body()
+    }
+
     suspend fun get(sessionId: String): SessionResponse {
         val response = authorizedGet("$baseUrl/api/sessions/$sessionId")
         if (!response.status.isSuccess()) {
@@ -177,6 +188,24 @@ class SessionsClient(
             }
         clearTokenIfUnauthorized(response)
         return response
+    }
+
+    private fun historyPdfUrl(
+        from: String?,
+        to: String?,
+    ): String {
+        val params = mutableListOf<String>()
+        if (!from.isNullOrBlank()) {
+            params += "from=$from"
+        }
+        if (!to.isNullOrBlank()) {
+            params += "to=$to"
+        }
+        return if (params.isEmpty()) {
+            "$baseUrl/api/sessions/history.pdf"
+        } else {
+            "$baseUrl/api/sessions/history.pdf?${params.joinToString("&")}"
+        }
     }
 
     private fun bearerOrThrow(): String {

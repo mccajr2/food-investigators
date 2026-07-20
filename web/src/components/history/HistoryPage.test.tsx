@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react"
+import { fireEvent, render, screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { describe, expect, it, vi } from "vitest"
 
@@ -46,12 +46,24 @@ const completedSession: SessionResponse = {
   updatedAt: "2026-07-21T00:00:00Z",
 }
 
+const olderSession: SessionResponse = {
+  ...completedSession,
+  id: "dddddddd-dddd-dddd-dddd-dddddddddddd",
+  scheduledOn: "2026-07-10",
+  foods: completedSession.foods.map((food) => ({
+    ...food,
+    variantNote: food.position === 1 ? "Older apple" : null,
+  })),
+  updatedAt: "2026-07-10T00:00:00Z",
+}
+
 function mockSessionsClient(
   overrides: Partial<SessionsClient> = {},
 ): SessionsClient {
   return {
     listUpcoming: vi.fn(),
     listHistory: vi.fn().mockResolvedValue([]),
+    downloadHistoryPdf: vi.fn().mockResolvedValue(new Blob(["%PDF"])),
     get: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
@@ -69,6 +81,7 @@ describe("HistoryPage", () => {
     expect(
       screen.getByText(/No completed nights yet/),
     ).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Download PDF" })).toBeInTheDocument()
   })
 
   it("lists completed sessions and shows read-only detail", async () => {
@@ -99,7 +112,53 @@ describe("HistoryPage", () => {
     expect(within(food2).getAllByText("Skipped").length).toBeGreaterThan(0)
     expect(within(food2).getByText("Warm")).toBeInTheDocument()
 
-    expect(screen.queryByRole("textbox")).not.toBeInTheDocument()
+    expect(within(detail).queryByRole("textbox")).not.toBeInTheDocument()
+  })
+
+  it("filters the list client-side and downloads PDF with the same range", async () => {
+    const user = userEvent.setup()
+    const downloadHistoryPdf = vi.fn().mockResolvedValue(new Blob(["%PDF-1.4"]))
+    const createObjectURL = vi
+      .spyOn(URL, "createObjectURL")
+      .mockReturnValue("blob:history-pdf")
+    const revokeObjectURL = vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {})
+
+    render(
+      <HistoryPage
+        sessionsClient={mockSessionsClient({
+          listHistory: vi.fn().mockResolvedValue([completedSession, olderSession]),
+          downloadHistoryPdf,
+        })}
+      />,
+    )
+
+    expect(await screen.findByText(/Honeycrisp/)).toBeInTheDocument()
+    expect(screen.getByText(/Older apple/)).toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText("From date"), {
+      target: { value: "2026-07-15" },
+    })
+    fireEvent.change(screen.getByLabelText("To date"), {
+      target: { value: "2026-07-31" },
+    })
+
+    expect(screen.getByText(/Honeycrisp/)).toBeInTheDocument()
+    expect(screen.queryByText(/Older apple/)).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "Download PDF" }))
+
+    expect(downloadHistoryPdf).toHaveBeenCalledWith({
+      from: "2026-07-15",
+      to: "2026-07-31",
+    })
+    expect(createObjectURL).toHaveBeenCalled()
+    expect(revokeObjectURL).toHaveBeenCalledWith("blob:history-pdf")
+
+    await user.click(screen.getByRole("button", { name: "Clear" }))
+    expect(screen.getByText(/Older apple/)).toBeInTheDocument()
+
+    createObjectURL.mockRestore()
+    revokeObjectURL.mockRestore()
   })
 
   it("surfaces load errors", async () => {
