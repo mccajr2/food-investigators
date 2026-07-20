@@ -151,6 +151,60 @@ class SessionsClientTest {
         }
 
     @Test
+    fun completePostsOutcomesAndParsesCompletedSession() =
+        runTest {
+            val store = InMemoryTokenStore()
+            store.saveToken("tok", rememberMe = true)
+            val engine =
+                MockEngine { request ->
+                    assertEquals(HttpMethod.Post, request.method)
+                    assertEquals(
+                        "/api/sessions/eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee/complete",
+                        request.url.encodedPath,
+                    )
+                    assertEquals("Bearer tok", request.headers[HttpHeaders.Authorization])
+                    respond(
+                        content = completedSessionJson(),
+                        status = HttpStatusCode.OK,
+                        headers = headersOf(HttpHeaders.ContentType, "application/json"),
+                    )
+                }
+
+            val client = SessionsClient("http://localhost:8080", httpClient(engine), store)
+            val completed =
+                client.complete(
+                    "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+                    CompleteSessionRequest(
+                        foods =
+                            listOf(
+                                FoodOutcomeRequest(
+                                    position = 1,
+                                    liked = "like",
+                                    texture = "crunchy",
+                                    temperature = "cold",
+                                    smell = "mild",
+                                    whyNote = "crunchy",
+                                    changeNote = "less peel",
+                                    ateEnough = true,
+                                ),
+                                FoodOutcomeRequest(
+                                    position = 2,
+                                    liked = "no",
+                                    temperature = "warm",
+                                    ateEnough = false,
+                                ),
+                            ),
+                    ),
+                )
+
+            assertEquals("completed", completed.status)
+            assertEquals("like", completed.foods[0].liked)
+            assertEquals(true, completed.foods[0].ateEnough)
+            assertEquals("no", completed.foods[1].liked)
+            assertEquals(false, completed.foods[1].ateEnough)
+        }
+
+    @Test
     fun requiresSignedInToken() =
         runTest {
             val client =
@@ -162,6 +216,43 @@ class SessionsClientTest {
             val error = assertFailsWith<SessionsException> { client.listUpcoming() }
             assertEquals("Not signed in", error.message)
         }
+
+    private fun completedSessionJson(): String =
+        """
+        {"id":"eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+         "scheduledOn":"2026-07-20",
+         "status":"completed",
+         "foods":[
+           {"foodId":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa04",
+            "name":"Apples",
+            "iconKey":"apple",
+            "familiarity":"likes",
+            "variantNote":"Honeycrisp",
+            "position":1,
+            "liked":"like",
+            "texture":"crunchy",
+            "temperature":"cold",
+            "smell":"mild",
+            "whyNote":"crunchy",
+            "changeNote":"less peel",
+            "ateEnough":true},
+           {"foodId":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa05",
+            "name":"Strawberries",
+            "iconKey":"strawberry",
+            "familiarity":"truly_new",
+            "variantNote":null,
+            "position":2,
+            "liked":"no",
+            "texture":null,
+            "temperature":"warm",
+            "smell":null,
+            "whyNote":null,
+            "changeNote":null,
+            "ateEnough":false}
+         ],
+         "createdAt":"2026-07-15T00:00:00Z",
+         "updatedAt":"2026-07-15T00:00:00Z"}
+        """.trimIndent()
 
     private fun sampleSessionJson(): String =
         """

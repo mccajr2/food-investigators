@@ -2,6 +2,7 @@ import { apiBaseUrl } from "@/config"
 import { apiUrl } from "@/api/authClient"
 import { defaultBrowserTokenStore, type TokenStore } from "@/api/tokenStore"
 import type {
+  CompleteSessionRequest,
   CreateSessionRequest,
   ErrorMessage,
   SessionResponse,
@@ -72,6 +73,21 @@ export class SessionsClient {
     })
     if (!response.ok) {
       throw new Error(await readErrorMessage(response, "Cancel session failed"))
+    }
+    return (await response.json()) as SessionResponse
+  }
+
+  async complete(
+    sessionId: string,
+    request: CompleteSessionRequest,
+  ): Promise<SessionResponse> {
+    const response = await this.authorized(`/api/sessions/${sessionId}/complete`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(request),
+    })
+    if (!response.ok) {
+      throw new Error(await readErrorMessage(response, "Complete session failed"))
     }
     return (await response.json()) as SessionResponse
   }

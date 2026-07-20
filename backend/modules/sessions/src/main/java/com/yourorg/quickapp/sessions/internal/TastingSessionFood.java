@@ -1,6 +1,10 @@
 package com.yourorg.quickapp.sessions.internal;
 
 import com.yourorg.quickapp.sessions.Familiarity;
+import com.yourorg.quickapp.sessions.Liked;
+import com.yourorg.quickapp.sessions.Smell;
+import com.yourorg.quickapp.sessions.Temperature;
+import com.yourorg.quickapp.sessions.Texture;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -36,6 +40,31 @@ class TastingSessionFood {
     @Column(nullable = false)
     private int position;
 
+    @Enumerated(EnumType.STRING)
+    @Column(length = 16)
+    private Liked liked;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 16)
+    private Texture texture;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 16)
+    private Temperature temperature;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 16)
+    private Smell smell;
+
+    @Column(name = "why_note", length = 500)
+    private String whyNote;
+
+    @Column(name = "change_note", length = 500)
+    private String changeNote;
+
+    @Column(name = "ate_enough")
+    private Boolean ateEnough;
+
     protected TastingSessionFood() {}
 
     static TastingSessionFood of(
@@ -53,6 +82,23 @@ class TastingSessionFood {
         this.session = session;
     }
 
+    void recordOutcome(
+            Liked liked,
+            Texture texture,
+            Temperature temperature,
+            Smell smell,
+            String whyNote,
+            String changeNote,
+            boolean ateEnough) {
+        this.liked = liked;
+        this.texture = texture;
+        this.temperature = temperature;
+        this.smell = smell;
+        this.whyNote = whyNote;
+        this.changeNote = changeNote;
+        this.ateEnough = ateEnough;
+    }
+
     UUID getFoodId() {
         return foodId;
     }
@@ -67,5 +113,33 @@ class TastingSessionFood {
 
     int getPosition() {
         return position;
+    }
+
+    Liked getLiked() {
+        return liked;
+    }
+
+    Texture getTexture() {
+        return texture;
+    }
+
+    Temperature getTemperature() {
+        return temperature;
+    }
+
+    Smell getSmell() {
+        return smell;
+    }
+
+    String getWhyNote() {
+        return whyNote;
+    }
+
+    String getChangeNote() {
+        return changeNote;
+    }
+
+    Boolean getAteEnough() {
+        return ateEnough;
     }
 }

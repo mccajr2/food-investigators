@@ -1,6 +1,7 @@
 package com.yourorg.quickapp.foods.internal;
 
 import com.yourorg.quickapp.foods.CreateFoodRequest;
+import com.yourorg.quickapp.foods.DuplicateFoodNameException;
 import com.yourorg.quickapp.foods.FoodIconKeys;
 import com.yourorg.quickapp.foods.FoodNotFoundException;
 import com.yourorg.quickapp.foods.FoodResponse;
@@ -41,11 +42,10 @@ public class FoodService {
     @Transactional
     public FoodResponse create(UUID householdId, CreateFoodRequest request) {
         FoodIconKeys.requireAllowed(request.iconKey());
+        String name = request.name().trim();
+        requireUniqueVisibleName(householdId, name, null);
         Instant now = clock.instant();
-        Food food =
-                foods.save(
-                        Food.household(
-                                householdId, request.name().trim(), request.iconKey(), now));
+        Food food = foods.save(Food.household(householdId, name, request.iconKey(), now));
         return toResponse(food);
     }
 
@@ -54,7 +54,9 @@ public class FoodService {
         Food food = requireHouseholdFood(householdId, foodId);
         Instant now = clock.instant();
         if (request.name() != null && !request.name().isBlank()) {
-            food.rename(request.name().trim(), now);
+            String name = request.name().trim();
+            requireUniqueVisibleName(householdId, name, foodId);
+            food.rename(name, now);
         }
         if (request.iconKey() != null && !request.iconKey().isBlank()) {
             FoodIconKeys.requireAllowed(request.iconKey());
@@ -68,6 +70,12 @@ public class FoodService {
         Food food = requireHouseholdFood(householdId, foodId);
         food.archive(clock.instant());
         return toResponse(foods.save(food));
+    }
+
+    private void requireUniqueVisibleName(UUID householdId, String name, UUID excludeId) {
+        if (foods.existsVisibleName(householdId, name, excludeId)) {
+            throw new DuplicateFoodNameException(name);
+        }
     }
 
     private Food requireHouseholdFood(UUID householdId, UUID foodId) {

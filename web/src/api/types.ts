@@ -76,7 +76,15 @@ export type UpdateFoodRequest = {
 
 export type Familiarity = "likes" | "familiar_but_new" | "truly_new"
 
-export type SessionStatus = "planned" | "cancelled"
+export type SessionStatus = "planned" | "cancelled" | "completed"
+
+export type Liked = "like" | "so_so" | "no"
+
+export type Texture = "soft" | "crunchy" | "chewy" | "wet"
+
+export type Temperature = "cold" | "warm" | "hot"
+
+export type Smell = "mild" | "strong"
 
 export type SessionFoodRequest = {
   foodId: string
@@ -94,6 +102,21 @@ export type UpdateSessionRequest = {
   foods: [SessionFoodRequest, SessionFoodRequest]
 }
 
+export type FoodOutcomeRequest = {
+  position: 1 | 2
+  liked?: Liked | null
+  texture?: Texture | null
+  temperature?: Temperature | null
+  smell?: Smell | null
+  whyNote?: string | null
+  changeNote?: string | null
+  ateEnough: boolean
+}
+
+export type CompleteSessionRequest = {
+  foods: [FoodOutcomeRequest, FoodOutcomeRequest]
+}
+
 export type SessionFoodResponse = {
   foodId: string
   name: string
@@ -101,6 +124,13 @@ export type SessionFoodResponse = {
   familiarity: Familiarity
   variantNote?: string | null
   position: 1 | 2
+  liked?: Liked | null
+  texture?: Texture | null
+  temperature?: Temperature | null
+  smell?: Smell | null
+  whyNote?: string | null
+  changeNote?: string | null
+  ateEnough?: boolean | null
 }
 
 export type SessionResponse = {

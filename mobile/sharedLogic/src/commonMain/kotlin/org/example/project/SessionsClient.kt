@@ -43,6 +43,30 @@ data class SessionFoodResponse(
     val familiarity: String,
     val variantNote: String? = null,
     val position: Int,
+    val liked: String? = null,
+    val texture: String? = null,
+    val temperature: String? = null,
+    val smell: String? = null,
+    val whyNote: String? = null,
+    val changeNote: String? = null,
+    val ateEnough: Boolean? = null,
+)
+
+@Serializable
+data class FoodOutcomeRequest(
+    val position: Int,
+    val liked: String? = null,
+    val texture: String? = null,
+    val temperature: String? = null,
+    val smell: String? = null,
+    val whyNote: String? = null,
+    val changeNote: String? = null,
+    val ateEnough: Boolean,
+)
+
+@Serializable
+data class CompleteSessionRequest(
+    val foods: List<FoodOutcomeRequest>,
 )
 
 @Serializable
@@ -113,6 +137,23 @@ class SessionsClient(
         val response =
             httpClient.post("$baseUrl/api/sessions/$sessionId/cancel") {
                 header(HttpHeaders.Authorization, bearerOrThrow())
+            }
+        clearTokenIfUnauthorized(response)
+        if (!response.status.isSuccess()) {
+            throw SessionsException(readError(response))
+        }
+        return response.body()
+    }
+
+    suspend fun complete(
+        sessionId: String,
+        request: CompleteSessionRequest,
+    ): SessionResponse {
+        val response =
+            httpClient.post("$baseUrl/api/sessions/$sessionId/complete") {
+                header(HttpHeaders.Authorization, bearerOrThrow())
+                contentType(ContentType.Application.Json)
+                setBody(request)
             }
         clearTokenIfUnauthorized(response)
         if (!response.status.isSuccess()) {

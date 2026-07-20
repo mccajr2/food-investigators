@@ -62,6 +62,14 @@ public class SessionController {
         return sessionService.cancel(requireHouseholdId(principal), sessionId);
     }
 
+    @PostMapping("/{sessionId}/complete")
+    public SessionResponse complete(
+            @AuthenticationPrincipal AccountPrincipal principal,
+            @PathVariable("sessionId") UUID sessionId,
+            @Valid @RequestBody CompleteSessionRequest request) {
+        return sessionService.complete(requireHouseholdId(principal), sessionId, request);
+    }
+
     private static UUID requireHouseholdId(AccountPrincipal principal) {
         if (principal == null || principal.householdId() == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest"
 
 import { SessionsClient } from "@/api/sessionsClient"
 import type { TokenStore } from "@/api/tokenStore"
-import type { SessionResponse } from "@/api/types"
+import type { CompleteSessionRequest, SessionResponse } from "@/api/types"
 
 function memoryStore(token: string | null = "tok"): TokenStore {
   let stored = token
@@ -167,6 +167,63 @@ describe("SessionsClient", () => {
     expect(String(fetchFn.mock.calls[2]?.[0])).toBe(
       `http://localhost:8080/api/sessions/${sampleSession.id}/cancel`,
     )
+  })
+
+  it("completes a session with outcomes", async () => {
+    const completed = {
+      ...sampleSession,
+      status: "completed" as const,
+      foods: sampleSession.foods.map((food, index) => ({
+        ...food,
+        liked: index === 0 ? ("like" as const) : null,
+        ateEnough: index === 0,
+      })),
+    }
+    const fetchFn = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify(completed), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    )
+    const client = new SessionsClient(
+      "http://localhost:8080",
+      fetchFn,
+      memoryStore(),
+    )
+    const request: CompleteSessionRequest = {
+      foods: [
+        {
+          position: 1,
+          liked: "like",
+          texture: "crunchy",
+          temperature: "cold",
+          smell: "mild",
+          whyNote: "crunchy",
+          changeNote: "less peel",
+          ateEnough: true,
+        },
+        {
+          position: 2,
+          liked: "no",
+          texture: null,
+          temperature: "warm",
+          smell: null,
+          whyNote: null,
+          changeNote: null,
+          ateEnough: false,
+        },
+      ],
+    }
+
+    const result = await client.complete(sampleSession.id, request)
+
+    expect(result.status).toBe("completed")
+    const init = fetchFn.mock.calls[0]?.[1] as RequestInit
+    expect(init.method).toBe("POST")
+    expect(String(fetchFn.mock.calls[0]?.[0])).toBe(
+      `http://localhost:8080/api/sessions/${sampleSession.id}/complete`,
+    )
+    expect(init.body).toBe(JSON.stringify(request))
   })
 
   it("surfaces API errors and requires a token", async () => {

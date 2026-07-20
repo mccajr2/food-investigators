@@ -124,6 +124,28 @@ class FoodsClientTest {
         }
 
     @Test
+    fun duplicateNameSurfacesApiMessage() =
+        runTest {
+            val store = InMemoryTokenStore()
+            store.saveToken("tok", rememberMe = true)
+            val engine =
+                MockEngine {
+                    respond(
+                        content = """{"message":"A food with that name already exists"}""",
+                        status = HttpStatusCode.Conflict,
+                        headers = headersOf(HttpHeaders.ContentType, "application/json"),
+                    )
+                }
+
+            val client = FoodsClient("http://localhost:8080", httpClient(engine), store)
+            val error =
+                assertFailsWith<FoodsException> {
+                    client.create("Watermelon", "custom_watermelon")
+                }
+            assertEquals("A food with that name already exists", error.message)
+        }
+
+    @Test
     fun requiresSignedInToken() =
         runTest {
             val client =

@@ -8,4 +8,11 @@ public record SessionFoodResponse(
         String iconKey,
         Familiarity familiarity,
         String variantNote,
-        int position) {}
+        int position,
+        Liked liked,
+        Texture texture,
+        Temperature temperature,
+        Smell smell,
+        String whyNote,
+        String changeNote,
+        Boolean ateEnough) {}

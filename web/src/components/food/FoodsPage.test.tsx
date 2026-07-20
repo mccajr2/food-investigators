@@ -150,6 +150,24 @@ describe("FoodsPage", () => {
     })
   })
 
+  it("surfaces create errors including duplicate names", async () => {
+    const user = userEvent.setup()
+    const create = vi
+      .fn()
+      .mockRejectedValue(new Error("A food with that name already exists"))
+    render(<FoodsPage client={mockFoodsClient({ create })} />)
+
+    await screen.findByText("Apples")
+    await user.click(screen.getByRole("button", { name: "Add food" }))
+    const form = screen.getByRole("form", { name: "Add food" })
+    await user.type(within(form).getByLabelText("Food name"), "Watermelon")
+    await user.click(within(form).getByRole("button", { name: "Save food" }))
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "A food with that name already exists",
+    )
+  })
+
   it("surfaces list errors", async () => {
     render(
       <FoodsPage

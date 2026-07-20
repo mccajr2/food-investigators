@@ -2,8 +2,11 @@ package com.yourorg.quickapp.sessions.internal;
 
 import com.yourorg.quickapp.foods.CatalogFood;
 import com.yourorg.quickapp.foods.FoodCatalog;
+import com.yourorg.quickapp.sessions.CompleteSessionRequest;
 import com.yourorg.quickapp.sessions.CreateSessionRequest;
+import com.yourorg.quickapp.sessions.FoodOutcomeRequest;
 import com.yourorg.quickapp.sessions.InvalidSessionFoodException;
+import com.yourorg.quickapp.sessions.InvalidSessionOutcomeException;
 import com.yourorg.quickapp.sessions.SessionFoodRequest;
 import com.yourorg.quickapp.sessions.SessionFoodResponse;
 import com.yourorg.quickapp.sessions.SessionNotEditableException;
@@ -14,7 +17,9 @@ import com.yourorg.quickapp.sessions.UpdateSessionRequest;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,7 +43,7 @@ public class SessionService {
         List<ResolvedFood> resolved = resolveFoods(householdId, request.foods());
         TastingSession session = TastingSession.planned(householdId, request.scheduledOn(), now);
         session.replaceFoods(toEntities(resolved), now);
-        return toResponse(sessions.save(session), resolved);
+        return toResponse(sessions.save(session));
     }
 
     @Transactional(readOnly = true)
@@ -66,7 +71,7 @@ public class SessionService {
         session.getFoods().clear();
         sessions.flush();
         session.replaceFoods(toEntities(resolved), now);
-        return toResponse(sessions.save(session), resolved);
+        return toResponse(sessions.save(session));
     }
 
     @Transactional
@@ -75,6 +80,53 @@ public class SessionService {
         requireEditable(session);
         session.cancel(clock.instant());
         return toResponse(sessions.save(session));
+    }
+
+    @Transactional
+    public SessionResponse complete(
+            UUID householdId, UUID sessionId, CompleteSessionRequest request) {
+        TastingSession session = requireSession(householdId, sessionId);
+        requireEditable(session);
+        applyOutcomes(session, request.foods());
+        session.complete(clock.instant());
+        return toResponse(sessions.save(session));
+    }
+
+    private void applyOutcomes(TastingSession session, List<FoodOutcomeRequest> outcomes) {
+        if (outcomes == null || outcomes.size() != 2) {
+            throw new InvalidSessionOutcomeException("Exactly two food outcomes are required");
+        }
+        Set<Integer> positions = new HashSet<>();
+        for (FoodOutcomeRequest outcome : outcomes) {
+            if (outcome.position() == null || outcome.position() < 1 || outcome.position() > 2) {
+                throw new InvalidSessionOutcomeException("Food outcome position must be 1 or 2");
+            }
+            if (!positions.add(outcome.position())) {
+                throw new InvalidSessionOutcomeException("Duplicate food outcome position");
+            }
+            if (outcome.ateEnough() == null) {
+                throw new InvalidSessionOutcomeException("ateEnough is required for each food");
+            }
+            TastingSessionFood row =
+                    session.getFoods().stream()
+                            .filter(food -> food.getPosition() == outcome.position())
+                            .findFirst()
+                            .orElseThrow(
+                                    () ->
+                                            new InvalidSessionOutcomeException(
+                                                    "No food at position " + outcome.position()));
+            row.recordOutcome(
+                    outcome.liked(),
+                    outcome.texture(),
+                    outcome.temperature(),
+                    outcome.smell(),
+                    normalizeNote(outcome.whyNote(), 500),
+                    normalizeNote(outcome.changeNote(), 500),
+                    outcome.ateEnough());
+        }
+        if (!positions.contains(1) || !positions.contains(2)) {
+            throw new InvalidSessionOutcomeException("Outcomes for positions 1 and 2 are required");
+        }
     }
 
     private TastingSession requireSession(UUID householdId, UUID sessionId) {
@@ -103,20 +155,25 @@ public class SessionService {
                                     () ->
                                             new InvalidSessionFoodException(
                                                     "Food is unknown, archived, or not in this household catalog"));
-            String note = normalizeNote(item.variantNote());
-            resolved.add(
-                    new ResolvedFood(
-                            catalog, item.familiarity(), note, i + 1));
+            String note = normalizeNote(item.variantNote(), 200);
+            resolved.add(new ResolvedFood(catalog, item.familiarity(), note, i + 1));
         }
         return resolved;
     }
 
-    private static String normalizeNote(String variantNote) {
-        if (variantNote == null) {
+    private static String normalizeNote(String note, int maxLength) {
+        if (note == null) {
             return null;
         }
-        String trimmed = variantNote.trim();
-        return trimmed.isEmpty() ? null : trimmed;
+        String trimmed = note.trim();
+        if (trimmed.isEmpty()) {
+            return null;
+        }
+        if (trimmed.length() > maxLength) {
+            throw new InvalidSessionOutcomeException(
+                    "Note must be at most " + maxLength + " characters");
+        }
+        return trimmed;
     }
 
     private static List<TastingSessionFood> toEntities(List<ResolvedFood> resolved) {
@@ -132,7 +189,7 @@ public class SessionService {
     }
 
     private SessionResponse toResponse(TastingSession session) {
-        List<ResolvedFood> resolved =
+        List<SessionFoodResponse> foods =
                 session.getFoods().stream()
                         .map(
                                 row -> {
@@ -146,28 +203,21 @@ public class SessionService {
                                                                             row.getFoodId(),
                                                                             "Unknown food",
                                                                             "custom_unknown"));
-                                    return new ResolvedFood(
-                                            catalog,
+                                    return new SessionFoodResponse(
+                                            catalog.id(),
+                                            catalog.name(),
+                                            catalog.iconKey(),
                                             row.getFamiliarity(),
                                             row.getVariantNote(),
-                                            row.getPosition());
+                                            row.getPosition(),
+                                            row.getLiked(),
+                                            row.getTexture(),
+                                            row.getTemperature(),
+                                            row.getSmell(),
+                                            row.getWhyNote(),
+                                            row.getChangeNote(),
+                                            row.getAteEnough());
                                 })
-                        .toList();
-        return toResponse(session, resolved);
-    }
-
-    private static SessionResponse toResponse(TastingSession session, List<ResolvedFood> resolved) {
-        List<SessionFoodResponse> foods =
-                resolved.stream()
-                        .map(
-                                food ->
-                                        new SessionFoodResponse(
-                                                food.catalog().id(),
-                                                food.catalog().name(),
-                                                food.catalog().iconKey(),
-                                                food.familiarity(),
-                                                food.variantNote(),
-                                                food.position()))
                         .toList();
         return new SessionResponse(
                 session.getId(),

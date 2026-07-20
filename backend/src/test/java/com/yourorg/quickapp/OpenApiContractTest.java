@@ -46,6 +46,7 @@ class OpenApiContractTest {
         assertThat(yaml).contains("includeArchived");
         assertThat(yaml).contains("custom_");
         assertThat(yaml).contains("custom_cucumber");
+        assertThat(yaml).contains("A food with that name already exists");
     }
 
     @Test
@@ -55,18 +56,30 @@ class OpenApiContractTest {
         assertThat(yaml).contains("/api/sessions");
         assertThat(yaml).contains("/api/sessions/{sessionId}");
         assertThat(yaml).contains("/api/sessions/{sessionId}/cancel");
+        assertThat(yaml).contains("/api/sessions/{sessionId}/complete");
         assertThat(yaml).contains("listUpcomingSessions");
         assertThat(yaml).contains("createSession");
         assertThat(yaml).contains("getSession");
         assertThat(yaml).contains("updateSession");
         assertThat(yaml).contains("cancelSession");
+        assertThat(yaml).contains("completeSession");
         assertThat(yaml).contains("SessionResponse");
         assertThat(yaml).contains("CreateSessionRequest");
         assertThat(yaml).contains("UpdateSessionRequest");
+        assertThat(yaml).contains("CompleteSessionRequest");
+        assertThat(yaml).contains("FoodOutcomeRequest");
         assertThat(yaml).contains("SessionFoodRequest");
         assertThat(yaml).contains("SessionFoodResponse");
         assertThat(yaml).contains("Familiarity");
         assertThat(yaml).contains("SessionStatus");
+        assertThat(yaml).contains("completed");
+        assertThat(yaml).contains("Liked");
+        assertThat(yaml).contains("Texture");
+        assertThat(yaml).contains("Temperature");
+        assertThat(yaml).contains("Smell");
+        assertThat(yaml).contains("whyNote");
+        assertThat(yaml).contains("changeNote");
+        assertThat(yaml).contains("ateEnough");
         assertThat(yaml).contains("likes");
         assertThat(yaml).contains("familiar_but_new");
         assertThat(yaml).contains("truly_new");
