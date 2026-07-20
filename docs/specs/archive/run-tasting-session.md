@@ -1,9 +1,10 @@
 # Spec: run-tasting-session
 
-Status: approved  
+Status: done  
 
 Created: 2026-07-11  
-Parent: [docs/roadmap.md](../roadmap.md)  
+Completed: 2026-07-19  
+Parent: [docs/roadmap.md](../../roadmap.md)  
 Added: 2026-07-11 · initial · 2026-07-15 · re-rank split (web first; native iOS deferred)
 
 ## Problem
