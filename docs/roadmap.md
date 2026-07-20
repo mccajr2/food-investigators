@@ -1,7 +1,7 @@
 # Product roadmap
 
 Status: active  
-Updated: 2026-07-19
+Updated: 2026-07-20
 
 Living backlog for this product repo. **One roadmap ↔ many specs** (1:1 by
 kebab-case id). `/roadmap` updates and re-ranks; `/spec <id>` fleshes out the
@@ -37,10 +37,13 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | pace-insights | planned | 2026-07-11 · initial | Parent dashboard: trends on what’s working; gentle suggestions you can ignore |
-| 2 | suggested-next-session | planned | 2026-07-11 · initial | App proposes next two foods + levels; parent approves or swaps |
-| 3 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
-| 4 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
+| 1 | kid-run-ui | planned | 2026-07-20 · enhancement | Keep simple run UX; replace canned CSS look with kid-facing Food Investigators visuals |
+| 2 | custom-food-icons | planned | 2026-07-20 · enhancement | Distinctive on-brand food illustrations / run symbols (less stock emoji) |
+| 3 | reward-cross-match | planned | 2026-07-20 · enhancement | Add Cross + Match templates beside Catch for post–ate-enough rewards |
+| 4 | pace-insights | planned | 2026-07-11 · initial | Parent dashboard: trends on what’s working; gentle suggestions you can ignore |
+| 5 | suggested-next-session | planned | 2026-07-11 · initial | App proposes next two foods + levels; parent approves or swaps |
+| 6 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
+| 7 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
 
 Status values: `parking` · `planned` · `active` · `done` · `cancelled`  
 Added: `YYYY-MM-DD · initial` | `enhancement` | `re-rank split`
@@ -96,3 +99,4 @@ Only notable events (first carve-up, major re-rank, cancelled theme) — not eve
 | 2026-07-19 | session-history shipped (web History tab + `GET /api/sessions/history`). Next up: `therapist-printout`. |
 | 2026-07-19 | therapist-printout shipped (History PDF download + date filter). Next up: `reward-mini-games`. |
 | 2026-07-19 | reward-mini-games shipped (post-complete Catch reward on web runner). Next up: `pace-insights`. |
+| 2026-07-20 | Re-rank: kid engagement ahead of insights — `kid-run-ui` → `custom-food-icons` → `reward-cross-match`, then `pace-insights`. |
