@@ -37,7 +37,7 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | kid-run-ui | planned | 2026-07-20 · enhancement | Keep simple run UX; replace canned CSS look with kid-facing Food Investigators visuals |
+| 1 | kid-run-ui | active | 2026-07-20 · enhancement | Keep simple run UX; replace canned CSS look with kid-facing Food Investigators visuals |
 | 2 | custom-food-icons | planned | 2026-07-20 · enhancement | Distinctive on-brand food illustrations / run symbols (less stock emoji) |
 | 3 | reward-cross-match | planned | 2026-07-20 · enhancement | Add Cross + Match templates beside Catch for post–ate-enough rewards |
 | 4 | pace-insights | planned | 2026-07-11 · initial | Parent dashboard: trends on what’s working; gentle suggestions you can ignore |
@@ -64,7 +64,9 @@ Unranked ideas. Promote into **Upcoming** with `/roadmap` (re-rank).
 
 In-progress work (locked for re-rank — finish, amend, or abandon before reshuffle).
 
-_(none)_
+| Id | Branch | Spec |
+|----|--------|------|
+| kid-run-ui | `kid-run-ui` | [active](specs/active/kid-run-ui.md) |
 
 ## Done
 
