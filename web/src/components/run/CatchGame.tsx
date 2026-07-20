@@ -5,16 +5,21 @@ import { FoodIcon } from "@/components/food/FoodIcon"
 import { Button } from "@/components/ui/button"
 
 export const CATCH_ROUND_MS = 30_000
-const CATCHER_WIDTH = 22
-const PIECE_SIZE = 10
+export const CATCHER_WIDTH = 22
+export const PIECE_SIZE = 10
 const SPAWN_EVERY_MS = 900
 const TICK_MS = 50
-const FALL_SPEED = 2.2
+export const FALL_SPEED = 2.2
 
 type Piece = {
   id: number
   x: number
   y: number
+}
+
+type Board = {
+  pieces: Piece[]
+  score: number
 }
 
 type CatchGameProps = {
@@ -24,14 +29,44 @@ type CatchGameProps = {
   roundMs?: number
 }
 
+/** Pure tick — safe under React Strict Mode double-invoked updaters. */
+export function advanceBoard(board: Board, catcherX: number): Board {
+  let caught = 0
+  const moved: Piece[] = []
+  const catcherLeft = catcherX
+  const catcherRight = catcherLeft + CATCHER_WIDTH
+
+  for (const piece of board.pieces) {
+    const y = piece.y + FALL_SPEED
+    if (y >= 100) {
+      continue
+    }
+    const pieceCenter = piece.x + PIECE_SIZE / 2
+    const overCatcher =
+      y >= 82 &&
+      y <= 96 &&
+      pieceCenter >= catcherLeft &&
+      pieceCenter <= catcherRight
+    if (overCatcher) {
+      caught += 1
+      continue
+    }
+    moved.push({ ...piece, y })
+  }
+
+  return {
+    pieces: moved,
+    score: board.score + caught,
+  }
+}
+
 export function CatchGame({
   food,
   onDone,
   roundMs = CATCH_ROUND_MS,
 }: CatchGameProps) {
   const [catcherX, setCatcherX] = useState(50 - CATCHER_WIDTH / 2)
-  const [pieces, setPieces] = useState<Piece[]>([])
-  const [score, setScore] = useState(0)
+  const [board, setBoard] = useState<Board>({ pieces: [], score: 0 })
   const [elapsedMs, setElapsedMs] = useState(0)
   const [finished, setFinished] = useState(false)
   const nextId = useRef(1)
@@ -58,33 +93,7 @@ export function CatchGame({
         return next
       })
 
-      setPieces((current) => {
-        let caught = 0
-        const moved: Piece[] = []
-        for (const piece of current) {
-          const y = piece.y + FALL_SPEED
-          if (y >= 100) {
-            continue
-          }
-          const catcherLeft = catcherXRef.current
-          const catcherRight = catcherLeft + CATCHER_WIDTH
-          const pieceCenter = piece.x + PIECE_SIZE / 2
-          const overCatcher =
-            y >= 82 &&
-            y <= 96 &&
-            pieceCenter >= catcherLeft &&
-            pieceCenter <= catcherRight
-          if (overCatcher) {
-            caught += 1
-            continue
-          }
-          moved.push({ ...piece, y })
-        }
-        if (caught > 0) {
-          setScore((value) => value + caught)
-        }
-        return moved
-      })
+      setBoard((current) => advanceBoard(current, catcherXRef.current))
     }, TICK_MS)
 
     return () => window.clearInterval(tick)
@@ -95,14 +104,19 @@ export function CatchGame({
       return
     }
     const spawn = window.setInterval(() => {
-      setPieces((current) => [
+      const id = nextId.current
+      nextId.current += 1
+      setBoard((current) => ({
         ...current,
-        {
-          id: nextId.current++,
-          x: Math.random() * (100 - PIECE_SIZE),
-          y: -PIECE_SIZE,
-        },
-      ])
+        pieces: [
+          ...current.pieces,
+          {
+            id,
+            x: Math.random() * (100 - PIECE_SIZE),
+            y: -PIECE_SIZE,
+          },
+        ],
+      }))
     }, SPAWN_EVERY_MS)
     return () => window.clearInterval(spawn)
   }, [finished])
@@ -146,7 +160,7 @@ export function CatchGame({
           </div>
         </div>
         <div className="flex items-center gap-4 text-sm font-medium">
-          <p aria-live="polite">Caught: {score}</p>
+          <p aria-live="polite">Caught: {board.score}</p>
           <p aria-live="polite">
             {finished ? "Time!" : `${remainingSec}s`}
           </p>
@@ -160,8 +174,8 @@ export function CatchGame({
         >
           <p className="text-2xl font-semibold">Nice catching!</p>
           <p className="text-lg text-muted-foreground">
-            You caught {score} {food.name.toLowerCase()}
-            {score === 1 ? "" : "s"}.
+            You caught {board.score} {food.name.toLowerCase()}
+            {board.score === 1 ? "" : "s"}.
           </p>
           <Button
             type="button"
@@ -185,7 +199,7 @@ export function CatchGame({
               onPlayAreaPointer(event.clientX, event.currentTarget)
             }
           >
-            {pieces.map((piece) => (
+            {board.pieces.map((piece) => (
               <div
                 key={piece.id}
                 className="pointer-events-none absolute"

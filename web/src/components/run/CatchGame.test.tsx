@@ -3,7 +3,12 @@ import userEvent from "@testing-library/user-event"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import type { SessionFoodResponse } from "@/api/types"
-import { CatchGame } from "@/components/run/CatchGame"
+import {
+  advanceBoard,
+  CatchGame,
+  CATCHER_WIDTH,
+  PIECE_SIZE,
+} from "@/components/run/CatchGame"
 
 const food: SessionFoodResponse = {
   foodId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa04",
@@ -14,6 +19,24 @@ const food: SessionFoodResponse = {
   position: 1,
   ateEnough: true,
 }
+
+describe("advanceBoard", () => {
+  it("adds one point per caught piece even if applied twice (Strict Mode)", () => {
+    const piece = {
+      id: 1,
+      x: 50 - PIECE_SIZE / 2,
+      y: 84 - 2.2,
+    }
+    const catcherX = 50 - CATCHER_WIDTH / 2
+    const first = advanceBoard({ pieces: [piece], score: 0 }, catcherX)
+    expect(first.score).toBe(1)
+    expect(first.pieces).toHaveLength(0)
+
+    // Same prev + same inputs → same next (idempotent under double invoke).
+    const second = advanceBoard({ pieces: [piece], score: 0 }, catcherX)
+    expect(second.score).toBe(1)
+  })
+})
 
 describe("CatchGame", () => {
   afterEach(() => {

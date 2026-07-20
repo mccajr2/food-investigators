@@ -1,8 +1,8 @@
 # Spec: reward-mini-games
 
-Status: approved  
-
+Status: done  
 Created: 2026-07-11  
+Completed: 2026-07-19  
 Parent: [docs/roadmap.md](../../roadmap.md)  
 Added: 2026-07-11 · initial
 
@@ -46,17 +46,17 @@ the runner offers a **Catch** mini-game themed to an ate-enough food.
 
 ## Acceptance criteria
 
-- [ ] After a successful complete with **exactly one** `ateEnough: true` food,
+- [x] After a successful complete with **exactly one** `ateEnough: true` food,
       the runner offers Catch themed to that food (name + icon visible).
-- [ ] After complete with **two** `ateEnough: true` foods, the runner shows a
+- [x] After complete with **two** `ateEnough: true` foods, the runner shows a
       pick step; choosing one starts Catch with that theme.
-- [ ] After complete with **zero** `ateEnough: true`, no game; encouraging
+- [x] After complete with **zero** `ateEnough: true`, no game; encouraging
       try-again copy; path back to Plan.
-- [ ] Catch is playable on web (iPad-oriented): large controls, short round,
+- [x] Catch is playable on web (iPad-oriented): large controls, short round,
       Done returns to Plan; no edit of past outcomes.
-- [ ] No new API endpoints; existing complete request/response unchanged.
-- [ ] No native game UI; no Cross/Match templates in this PR.
-- [ ] Component/unit tests for unlock branching (0/1/2 ate-enough) and Catch
+- [x] No new API endpoints; existing complete request/response unchanged.
+- [x] No native game UI; no Cross/Match templates in this PR.
+- [x] Component/unit tests for unlock branching (0/1/2 ate-enough) and Catch
       smoke; existing run complete tests still green.
 
 ## Tasks
@@ -65,7 +65,7 @@ the runner offers a **Catch** mini-game themed to an ate-enough food.
       `RunSessionPage` after successful complete.
 - [x] Web: Catch mini-game component (food-themed skin from chosen session
       food; short round; Done → Plan).
-- [ ] Tests: Run/reward branching (0/1/2) + Catch component smoke; keep run
+- [x] Tests: Run/reward branching (0/1/2) + Catch component smoke; keep run
       complete tests green.
 
 ## Decisions (locked)
@@ -79,4 +79,4 @@ the runner offers a **Catch** mini-game themed to an ate-enough food.
 
 ## Open questions
 
-_(none — ready for approval)_
+_(none)_
