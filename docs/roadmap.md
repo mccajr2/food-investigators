@@ -37,7 +37,7 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | reward-mini-games | planned | 2026-07-11 · initial | Curated mini-game templates; unlock when parent marks ate enough; food-themed skins |
+| 1 | reward-mini-games | active | 2026-07-11 · initial | Curated mini-game templates; unlock when parent marks ate enough; food-themed skins |
 | 2 | pace-insights | planned | 2026-07-11 · initial | Parent dashboard: trends on what’s working; gentle suggestions you can ignore |
 | 3 | suggested-next-session | planned | 2026-07-11 · initial | App proposes next two foods + levels; parent approves or swaps |
 | 4 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
@@ -62,7 +62,9 @@ Unranked ideas. Promote into **Upcoming** with `/roadmap` (re-rank).
 
 In-progress work (locked for re-rank — finish, amend, or abandon before reshuffle).
 
-_(none)_
+| Id | Branch | Spec |
+|----|--------|------|
+| reward-mini-games | `reward-mini-games` | [active](specs/active/reward-mini-games.md) |
 
 ## Done
 
