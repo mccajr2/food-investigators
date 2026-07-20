@@ -5,6 +5,7 @@ import com.yourorg.quickapp.foods.FoodCatalog;
 import com.yourorg.quickapp.sessions.CompleteSessionRequest;
 import com.yourorg.quickapp.sessions.CreateSessionRequest;
 import com.yourorg.quickapp.sessions.FoodOutcomeRequest;
+import com.yourorg.quickapp.sessions.InvalidHistoryPdfRequestException;
 import com.yourorg.quickapp.sessions.InvalidSessionFoodException;
 import com.yourorg.quickapp.sessions.InvalidSessionOutcomeException;
 import com.yourorg.quickapp.sessions.SessionFoodRequest;
@@ -16,6 +17,7 @@ import com.yourorg.quickapp.sessions.SessionStatus;
 import com.yourorg.quickapp.sessions.UpdateSessionRequest;
 import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -64,6 +66,32 @@ public class SessionService {
                 .stream()
                 .map(this::toResponse)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] exportHistoryPdf(UUID householdId, LocalDate from, LocalDate to) {
+        if (from != null && to != null && from.isAfter(to)) {
+            throw new InvalidHistoryPdfRequestException("'from' must be on or before 'to'");
+        }
+        List<SessionResponse> history =
+                sessions
+                        .findByHouseholdIdAndStatusOrderByScheduledOnDescUpdatedAtDesc(
+                                householdId, SessionStatus.completed)
+                        .stream()
+                        .map(this::toResponse)
+                        .filter(session -> inRange(session.scheduledOn(), from, to))
+                        .toList();
+        return HistoryPdfRenderer.render(history, from, to, clock.instant());
+    }
+
+    private static boolean inRange(LocalDate scheduledOn, LocalDate from, LocalDate to) {
+        if (from != null && scheduledOn.isBefore(from)) {
+            return false;
+        }
+        if (to != null && scheduledOn.isAfter(to)) {
+            return false;
+        }
+        return true;
     }
 
     @Transactional(readOnly = true)

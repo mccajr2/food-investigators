@@ -76,10 +76,10 @@ parent can **download a PDF** of completed sessions (optionally date-filtered).
 
 ## Tasks
 
-- [ ] Backend: PDF export on sessions service/controller (`from`/`to` on
+- [x] Backend: PDF export on sessions service/controller (`from`/`to` on
       `scheduledOn`); household scoping; empty-range PDF.
 - [ ] Contract: Document `GET /api/sessions/history.pdf` in
-      `contracts/openapi.yaml` (ask before adding a PDF library).
+      `contracts/openapi.yaml`.
 - [ ] Web: History from/to filter (client-side) + Download PDF via sessions
       client.
 - [ ] Mobile sharedLogic: PDF download method (no SwiftUI UI).
@@ -94,7 +94,8 @@ parent can **download a PDF** of completed sessions (optionally date-filtered).
   endpoint takes `from`/`to`.
 - Packet header: **generic title only** (no email / child name).
 - History JSON list API unchanged this PR.
+- PDF library: **Apache PDFBox** 3.0.8.
 
 ## Open questions
 
-- Which PDF library to add (resolve at `/implement` — ask before adding).
+_(none — ready for implementation)_
