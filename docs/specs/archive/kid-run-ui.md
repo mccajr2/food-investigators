@@ -1,6 +1,6 @@
 # Spec: kid-run-ui
 
-Status: approved  
+Status: done  
 
 Created: 2026-07-20  
 Parent: [docs/roadmap.md](../../roadmap.md)  
@@ -51,29 +51,29 @@ reward encourage/pick, Catch chrome) with a **soft kitchen table** atmosphere:
 
 ## Acceptance criteria
 
-- [ ] Full-screen run ritual (questions → reward/Catch) uses a soft kitchen-table
+- [x] Full-screen run ritual (questions → reward/Catch) uses a soft kitchen-table
       look distinct from the default gray/white shell behind it.
-- [ ] Plan / History / Foods / AuthShell visual appearance is unchanged when not
+- [x] Plan / History / Foods / AuthShell visual appearance is unchanged when not
       in a run.
-- [ ] Outcome flow UX stays the same: same steps, prompts, skip rules, large
+- [x] Outcome flow UX stays the same: same steps, prompts, skip rules, large
       targets; no new fields or API calls.
-- [ ] Answer tiles read as placemat-style choices (not default bordered cards
+- [x] Answer tiles read as placemat-style choices (not default bordered cards
       only); prompts use expressive type sized for iPad.
-- [ ] At least two intentional motions: step/prompt enter + answer-tile press;
+- [x] At least two intentional motions: step/prompt enter + answer-tile press;
       no distracting loop animations.
-- [ ] Reward encourage / pick / Catch chrome shares the same scoped run theme.
-- [ ] No OpenAPI or backend changes.
-- [ ] Component tests for run steps / reward still pass; smoke check for scoped
+- [x] Reward encourage / pick / Catch chrome shares the same scoped run theme.
+- [x] No OpenAPI or backend changes.
+- [x] Component tests for run steps / reward still pass; smoke check for scoped
       run theme hook.
 
 ## Tasks
 
-- [ ] Web: Scoped run theme tokens + kitchen-table restyle for
+- [x] Web: Scoped run theme tokens + kitchen-table restyle for
       `RunSessionPage` / `RunSteps` (choices + speech).
-- [ ] Web: Apply the same scoped theme to `RewardFlow` + Catch chrome (header /
+- [x] Web: Apply the same scoped theme to `RewardFlow` + Catch chrome (header /
       play frame / finish), without changing Catch game logic.
-- [ ] Web: Light motion (prompt enter + tile press).
-- [ ] Tests: Keep run/reward tests green; add smoke for scoped theme hook on
+- [x] Web: Light motion (prompt enter + tile press).
+- [x] Tests: Keep run/reward tests green; add smoke for scoped theme hook on
       run root.
 
 ## Decisions (locked)

@@ -8,6 +8,7 @@ import {
   buildCompleteRequest,
   RunSessionPage,
 } from "@/components/run/RunSessionPage"
+import { RUN_THEME } from "@/components/run/runTheme"
 
 const sampleSession: SessionResponse = {
   id: "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
@@ -100,6 +101,21 @@ describe("buildCompleteRequest", () => {
 })
 
 describe("RunSessionPage", () => {
+  it("exposes the scoped kitchen-run theme on the run root", () => {
+    render(
+      <RunSessionPage
+        session={sampleSession}
+        sessionsClient={mockSessionsClient()}
+        onComplete={vi.fn()}
+        onExit={vi.fn()}
+      />,
+    )
+
+    const dialog = screen.getByRole("dialog", { name: "Run tasting session" })
+    expect(dialog).toHaveAttribute("data-theme", RUN_THEME)
+    expect(RUN_THEME).toBe("kitchen-run")
+  })
+
   it("walks both foods and completes the session", async () => {
     const user = userEvent.setup()
     const completed: SessionResponse = {
@@ -126,7 +142,16 @@ describe("RunSessionPage", () => {
     expect(
       screen.getByRole("dialog", { name: "Run tasting session" }),
     ).toBeInTheDocument()
+    expect(
+      screen.getByRole("dialog", { name: "Run tasting session" }),
+    ).toHaveAttribute("data-theme", RUN_THEME)
     expect(screen.getByText("Did you like it?")).toBeInTheDocument()
+    expect(
+      screen.getByText("Did you like it?").closest(".run-enter"),
+    ).not.toBeNull()
+    expect(screen.getByRole("option", { name: "Like" }).className).toContain(
+      "run-placemat",
+    )
 
     await user.click(screen.getByRole("option", { name: "Like" }))
     await skipOptionalStepsAfterLiked(user)
@@ -193,12 +218,24 @@ describe("RunSessionPage", () => {
     expect(
       await screen.findByLabelText("Pick food for game"),
     ).toBeInTheDocument()
+    expect(
+      screen.getByText("Which food for your game?").className,
+    ).toContain("run-prompt")
+    expect(screen.getByLabelText("Pick food for game").className).toContain(
+      "run-enter",
+    )
+    expect(
+      screen.getByRole("button", { name: /Strawberries/ }).className,
+    ).toContain("run-placemat")
     await user.click(
       screen.getByRole("button", { name: /Strawberries/ }),
     )
     expect(
       await screen.findByLabelText("Catch game: Strawberries"),
     ).toBeInTheDocument()
+    expect(screen.getByLabelText("Catch play area").className).toContain(
+      "run-play-frame",
+    )
 
     await user.click(screen.getByRole("button", { name: "Done" }))
     expect(onComplete).toHaveBeenCalledWith(completed)
@@ -234,6 +271,12 @@ describe("RunSessionPage", () => {
 
     expect(await screen.findByLabelText("Encouragement")).toBeInTheDocument()
     expect(screen.getByText(/try again another night/i)).toBeInTheDocument()
+    expect(screen.getByText("Nice try tonight").className).toContain(
+      "run-prompt",
+    )
+    expect(
+      screen.getByLabelText("Encouragement").className,
+    ).toContain("run-enter")
     expect(screen.queryByLabelText(/Catch game/)).not.toBeInTheDocument()
 
     await user.click(screen.getByRole("button", { name: "Back to Plan" }))

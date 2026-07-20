@@ -268,6 +268,49 @@ class SessionsApiIntegrationTest {
     }
 
     @Test
+    void completeRejectsUnknownSmellWithBadRequestNotUnauthorized() throws Exception {
+        String token = register("sessions-smell-" + System.nanoTime() + "@example.com");
+        String sessionId =
+                idFrom(
+                        mockMvc.perform(
+                                        post("/api/sessions")
+                                                .header("Authorization", "Bearer " + token)
+                                                .contentType(MediaType.APPLICATION_JSON)
+                                                .content(
+                                                        """
+                                                        {
+                                                          "scheduledOn":"2026-07-25",
+                                                          "foods":[
+                                                            {"foodId":"%s","familiarity":"likes"},
+                                                            {"foodId":"%s","familiarity":"truly_new"}
+                                                          ]
+                                                        }
+                                                        """
+                                                                .formatted(APPLES, STRAWBERRIES)))
+                                .andExpect(status().isCreated())
+                                .andReturn());
+
+        mockMvc.perform(
+                        post("/api/sessions/" + sessionId + "/complete")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                                        {
+                                          "foods":[
+                                            {"position":1,"smell":"mild","ateEnough":true},
+                                            {"position":2,"ateEnough":false}
+                                          ]
+                                        }
+                                        """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Invalid request"));
+
+        mockMvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     void listHistoryReturnsCompletedNewestFirstAndSkipsPlannedOrCancelled() throws Exception {
         String token = register("sessions-history-" + System.nanoTime() + "@example.com");
 
