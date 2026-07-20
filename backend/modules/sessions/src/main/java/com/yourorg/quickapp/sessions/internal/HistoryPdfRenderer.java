@@ -166,8 +166,9 @@ final class HistoryPdfRenderer {
             return "-";
         }
         return switch (value) {
-            case mild -> "Mild";
-            case strong -> "Strong";
+            case like -> "Like";
+            case so_so -> "So-so";
+            case no -> "No";
         };
     }
 

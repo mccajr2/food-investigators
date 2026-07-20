@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Quickapp API
-  version: 0.7.0
+  version: 0.8.0
   description: >
     Contract-first API for Food Investigators. Documents family-account auth
     (email/password register and login, Bearer session tokens, /api/auth/me),
@@ -566,7 +566,7 @@ paths:
                   liked: like
                   texture: crunchy
                   temperature: cold
-                  smell: mild
+                  smell: like
                   whyNote: crunchy
                   changeNote: less peel
                   ateEnough: true
@@ -808,8 +808,10 @@ components:
     Smell:
       type: string
       enum:
-        - mild
-        - strong
+        - like
+        - so_so
+        - no
+      description: Whether the child liked how the food smelled (same scale as Liked)
     FoodOutcomeRequest:
       type: object
       required:
