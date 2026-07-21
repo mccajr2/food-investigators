@@ -16,6 +16,7 @@ import { IconChoiceStep, SpeechNoteStep } from "@/components/run/RunSteps"
 import { RUN_THEME } from "@/components/run/runTheme"
 import {
   initialRewardPhase,
+  phaseAfterFoodPick,
   type RewardPhase,
 } from "@/components/run/rewardFoods"
 import { Button } from "@/components/ui/button"
@@ -314,7 +315,8 @@ export function RunSessionPage({
         {inReward && rewardPhase ? (
           <RewardFlow
             phase={rewardPhase}
-            onPick={(food) => setRewardPhase({ kind: "catch", food })}
+            onPick={(food) => setRewardPhase(phaseAfterFoodPick(food))}
+            onChooseGame={setRewardPhase}
             onFinished={finishReward}
           />
         ) : null}

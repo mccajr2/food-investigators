@@ -1,7 +1,7 @@
 # Product roadmap
 
 Status: active  
-Updated: 2026-07-20
+Updated: 2026-07-21
 
 Living backlog for this product repo. **One roadmap ↔ many specs** (1:1 by
 kebab-case id). `/roadmap` updates and re-ranks; `/spec <id>` fleshes out the
@@ -37,12 +37,13 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | custom-food-icons | planned | 2026-07-20 · enhancement | Distinctive on-brand food illustrations / run symbols (less stock emoji) |
-| 2 | reward-cross-match | planned | 2026-07-20 · enhancement | Add Cross + Match templates beside Catch for post–ate-enough rewards |
-| 3 | pace-insights | planned | 2026-07-11 · initial | Parent dashboard: trends on what’s working; gentle suggestions you can ignore |
-| 4 | suggested-next-session | planned | 2026-07-11 · initial | App proposes next two foods + levels; parent approves or swaps |
-| 5 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
-| 6 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
+| 1 | brand-identity | planned | 2026-07-21 · enhancement | Official logo + palette/fonts across web shell, run, and game chrome |
+| 2 | reward-match | planned | 2026-07-20 · re-rank split | Add Match (memory / 3-in-a-row lite) beside Catch + Cross |
+| 3 | custom-food-icons | planned | 2026-07-20 · enhancement | Distinctive on-brand food illustrations / run symbols (less stock emoji) |
+| 4 | pace-insights | planned | 2026-07-11 · initial | Parent dashboard: trends on what’s working; gentle suggestions you can ignore |
+| 5 | suggested-next-session | planned | 2026-07-11 · initial | App proposes next two foods + levels; parent approves or swaps |
+| 6 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
+| 7 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
 
 Status values: `parking` · `planned` · `active` · `done` · `cancelled`  
 Added: `YYYY-MM-DD · initial` | `enhancement` | `re-rank split`
@@ -70,6 +71,7 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Completed | Spec |
 |----|-----------|------|
+| reward-cross | 2026-07-21 | [archive](specs/archive/reward-cross.md) |
 | kid-run-ui | 2026-07-20 | [archive](specs/archive/kid-run-ui.md) |
 | reward-mini-games | 2026-07-19 | [archive](specs/archive/reward-mini-games.md) |
 | therapist-printout | 2026-07-19 | [archive](specs/archive/therapist-printout.md) |
@@ -102,3 +104,6 @@ Only notable events (first carve-up, major re-rank, cancelled theme) — not eve
 | 2026-07-19 | reward-mini-games shipped (post-complete Catch reward on web runner). Next up: `pace-insights`. |
 | 2026-07-20 | Re-rank: kid engagement ahead of insights — `kid-run-ui` → `custom-food-icons` → `reward-cross-match`, then `pace-insights`. |
 | 2026-07-20 | kid-run-ui shipped (scoped kitchen-table run theme + light motion). Next up: `custom-food-icons`. |
+| 2026-07-20 | Split `reward-cross-match` → `reward-cross` + `reward-match`; deprioritize `custom-food-icons`. Next up: `reward-cross`. |
+| 2026-07-21 | Added `brand-identity` (logo + palette/fonts on all web screens & games); ranked after active `reward-cross`, ahead of Match / custom icons. |
+| 2026-07-21 | reward-cross shipped (Cross + Catch/Cross/Surprise pick). Next up: `brand-identity`. |

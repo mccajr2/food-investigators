@@ -178,6 +178,12 @@ describe("RunSessionPage", () => {
       })
     })
     expect(onComplete).not.toHaveBeenCalled()
+    expect(await screen.findByLabelText("Pick game")).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Catch" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Cross" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Surprise" })).toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "Catch" }))
     expect(
       await screen.findByLabelText("Catch game: Apples"),
     ).toBeInTheDocument()
@@ -187,7 +193,7 @@ describe("RunSessionPage", () => {
     expect(onComplete).toHaveBeenCalledWith(completed)
   })
 
-  it("shows pick then Catch when both foods ate enough", async () => {
+  it("shows food pick then game pick then Catch when both foods ate enough", async () => {
     const user = userEvent.setup()
     const completed: SessionResponse = {
       ...sampleSession,
@@ -230,6 +236,9 @@ describe("RunSessionPage", () => {
     await user.click(
       screen.getByRole("button", { name: /Strawberries/ }),
     )
+    expect(await screen.findByLabelText("Pick game")).toBeInTheDocument()
+    expect(screen.getByLabelText("Pick game").className).toContain("run-enter")
+    await user.click(screen.getByRole("button", { name: "Catch" }))
     expect(
       await screen.findByLabelText("Catch game: Strawberries"),
     ).toBeInTheDocument()
@@ -237,6 +246,89 @@ describe("RunSessionPage", () => {
       "run-play-frame",
     )
 
+    await user.click(screen.getByRole("button", { name: "Done" }))
+    expect(onComplete).toHaveBeenCalledWith(completed)
+  })
+
+  it("starts Cross from game pick when one food ate enough", async () => {
+    const user = userEvent.setup()
+    const completed: SessionResponse = {
+      ...sampleSession,
+      status: "completed",
+      foods: sampleSession.foods.map((food, index) => ({
+        ...food,
+        ateEnough: index === 0,
+      })),
+    }
+    const onComplete = vi.fn()
+
+    render(
+      <RunSessionPage
+        session={sampleSession}
+        sessionsClient={mockSessionsClient({
+          complete: vi.fn().mockResolvedValue(completed),
+        })}
+        onComplete={onComplete}
+        onExit={vi.fn()}
+      />,
+    )
+
+    await skipAllOptionalSteps(user)
+    await user.click(screen.getByRole("option", { name: "Yes" }))
+    await skipAllOptionalSteps(user)
+    await user.click(screen.getByRole("option", { name: "No" }))
+
+    expect(await screen.findByLabelText("Pick game")).toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: "Cross" }))
+    expect(
+      await screen.findByLabelText("Cross game: Apples"),
+    ).toBeInTheDocument()
+    expect(screen.getByText(/Theme: Apples/)).toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "Done" }))
+    expect(onComplete).toHaveBeenCalledWith(completed)
+  })
+
+  it("shows Surprise reveal then starts the rolled game", async () => {
+    const user = userEvent.setup()
+    const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0.1)
+    const completed: SessionResponse = {
+      ...sampleSession,
+      status: "completed",
+      foods: sampleSession.foods.map((food, index) => ({
+        ...food,
+        ateEnough: index === 0,
+      })),
+    }
+    const onComplete = vi.fn()
+
+    render(
+      <RunSessionPage
+        session={sampleSession}
+        sessionsClient={mockSessionsClient({
+          complete: vi.fn().mockResolvedValue(completed),
+        })}
+        onComplete={onComplete}
+        onExit={vi.fn()}
+      />,
+    )
+
+    await skipAllOptionalSteps(user)
+    await user.click(screen.getByRole("option", { name: "Yes" }))
+    await skipAllOptionalSteps(user)
+    await user.click(screen.getByRole("option", { name: "No" }))
+
+    expect(await screen.findByLabelText("Pick game")).toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: "Surprise" }))
+    expect(await screen.findByLabelText("Surprise reveal")).toBeInTheDocument()
+    expect(screen.getByText("Surprise: Catch!")).toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "Let's go" }))
+    expect(
+      await screen.findByLabelText("Catch game: Apples"),
+    ).toBeInTheDocument()
+
+    randomSpy.mockRestore()
     await user.click(screen.getByRole("button", { name: "Done" }))
     expect(onComplete).toHaveBeenCalledWith(completed)
   })
@@ -274,10 +366,9 @@ describe("RunSessionPage", () => {
     expect(screen.getByText("Nice try tonight").className).toContain(
       "run-prompt",
     )
-    expect(
-      screen.getByLabelText("Encouragement").className,
-    ).toContain("run-enter")
+    expect(screen.queryByLabelText("Pick game")).not.toBeInTheDocument()
     expect(screen.queryByLabelText(/Catch game/)).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/Cross game/)).not.toBeInTheDocument()
 
     await user.click(screen.getByRole("button", { name: "Back to Plan" }))
     expect(onComplete).toHaveBeenCalledWith(completed)
