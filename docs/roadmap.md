@@ -37,7 +37,7 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | brand-identity | planned | 2026-07-21 · enhancement | Official logo + palette/fonts across web shell, run, and game chrome |
+| 1 | brand-identity | active | 2026-07-21 · enhancement | Official logo + palette/fonts across web shell, run, and game chrome |
 | 2 | reward-match | planned | 2026-07-20 · re-rank split | Add Match (memory / 3-in-a-row lite) beside Catch + Cross |
 | 3 | custom-food-icons | planned | 2026-07-20 · enhancement | Distinctive on-brand food illustrations / run symbols (less stock emoji) |
 | 4 | pace-insights | planned | 2026-07-11 · initial | Parent dashboard: trends on what’s working; gentle suggestions you can ignore |
@@ -66,6 +66,7 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Branch | Spec |
 |----|--------|------|
+| brand-identity | `brand-identity` | [active](specs/active/brand-identity.md) |
 
 ## Done
 
