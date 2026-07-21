@@ -1,6 +1,7 @@
 # Spec: reward-cross
 
-Status: approved  
+Status: done  
+
 Created: 2026-07-20  
 Parent: [docs/roadmap.md](../../roadmap.md)  
 Added: 2026-07-20 · re-rank split
@@ -55,29 +56,29 @@ Split from former roadmap id `reward-cross-match` — Match deferred to
 
 ## Acceptance criteria
 
-- [ ] After complete with ≥1 `ateEnough: true`, the runner shows a **Which game?**
+- [x] After complete with ≥1 `ateEnough: true`, the runner shows a **Which game?**
       step offering Catch, Cross, and Surprise (after food pick when two foods
       qualify).
-- [ ] Choosing Catch starts the existing Catch game themed to the selected food.
-- [ ] Choosing Cross starts Cross themed to the selected food (name + icon visible).
-- [ ] Choosing Surprise randomly starts Catch or Cross (equal chance) themed to
+- [x] Choosing Catch starts the existing Catch game themed to the selected food.
+- [x] Choosing Cross starts Cross themed to the selected food (name + icon visible).
+- [x] Choosing Surprise randomly starts Catch or Cross (equal chance) themed to
       the selected food; kid can tell which game started.
-- [ ] Cross is playable on web (iPad-oriented): large controls, short round,
+- [x] Cross is playable on web (iPad-oriented): large controls, short round,
       forgiving outcome, Done returns to Plan; no edit of past outcomes.
-- [ ] Zero `ateEnough` still shows encouragement only (no game pick).
-- [ ] No new API endpoints; complete request/response unchanged.
-- [ ] No Match template and no native game UI in this PR.
-- [ ] Tests for reward branching including game pick, Surprise roll helper, +
+- [x] Zero `ateEnough` still shows encouragement only (no game pick).
+- [x] No new API endpoints; complete request/response unchanged.
+- [x] No Match template and no native game UI in this PR.
+- [x] Tests for reward branching including game pick, Surprise roll helper, +
       Cross smoke; Catch and existing run/complete tests stay green.
 
 ## Tasks
 
-- [ ] Web: Extend reward phases for game pick (Catch / Cross / Surprise) + Cross;
+- [x] Web: Extend reward phases for game pick (Catch / Cross / Surprise) + Cross;
       keep encourage / food-pick / Catch paths working.
-- [ ] Web: Cross mini-game component (food-themed Frogger-lite; short round;
+- [x] Web: Cross mini-game component (food-themed Frogger-lite; short round;
       Done → Plan) using kitchen-run chrome.
-- [ ] Web: Surprise roll helper (Catch | Cross) + optional reveal beat before play.
-- [ ] Tests: Reward branching (food + game pick + Surprise) + Cross smoke; keep
+- [x] Web: Surprise roll helper (Catch | Cross) + optional reveal beat before play.
+- [x] Tests: Reward branching (food + game pick + Surprise) + Cross smoke; keep
       Catch and run complete tests green.
 
 ## Decisions (locked)

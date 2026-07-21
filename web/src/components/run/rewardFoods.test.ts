@@ -4,6 +4,10 @@ import type { SessionResponse } from "@/api/types"
 import {
   eligibleRewardFoods,
   initialRewardPhase,
+  phaseAfterFoodPick,
+  phaseForGame,
+  phaseForSurprise,
+  rollSurpriseGame,
 } from "@/components/run/rewardFoods"
 
 const baseSession: SessionResponse = {
@@ -40,7 +44,7 @@ describe("rewardFoods", () => {
     expect(initialRewardPhase(baseSession)).toEqual({ kind: "encourage" })
   })
 
-  it("catch when exactly one ate enough", () => {
+  it("pickGame when exactly one ate enough", () => {
     const session: SessionResponse = {
       ...baseSession,
       foods: [
@@ -50,14 +54,13 @@ describe("rewardFoods", () => {
     }
     const eligible = eligibleRewardFoods(session)
     expect(eligible).toHaveLength(1)
-    expect(eligible[0].name).toBe("Apples")
     expect(initialRewardPhase(session)).toEqual({
-      kind: "catch",
+      kind: "pickGame",
       food: eligible[0],
     })
   })
 
-  it("pick when two ate enough", () => {
+  it("pick food when two ate enough, then pickGame after food choice", () => {
     const session: SessionResponse = {
       ...baseSession,
       foods: [
@@ -72,6 +75,35 @@ describe("rewardFoods", () => {
         "Apples",
         "Strawberries",
       ])
+      expect(phaseAfterFoodPick(phase.foods[1])).toEqual({
+        kind: "pickGame",
+        food: phase.foods[1],
+      })
     }
+  })
+
+  it("phaseForGame builds catch and cross phases", () => {
+    const food = baseSession.foods[0]
+    expect(phaseForGame("catch", food)).toEqual({ kind: "catch", food })
+    expect(phaseForGame("cross", food)).toEqual({ kind: "cross", food })
+  })
+
+  it("rollSurpriseGame picks catch or cross from random", () => {
+    expect(rollSurpriseGame(() => 0.1)).toBe("catch")
+    expect(rollSurpriseGame(() => 0.9)).toBe("cross")
+  })
+
+  it("phaseForSurprise parks on a reveal beat with the rolled game", () => {
+    const food = baseSession.foods[0]
+    expect(phaseForSurprise(food, () => 0.1)).toEqual({
+      kind: "surpriseReveal",
+      food,
+      game: "catch",
+    })
+    expect(phaseForSurprise(food, () => 0.9)).toEqual({
+      kind: "surpriseReveal",
+      food,
+      game: "cross",
+    })
   })
 })
