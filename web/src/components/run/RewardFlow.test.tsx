@@ -69,7 +69,7 @@ describe("RewardFlow surprise reveal", () => {
 
     const pick = screen.getByLabelText("Pick game")
     expect(pick.querySelectorAll("[data-run-game-symbol]")).toHaveLength(4)
-    expect(pick.textContent).not.toMatch(/[🧺🐸🃏✨]/)
+    expect(pick.textContent).not.toMatch(/[🧺🐸🃏✨]/u)
   })
 
   it("choosing Match advances to the match phase", async () => {
@@ -121,7 +121,7 @@ describe("RewardFlow surprise reveal", () => {
         .querySelector("[data-run-game-symbol]"),
     ).toBeTruthy()
     expect(screen.getByLabelText("Surprise reveal").textContent).not.toMatch(
-      /[✨]/,
+      /[✨]/u,
     )
 
     await act(async () => {

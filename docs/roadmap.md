@@ -1,7 +1,7 @@
 # Product roadmap
 
 Status: active  
-Updated: 2026-07-21
+Updated: 2026-07-22
 
 Living backlog for this product repo. **One roadmap ↔ many specs** (1:1 by
 kebab-case id). `/roadmap` updates and re-ranks; `/spec <id>` fleshes out the
@@ -37,11 +37,10 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | custom-food-icons | active | 2026-07-20 · enhancement | Logo-aligned SVG for hero foods + Catch/Cross/Match/Surprise run symbols |
-| 2 | pace-insights | planned | 2026-07-11 · initial | Parent dashboard: trends on what’s working; gentle suggestions you can ignore |
-| 3 | suggested-next-session | planned | 2026-07-11 · initial | App proposes next two foods + levels; parent approves or swaps |
-| 4 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
-| 5 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
+| 1 | pace-insights | planned | 2026-07-11 · initial | Parent dashboard: trends on what’s working; gentle suggestions you can ignore |
+| 2 | suggested-next-session | planned | 2026-07-11 · initial | App proposes next two foods + levels; parent approves or swaps |
+| 3 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
+| 4 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
 
 Status values: `parking` · `planned` · `active` · `done` · `cancelled`  
 Added: `YYYY-MM-DD · initial` | `enhancement` | `re-rank split`
@@ -69,12 +68,13 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Branch | Spec |
 |----|--------|------|
-| custom-food-icons | `custom-food-icons` | [active](specs/active/custom-food-icons.md) |
+| — | — | — |
 
 ## Done
 
 | Id | Completed | Spec |
 |----|-----------|------|
+| custom-food-icons | 2026-07-22 | [archive](specs/archive/custom-food-icons.md) |
 | reward-match | 2026-07-21 | [archive](specs/archive/reward-match.md) |
 | reward-high-scores | 2026-07-21 | [archive](specs/archive/reward-high-scores.md) |
 | reward-game-visuals | 2026-07-21 | [archive](specs/archive/reward-game-visuals.md) |
@@ -122,3 +122,4 @@ Only notable events (first carve-up, major re-rank, cancelled theme) — not eve
 | 2026-07-21 | reward-game-visuals shipped (Catch basket, Cross multi-kind + statics/pattern gate, shared HUD type). Next up: `reward-high-scores`. |
 | 2026-07-21 | reward-high-scores shipped (local Best + New best! cheer on Catch/Cross finish). Next up: `reward-match`. |
 | 2026-07-21 | reward-match shipped (memory pairs + Surprise includes Match). Next up: `custom-food-icons`. |
+| 2026-07-22 | custom-food-icons shipped (hero SVG foods + run game symbols; pizza/pretzel/raspberry starters). Next up: `pace-insights`. |

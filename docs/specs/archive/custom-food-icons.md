@@ -1,6 +1,6 @@
 # Spec: custom-food-icons
 
-Status: in-progress  
+Status: done  
 Created: 2026-07-20  
 Parent: [docs/roadmap.md](../../roadmap.md)  
 Added: 2026-07-20 · enhancement
@@ -80,14 +80,14 @@ Match, Surprise (e.g. `RunGameSymbol`). Sibling style to food icons.
 
 ## Acceptance criteria
 
-- [ ] All 10 hero foods above have **logo-aligned SVG** art via `FoodIcon` /
+- [x] All 10 hero foods above have **logo-aligned SVG** art via `FoodIcon` /
       `iconKey` (new keys included).
-- [ ] `cheese_pizza`, `soft_pretzel`, and `raspberry` are valid starter keys
+- [x] `cheese_pizza`, `soft_pretzel`, and `raspberry` are valid starter keys
       (allowlist + system catalog rows) and selectable like other starters.
-- [ ] Non-hero existing keys still render (current art OK this PR).
-- [ ] Reward **Which game?** tiles use on-brand SVG symbols (not 🧺🐸🃏✨).
-- [ ] No AI art pipeline; no new binary illustration packs.
-- [ ] Backend foods tests + web Foods / RewardFlow / run tests stay green.
+- [x] Non-hero existing keys still render (current art OK this PR).
+- [x] Reward **Which game?** tiles use on-brand SVG symbols (not 🧺🐸🃏✨).
+- [x] No AI art pipeline; no new binary illustration packs.
+- [x] Backend foods tests + web Foods / RewardFlow / run tests stay green.
 
 ## Tasks
 
@@ -96,7 +96,7 @@ Match, Surprise (e.g. `RunGameSymbol`). Sibling style to food icons.
 - [x] Web: Redraw / add SVG for all 10 hero `FoodIcon`s + labels; extend
       `FOOD_ICON_KEYS`.
 - [x] Web: Catch / Cross / Match / Surprise SVG symbols; wire RewardFlow tiles.
-- [ ] Tests: Hero smoke + new starters + Which game? symbols; keep foods / run /
+- [x] Tests: Hero smoke + new starters + Which game? symbols; keep foods / run /
       reward suites green.
 
 ## Decisions (locked)

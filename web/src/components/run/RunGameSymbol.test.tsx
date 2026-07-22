@@ -30,7 +30,7 @@ describe("RunGameSymbol", () => {
     for (const kind of KINDS) {
       const { container, unmount } = render(<RunGameSymbol kind={kind} />)
       expect(container.textContent).toBe("")
-      expect(container.textContent).not.toMatch(/[🧺🐸🃏✨]/)
+      expect(container.textContent).not.toMatch(/[🧺🐸🃏✨]/u)
       unmount()
     }
   })
