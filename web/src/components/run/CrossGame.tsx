@@ -4,6 +4,10 @@ import type { SessionFoodResponse } from "@/api/types"
 import { FoodIcon } from "@/components/food/FoodIcon"
 import { createCrossAudio } from "@/components/run/crossAudio"
 import {
+  recordScore,
+  type RecordScoreResult,
+} from "@/components/run/rewardBestScores"
+import {
   RUN_GAME_CELEBRATE,
   RUN_GAME_FINISH_SUB,
   RUN_GAME_FINISH_TITLE,
@@ -22,6 +26,8 @@ export const CROSS_COLS = 5
 export const CROSS_CELEBRATE_MS = 550
 /** Let the round-end cheer finish before closing AudioContext. */
 const CHEER_THEN_STOP_MS = 650
+/** New-best fanfare is longer than the normal end cheer. */
+const NEW_BEST_THEN_STOP_MS = 900
 const TICK_MS = 80
 const HAZARD_STEP_EVERY_MS = 400
 
@@ -68,6 +74,8 @@ type CrossGameProps = {
   onDone: () => void
   /** Override round length (ms) — tests use a short value. */
   roundMs?: number
+  /** Scopes local best by household when provided. */
+  householdId?: string | null
 }
 
 /** Start / home column (center). */
@@ -265,16 +273,19 @@ export function CrossGame({
   food,
   onDone,
   roundMs = CROSS_ROUND_MS,
+  householdId = null,
 }: CrossGameProps) {
   const [board, setBoard] = useState<CrossBoard>(() => initialCrossBoard())
   const [elapsedMs, setElapsedMs] = useState(0)
   const [finished, setFinished] = useState(false)
   const [celebrating, setCelebrating] = useState(false)
+  const [finishBest, setFinishBest] = useState<RecordScoreResult | null>(null)
   const nextId = useRef(1)
   const sinceHazardStep = useRef(0)
   const audioRef = useRef(createCrossAudio())
   const celebrateTimer = useRef<number | null>(null)
   const cheerStopTimer = useRef<number | null>(null)
+  const finishHandledRef = useRef(false)
   const finishedRef = useRef(finished)
   finishedRef.current = finished
 
@@ -340,19 +351,29 @@ export function CrossGame({
   }, [])
 
   useEffect(() => {
-    if (!finished) {
+    if (!finished || finishHandledRef.current) {
       return
     }
+    finishHandledRef.current = true
+    const result = recordScore("cross", board.crossings, householdId)
+    setFinishBest(result)
     const audio = audioRef.current
-    audio?.playCrossing()
+    if (result.isNewBest) {
+      audio?.playNewBest()
+    } else {
+      audio?.playCrossing()
+    }
     if (cheerStopTimer.current !== null) {
       window.clearTimeout(cheerStopTimer.current)
     }
-    cheerStopTimer.current = window.setTimeout(() => {
-      audio?.stop()
-      cheerStopTimer.current = null
-    }, CHEER_THEN_STOP_MS)
-  }, [finished])
+    cheerStopTimer.current = window.setTimeout(
+      () => {
+        audio?.stop()
+        cheerStopTimer.current = null
+      },
+      result.isNewBest ? NEW_BEST_THEN_STOP_MS : CHEER_THEN_STOP_MS,
+    )
+  }, [finished, board.crossings, householdId])
 
   useEffect(() => {
     if (finished) {
@@ -458,9 +479,17 @@ export function CrossGame({
           aria-label="Cross finished"
         >
           <p className={RUN_GAME_FINISH_TITLE}>Nice crossing!</p>
+          {finishBest?.isNewBest ? (
+            <p className={RUN_GAME_CELEBRATE} aria-live="polite">
+              New best!
+            </p>
+          ) : null}
           <p className={RUN_GAME_FINISH_SUB}>
             You crossed {board.crossings} time
             {board.crossings === 1 ? "" : "s"}.
+          </p>
+          <p className={RUN_GAME_TITLE} aria-live="polite">
+            Best: {finishBest?.best ?? board.crossings}
           </p>
           <Button
             type="button"

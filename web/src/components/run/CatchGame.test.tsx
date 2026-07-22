@@ -9,11 +9,25 @@ import {
   PIECE_SIZE,
   advanceBoard,
 } from "@/components/run/CatchGame"
+import * as rewardBestScores from "@/components/run/rewardBestScores"
 import {
   RUN_GAME_FINISH_TITLE,
   RUN_GAME_HUD,
   RUN_GAME_TITLE,
 } from "@/components/run/runTheme"
+
+const catchAudioApi = vi.hoisted(() => ({
+  resume: vi.fn().mockResolvedValue(undefined),
+  playCatch: vi.fn(),
+  playCheer: vi.fn(),
+  playNewBest: vi.fn(),
+  startBed: vi.fn(),
+  stop: vi.fn(),
+}))
+
+vi.mock("@/components/run/catchAudio", () => ({
+  createCatchAudio: () => catchAudioApi,
+}))
 
 const food: SessionFoodResponse = {
   foodId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa04",
@@ -46,6 +60,9 @@ describe("advanceBoard", () => {
 describe("CatchGame", () => {
   afterEach(() => {
     vi.useRealTimers()
+    vi.restoreAllMocks()
+    vi.clearAllMocks()
+    localStorage.clear()
   })
 
   it("shows food theme and large basket controls while playing", async () => {
@@ -68,13 +85,14 @@ describe("CatchGame", () => {
     expect(screen.getByText(/Caught:/).parentElement?.className).toBe(
       RUN_GAME_HUD,
     )
+    expect(screen.queryByText(/Best:/)).not.toBeInTheDocument()
 
     await user.click(screen.getByRole("button", { name: "Move basket right" }))
     await user.click(screen.getByRole("button", { name: "Done" }))
     expect(onDone).toHaveBeenCalled()
   })
 
-  it("ends the round and shows a Done finish screen", async () => {
+  it("ends the round and shows Best on the finish screen", async () => {
     vi.useFakeTimers()
     const onDone = vi.fn()
     render(<CatchGame food={food} onDone={onDone} roundMs={200} />)
@@ -88,8 +106,42 @@ describe("CatchGame", () => {
     expect(screen.getByLabelText("Catch finished")).toBeInTheDocument()
     const finishTitle = screen.getByText(/Nice catching/)
     expect(finishTitle.className).toBe(RUN_GAME_FINISH_TITLE)
+    expect(screen.getByText(/Best:/)).toBeInTheDocument()
+    expect(screen.queryByText("New best!")).not.toBeInTheDocument()
+    expect(catchAudioApi.playCheer).toHaveBeenCalled()
+    expect(catchAudioApi.playNewBest).not.toHaveBeenCalled()
 
     screen.getByRole("button", { name: "Done" }).click()
     expect(onDone).toHaveBeenCalled()
+  })
+
+  it("shows New best! when recordScore reports a new best", async () => {
+    vi.useFakeTimers()
+    vi.spyOn(rewardBestScores, "recordScore").mockReturnValue({
+      best: 5,
+      isNewBest: true,
+    })
+    render(
+      <CatchGame
+        food={food}
+        onDone={vi.fn()}
+        roundMs={200}
+        householdId="hh-test"
+      />,
+    )
+
+    await act(async () => {
+      vi.advanceTimersByTime(300)
+    })
+
+    expect(screen.getByText("New best!")).toBeInTheDocument()
+    expect(screen.getByText("Best: 5")).toBeInTheDocument()
+    expect(rewardBestScores.recordScore).toHaveBeenCalledWith(
+      "catch",
+      expect.any(Number),
+      "hh-test",
+    )
+    expect(catchAudioApi.playNewBest).toHaveBeenCalled()
+    expect(catchAudioApi.playCheer).not.toHaveBeenCalled()
   })
 })

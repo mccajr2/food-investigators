@@ -8,6 +8,8 @@ type CatchAudio = {
   resume: () => Promise<void>
   playCatch: () => void
   playCheer: () => void
+  /** Longer / brighter cheer when the round sets a new personal best. */
+  playNewBest: () => void
   startBed: () => void
   stop: () => void
 }
@@ -120,6 +122,56 @@ export function createCatchAudio(
         type: "triangle",
         gain: 0.04,
         when: 0.38,
+      })
+    },
+    playNewBest() {
+      const audio = ensure()
+      if (!audio) {
+        return
+      }
+      // Longer fanfare than playCheer — clear “personal best” moment.
+      tone(audio, { frequency: 392.0, duration: 0.1, type: "triangle", gain: 0.07 })
+      tone(audio, {
+        frequency: 493.88,
+        duration: 0.1,
+        type: "sine",
+        gain: 0.075,
+        when: 0.08,
+      })
+      tone(audio, {
+        frequency: 587.33,
+        duration: 0.11,
+        type: "sine",
+        gain: 0.075,
+        when: 0.16,
+      })
+      tone(audio, {
+        frequency: 698.46,
+        duration: 0.12,
+        type: "triangle",
+        gain: 0.07,
+        when: 0.26,
+      })
+      tone(audio, {
+        frequency: 880.0,
+        duration: 0.14,
+        type: "sine",
+        gain: 0.065,
+        when: 0.38,
+      })
+      tone(audio, {
+        frequency: 1174.7,
+        duration: 0.2,
+        type: "triangle",
+        gain: 0.055,
+        when: 0.5,
+      })
+      tone(audio, {
+        frequency: 1318.5,
+        duration: 0.16,
+        type: "sine",
+        gain: 0.04,
+        when: 0.64,
       })
     },
     startBed() {

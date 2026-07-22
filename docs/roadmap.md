@@ -37,13 +37,12 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | reward-high-scores | planned | 2026-07-21 · enhancement | Local best/recent scores per Catch & Cross for something to beat |
-| 2 | reward-match | planned | 2026-07-20 · re-rank split | Add Match (memory / 3-in-a-row lite) beside Catch + Cross |
-| 3 | custom-food-icons | planned | 2026-07-20 · enhancement | Distinctive on-brand food illustrations / run symbols (less stock emoji) |
-| 4 | pace-insights | planned | 2026-07-11 · initial | Parent dashboard: trends on what’s working; gentle suggestions you can ignore |
-| 5 | suggested-next-session | planned | 2026-07-11 · initial | App proposes next two foods + levels; parent approves or swaps |
-| 6 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
-| 7 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
+| 1 | reward-match | planned | 2026-07-20 · re-rank split | Add Match (memory / 3-in-a-row lite) beside Catch + Cross |
+| 2 | custom-food-icons | planned | 2026-07-20 · enhancement | Distinctive on-brand food illustrations / run symbols (less stock emoji) |
+| 3 | pace-insights | planned | 2026-07-11 · initial | Parent dashboard: trends on what’s working; gentle suggestions you can ignore |
+| 4 | suggested-next-session | planned | 2026-07-11 · initial | App proposes next two foods + levels; parent approves or swaps |
+| 5 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
+| 6 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
 
 Status values: `parking` · `planned` · `active` · `done` · `cancelled`  
 Added: `YYYY-MM-DD · initial` | `enhancement` | `re-rank split`
@@ -77,6 +76,7 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Completed | Spec |
 |----|-----------|------|
+| reward-high-scores | 2026-07-21 | [archive](specs/archive/reward-high-scores.md) |
 | reward-game-visuals | 2026-07-21 | [archive](specs/archive/reward-game-visuals.md) |
 | reward-game-audio | 2026-07-21 | [archive](specs/archive/reward-game-audio.md) |
 | brand-identity | 2026-07-21 | [archive](specs/archive/brand-identity.md) |
@@ -120,3 +120,4 @@ Only notable events (first carve-up, major re-rank, cancelled theme) — not eve
 | 2026-07-21 | Split Catch/Cross polish into `reward-game-audio` → `reward-game-visuals` → `reward-high-scores` (ahead of Match). Next up: `reward-game-audio`. |
 | 2026-07-21 | reward-game-audio shipped (Catch/Cross beds, ouch, catch blip, cheers). Next up: `reward-game-visuals`. |
 | 2026-07-21 | reward-game-visuals shipped (Catch basket, Cross multi-kind + statics/pattern gate, shared HUD type). Next up: `reward-high-scores`. |
+| 2026-07-21 | reward-high-scores shipped (local Best + New best! cheer on Catch/Cross finish). Next up: `reward-match`. |

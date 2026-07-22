@@ -47,12 +47,13 @@ describe("createCrossAudio", () => {
     audio?.playJump()
     audio?.playOuch()
     audio?.playCrossing()
+    audio?.playNewBest()
     audio?.startBed()
     audio?.stop()
     expect(start).toHaveBeenCalled()
   })
 
-  it("exposes playOuch as a distinct API from jump and crossing", () => {
+  it("exposes playOuch and playNewBest as distinct APIs", () => {
     class FakeAudioContext {
       currentTime = 0
       state = "running"
@@ -82,8 +83,10 @@ describe("createCrossAudio", () => {
       playJump: expect.any(Function),
       playOuch: expect.any(Function),
       playCrossing: expect.any(Function),
+      playNewBest: expect.any(Function),
     })
     expect(audio?.playOuch).not.toBe(audio?.playJump)
     expect(audio?.playOuch).not.toBe(audio?.playCrossing)
+    expect(audio?.playNewBest).not.toBe(audio?.playCrossing)
   })
 })

@@ -10,6 +10,8 @@ type CrossAudio = {
   playOuch: () => void
   /** Clearer rising cheer when the player reaches the goal. */
   playCrossing: () => void
+  /** Longer / brighter cheer when the round sets a new personal best. */
+  playNewBest: () => void
   startBed: () => void
   stop: () => void
 }
@@ -143,6 +145,56 @@ export function createCrossAudio(
         type: "triangle",
         gain: 0.045,
         when: 0.34,
+      })
+    },
+    playNewBest() {
+      const audio = ensure()
+      if (!audio) {
+        return
+      }
+      // Longer fanfare than playCrossing — clear “personal best” moment.
+      tone(audio, { frequency: 523.25, duration: 0.1, type: "triangle", gain: 0.075 })
+      tone(audio, {
+        frequency: 659.25,
+        duration: 0.1,
+        type: "sine",
+        gain: 0.08,
+        when: 0.08,
+      })
+      tone(audio, {
+        frequency: 783.99,
+        duration: 0.11,
+        type: "sine",
+        gain: 0.08,
+        when: 0.16,
+      })
+      tone(audio, {
+        frequency: 987.77,
+        duration: 0.12,
+        type: "triangle",
+        gain: 0.07,
+        when: 0.26,
+      })
+      tone(audio, {
+        frequency: 1174.7,
+        duration: 0.14,
+        type: "sine",
+        gain: 0.065,
+        when: 0.38,
+      })
+      tone(audio, {
+        frequency: 1396.9,
+        duration: 0.2,
+        type: "triangle",
+        gain: 0.05,
+        when: 0.5,
+      })
+      tone(audio, {
+        frequency: 1568.0,
+        duration: 0.16,
+        type: "sine",
+        gain: 0.04,
+        when: 0.64,
       })
     },
     startBed() {
