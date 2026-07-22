@@ -66,6 +66,10 @@ describe("RewardFlow surprise reveal", () => {
     expect(screen.getByRole("button", { name: "Cross" })).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Match" })).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Surprise" })).toBeInTheDocument()
+
+    const pick = screen.getByLabelText("Pick game")
+    expect(pick.querySelectorAll("[data-run-game-symbol]")).toHaveLength(4)
+    expect(pick.textContent).not.toMatch(/[🧺🐸🃏✨]/u)
   })
 
   it("choosing Match advances to the match phase", async () => {
@@ -111,6 +115,14 @@ describe("RewardFlow surprise reveal", () => {
 
     expect(screen.getByLabelText("Surprise reveal")).toBeInTheDocument()
     expect(screen.getByText("Surprise: Cross!")).toBeInTheDocument()
+    expect(
+      screen
+        .getByLabelText("Surprise reveal")
+        .querySelector("[data-run-game-symbol]"),
+    ).toBeTruthy()
+    expect(screen.getByLabelText("Surprise reveal").textContent).not.toMatch(
+      /[✨]/u,
+    )
 
     await act(async () => {
       vi.advanceTimersByTime(SURPRISE_REVEAL_MS)

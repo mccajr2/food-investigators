@@ -14,6 +14,7 @@ import {
   type RewardGameKind,
   type RewardPhase,
 } from "@/components/run/rewardFoods"
+import { RunGameSymbol } from "@/components/run/RunGameSymbol"
 import { Button } from "@/components/ui/button"
 
 type RewardFlowProps = {
@@ -26,31 +27,26 @@ type RewardFlowProps = {
 const GAME_OPTIONS: {
   game: RewardGameKind | "surprise"
   label: string
-  symbol: string
   hint: string
 }[] = [
   {
     game: "catch",
     label: "Catch",
-    symbol: "🧺",
     hint: "Catch falling food",
   },
   {
     game: "cross",
     label: "Cross",
-    symbol: "🐸",
     hint: "Cross the lanes",
   },
   {
     game: "match",
     label: "Match",
-    symbol: "🃏",
     hint: "Find matching pairs",
   },
   {
     game: "surprise",
     label: "Surprise",
-    symbol: "✨",
     hint: "Catch, Cross, or Match — surprise!",
   },
 ]
@@ -172,9 +168,7 @@ export function RewardFlow({
                   onChooseGame(phaseForGame(option.game, phase.food))
                 }}
               >
-                <span className="text-4xl" aria-hidden>
-                  {option.symbol}
-                </span>
+                <RunGameSymbol kind={option.game} className="size-14" />
                 <span className="run-prompt text-xl">{option.label}</span>
                 <span className="text-sm text-muted-foreground">
                   {option.hint}
@@ -196,9 +190,7 @@ export function RewardFlow({
         aria-live="polite"
       >
         <BrandLogo variant="full" className="max-w-[14rem] sm:max-w-xs" />
-        <p className="text-5xl" aria-hidden>
-          ✨
-        </p>
+        <RunGameSymbol kind={phase.game} className="size-16" />
         <h2 className="run-prompt text-3xl leading-tight md:text-4xl">
           Surprise: {label}!
         </h2>

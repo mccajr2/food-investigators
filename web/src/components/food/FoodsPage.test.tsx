@@ -101,6 +101,42 @@ describe("FoodsPage", () => {
     })
   })
 
+  it("offers the new hero starters as selectable icons", async () => {
+    const user = userEvent.setup()
+    const created: FoodResponse = {
+      id: "cccccccc-cccc-cccc-cccc-cccccccccccc",
+      name: "Friday pizza",
+      iconKey: "cheese_pizza",
+      householdId: "22222222-2222-2222-2222-222222222222",
+      system: false,
+    }
+    const create = vi.fn().mockResolvedValue(created)
+    render(<FoodsPage client={mockFoodsClient({ create })} />)
+
+    await screen.findByText("Apples")
+    await user.click(screen.getByRole("button", { name: "Add food" }))
+
+    const form = screen.getByRole("form", { name: "Add food" })
+    expect(
+      within(form).getByRole("option", { name: "Cheese pizza" }),
+    ).toBeInTheDocument()
+    expect(
+      within(form).getByRole("option", { name: "Soft pretzels" }),
+    ).toBeInTheDocument()
+    expect(
+      within(form).getByRole("option", { name: "Raspberries" }),
+    ).toBeInTheDocument()
+
+    await user.type(within(form).getByLabelText("Food name"), "Friday pizza")
+    await user.click(within(form).getByRole("option", { name: "Cheese pizza" }))
+    await user.click(within(form).getByRole("button", { name: "Save food" }))
+
+    expect(create).toHaveBeenCalledWith({
+      name: "Friday pizza",
+      iconKey: "cheese_pizza",
+    })
+  })
+
   it("edits and archives a household food", async () => {
     const user = userEvent.setup()
     const mine: FoodResponse = {

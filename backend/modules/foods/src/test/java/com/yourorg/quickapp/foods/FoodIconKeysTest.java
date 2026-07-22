@@ -29,11 +29,21 @@ class FoodIconKeysTest {
                     "yogurt_vanilla",
                     "carrot",
                     "corn",
-                    "sweet_potato");
+                    "sweet_potato",
+                    "cheese_pizza",
+                    "soft_pretzel",
+                    "raspberry");
 
     @Test
     void allowlistMatchesSeededStarterIcons() {
         assertThat(FoodIconKeys.ALL).containsExactlyInAnyOrderElementsOf(SEEDED_ICON_KEYS);
+    }
+
+    @Test
+    void acceptsNewHeroStarterKeys() {
+        FoodIconKeys.requireAllowed("cheese_pizza");
+        FoodIconKeys.requireAllowed("soft_pretzel");
+        FoodIconKeys.requireAllowed("raspberry");
     }
 
     @Test
