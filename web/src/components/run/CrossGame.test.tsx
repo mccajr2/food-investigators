@@ -13,6 +13,19 @@ import {
   spawnHazard,
 } from "@/components/run/CrossGame"
 
+const crossAudioApi = vi.hoisted(() => ({
+  resume: vi.fn().mockResolvedValue(undefined),
+  playJump: vi.fn(),
+  playOuch: vi.fn(),
+  playCrossing: vi.fn(),
+  startBed: vi.fn(),
+  stop: vi.fn(),
+}))
+
+vi.mock("@/components/run/crossAudio", () => ({
+  createCrossAudio: () => crossAudioApi,
+}))
+
 const food: SessionFoodResponse = {
   foodId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa04",
   name: "Apples",
@@ -66,6 +79,7 @@ describe("cross board helpers", () => {
 describe("CrossGame", () => {
   afterEach(() => {
     vi.useRealTimers()
+    vi.clearAllMocks()
   })
 
   it("shows food theme and large move controls while playing", async () => {
@@ -129,6 +143,7 @@ describe("CrossGame", () => {
 
     expect(screen.getByLabelText("Cross finished")).toBeInTheDocument()
     expect(screen.getByText(/Nice crossing/)).toBeInTheDocument()
+    expect(crossAudioApi.playCrossing).toHaveBeenCalled()
 
     screen.getByRole("button", { name: "Done" }).click()
     expect(onDone).toHaveBeenCalled()

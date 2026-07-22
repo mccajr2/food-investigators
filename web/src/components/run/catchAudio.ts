@@ -1,15 +1,13 @@
 /**
- * Tiny Web Audio helpers for Cross — no asset files, no new deps.
+ * Tiny Web Audio helpers for Catch — no asset files, no new deps.
  * Soft volumes; callers start the context on a user gesture (first move).
+ * Bed notes/pacing differ from Cross so the two games feel distinct.
  */
 
-type CrossAudio = {
+type CatchAudio = {
   resume: () => Promise<void>
-  playJump: () => void
-  /** Short descending “ouch” when bumped by a hazard. */
-  playOuch: () => void
-  /** Clearer rising cheer when the player reaches the goal. */
-  playCrossing: () => void
+  playCatch: () => void
+  playCheer: () => void
   startBed: () => void
   stop: () => void
 }
@@ -44,9 +42,9 @@ function tone(
   osc.stop(start + duration + 0.02)
 }
 
-export function createCrossAudio(
+export function createCatchAudio(
   AudioContextCtor: typeof AudioContext = globalThis.AudioContext,
-): CrossAudio | null {
+): CatchAudio | null {
   if (typeof AudioContextCtor !== "function") {
     return null
   }
@@ -73,76 +71,55 @@ export function createCrossAudio(
         await audio.resume()
       }
     },
-    playJump() {
+    playCatch() {
       const audio = ensure()
       if (!audio) {
         return
       }
-      tone(audio, { frequency: 520, duration: 0.07, type: "triangle", gain: 0.06 })
+      // Bright short blip — score without looking.
+      tone(audio, { frequency: 880, duration: 0.06, type: "square", gain: 0.05 })
       tone(audio, {
-        frequency: 680,
-        duration: 0.06,
+        frequency: 1174.7,
+        duration: 0.07,
         type: "triangle",
         gain: 0.04,
         when: 0.04,
       })
     },
-    playOuch() {
+    playCheer() {
       const audio = ensure()
       if (!audio) {
         return
       }
-      // Descending / slightly rough — distinct from jump and cheer.
-      tone(audio, { frequency: 220, duration: 0.12, type: "sawtooth", gain: 0.05 })
+      // Same family as Cross cheer, different intervals / top note.
+      tone(audio, { frequency: 392.0, duration: 0.1, type: "sine", gain: 0.075 })
       tone(audio, {
-        frequency: 165,
-        duration: 0.14,
-        type: "triangle",
-        gain: 0.045,
-        when: 0.07,
-      })
-      tone(audio, {
-        frequency: 110,
-        duration: 0.16,
-        type: "sine",
-        gain: 0.04,
-        when: 0.14,
-      })
-    },
-    playCrossing() {
-      const audio = ensure()
-      if (!audio) {
-        return
-      }
-      // Brighter cheer than the old 3-note chime — obvious “you made it”.
-      tone(audio, { frequency: 523.25, duration: 0.1, type: "sine", gain: 0.08 })
-      tone(audio, {
-        frequency: 659.25,
+        frequency: 523.25,
         duration: 0.1,
         type: "sine",
-        gain: 0.08,
-        when: 0.07,
+        gain: 0.075,
+        when: 0.08,
+      })
+      tone(audio, {
+        frequency: 659.25,
+        duration: 0.12,
+        type: "triangle",
+        gain: 0.07,
+        when: 0.16,
       })
       tone(audio, {
         frequency: 783.99,
-        duration: 0.12,
-        type: "triangle",
-        gain: 0.075,
-        when: 0.14,
-      })
-      tone(audio, {
-        frequency: 1046.5,
-        duration: 0.18,
+        duration: 0.16,
         type: "sine",
-        gain: 0.07,
-        when: 0.24,
+        gain: 0.065,
+        when: 0.26,
       })
       tone(audio, {
-        frequency: 1318.5,
-        duration: 0.12,
+        frequency: 987.77,
+        duration: 0.14,
         type: "triangle",
-        gain: 0.045,
-        when: 0.34,
+        gain: 0.04,
+        when: 0.38,
       })
     },
     startBed() {
@@ -150,21 +127,22 @@ export function createCrossAudio(
       if (!audio || bedTimer !== null) {
         return
       }
-      const notes = [261.63, 329.63, 392.0, 329.63]
+      // Pentatonic-ish bounce — faster/lighter than Cross’s 480ms bed.
+      const notes = [293.66, 349.23, 440.0, 523.25, 440.0, 349.23]
       bedTimer = window.setInterval(() => {
         const live = ensure()
         if (!live) {
           return
         }
-        const frequency = notes[bedStep % notes.length] ?? 261.63
+        const frequency = notes[bedStep % notes.length] ?? 293.66
         bedStep += 1
         tone(live, {
           frequency,
-          duration: 0.35,
-          type: "sine",
-          gain: 0.018,
+          duration: 0.28,
+          type: "triangle",
+          gain: 0.016,
         })
-      }, 480)
+      }, 360)
     },
     stop() {
       if (bedTimer !== null) {

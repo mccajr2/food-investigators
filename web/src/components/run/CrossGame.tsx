@@ -12,6 +12,8 @@ export const CROSS_LANE_COUNT = 6
 export const GOAL_LANE = CROSS_LANE_COUNT - 1
 export const CROSS_COLS = 5
 export const CROSS_CELEBRATE_MS = 550
+/** Let the round-end cheer finish before closing AudioContext. */
+const CHEER_THEN_STOP_MS = 650
 const TICK_MS = 80
 const HAZARD_STEP_EVERY_MS = 400
 
@@ -166,6 +168,7 @@ export function CrossGame({
   const sinceHazardStep = useRef(0)
   const audioRef = useRef(createCrossAudio())
   const celebrateTimer = useRef<number | null>(null)
+  const cheerStopTimer = useRef<number | null>(null)
   const finishedRef = useRef(finished)
   finishedRef.current = finished
 
@@ -198,16 +201,19 @@ export function CrossGame({
 
     setBoard((current) => {
       const moved = movePlayer(current, move)
-      const next = playerHitHazard(moved)
-        ? resetPlayerAfterHit(moved)
-        : moved
-      if (next.crossings > current.crossings) {
+      if (playerHitHazard(moved)) {
+        window.setTimeout(() => {
+          audio?.playOuch()
+        }, 0)
+        return resetPlayerAfterHit(moved)
+      }
+      if (moved.crossings > current.crossings) {
         window.setTimeout(() => {
           audio?.playCrossing()
           flashCelebrate()
         }, 0)
       }
-      return next
+      return moved
     })
   }
 
@@ -221,12 +227,29 @@ export function CrossGame({
       if (celebrateTimer.current !== null) {
         window.clearTimeout(celebrateTimer.current)
       }
+      if (cheerStopTimer.current !== null) {
+        window.clearTimeout(cheerStopTimer.current)
+      }
     }
   }, [])
 
   useEffect(() => {
+    if (!finished) {
+      return
+    }
+    const audio = audioRef.current
+    audio?.playCrossing()
+    if (cheerStopTimer.current !== null) {
+      window.clearTimeout(cheerStopTimer.current)
+    }
+    cheerStopTimer.current = window.setTimeout(() => {
+      audio?.stop()
+      cheerStopTimer.current = null
+    }, CHEER_THEN_STOP_MS)
+  }, [finished])
+
+  useEffect(() => {
     if (finished) {
-      audioRef.current?.stop()
       return
     }
     const tick = window.setInterval(() => {
@@ -242,7 +265,18 @@ export function CrossGame({
       sinceHazardStep.current += TICK_MS
       if (sinceHazardStep.current >= HAZARD_STEP_EVERY_MS) {
         sinceHazardStep.current = 0
-        setBoard((current) => advanceHazards(current))
+        setBoard((current) => {
+          const next = advanceHazards(current)
+          if (
+            current.playerLane !== next.playerLane ||
+            current.playerCol !== next.playerCol
+          ) {
+            window.setTimeout(() => {
+              audioRef.current?.playOuch()
+            }, 0)
+          }
+          return next
+        })
       }
     }, TICK_MS)
 
@@ -256,7 +290,18 @@ export function CrossGame({
     const spawn = window.setInterval(() => {
       const id = nextId.current
       nextId.current += 1
-      setBoard((current) => spawnHazard(current, id))
+      setBoard((current) => {
+        const next = spawnHazard(current, id)
+        if (
+          current.playerLane !== next.playerLane ||
+          current.playerCol !== next.playerCol
+        ) {
+          window.setTimeout(() => {
+            audioRef.current?.playOuch()
+          }, 0)
+        }
+        return next
+      })
     }, 1200)
     return () => window.clearInterval(spawn)
   }, [finished])

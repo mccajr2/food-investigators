@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react"
 
 import type { SessionFoodResponse } from "@/api/types"
 import { FoodIcon } from "@/components/food/FoodIcon"
+import { createCatchAudio } from "@/components/run/catchAudio"
 import { Button } from "@/components/ui/button"
 
 export const CATCH_ROUND_MS = 30_000
@@ -10,6 +11,8 @@ export const PIECE_SIZE = 10
 const SPAWN_EVERY_MS = 900
 const TICK_MS = 50
 export const FALL_SPEED = 2.2
+/** Let the end cheer finish before closing AudioContext. */
+const CHEER_THEN_STOP_MS = 650
 
 type Piece = {
   id: number
@@ -72,12 +75,46 @@ export function CatchGame({
   const nextId = useRef(1)
   const catcherXRef = useRef(catcherX)
   catcherXRef.current = catcherX
+  const audioRef = useRef(createCatchAudio())
+  const cheerStopTimer = useRef<number | null>(null)
 
   const remainingMs = Math.max(0, roundMs - elapsedMs)
   const remainingSec = Math.ceil(remainingMs / 1000)
   const themeLabel = food.variantNote
     ? `${food.name} (${food.variantNote})`
     : food.name
+
+  function armAudio() {
+    const audio = audioRef.current
+    void audio?.resume().then(() => {
+      audio?.startBed()
+    })
+  }
+
+  useEffect(() => {
+    const audio = audioRef.current
+    return () => {
+      if (cheerStopTimer.current !== null) {
+        window.clearTimeout(cheerStopTimer.current)
+      }
+      audio?.stop()
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!finished) {
+      return
+    }
+    const audio = audioRef.current
+    audio?.playCheer()
+    if (cheerStopTimer.current !== null) {
+      window.clearTimeout(cheerStopTimer.current)
+    }
+    cheerStopTimer.current = window.setTimeout(() => {
+      audio?.stop()
+      cheerStopTimer.current = null
+    }, CHEER_THEN_STOP_MS)
+  }, [finished])
 
   useEffect(() => {
     if (finished) {
@@ -93,7 +130,18 @@ export function CatchGame({
         return next
       })
 
-      setBoard((current) => advanceBoard(current, catcherXRef.current))
+      setBoard((current) => {
+        const next = advanceBoard(current, catcherXRef.current)
+        const gained = next.score - current.score
+        if (gained > 0) {
+          window.setTimeout(() => {
+            for (let i = 0; i < gained; i += 1) {
+              audioRef.current?.playCatch()
+            }
+          }, 0)
+        }
+        return next
+      })
     }, TICK_MS)
 
     return () => window.clearInterval(tick)
@@ -125,6 +173,7 @@ export function CatchGame({
     if (finished) {
       return
     }
+    armAudio()
     setCatcherX((current) =>
       Math.min(100 - CATCHER_WIDTH, Math.max(0, current + delta)),
     )
@@ -134,6 +183,7 @@ export function CatchGame({
     if (finished) {
       return
     }
+    armAudio()
     const rect = target.getBoundingClientRect()
     if (rect.width <= 0) {
       return
