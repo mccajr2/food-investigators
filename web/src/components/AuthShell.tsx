@@ -4,6 +4,7 @@ import { AuthClient, FoodsClient, SessionsClient } from "@/api"
 import { apiBaseUrl } from "@/config"
 import { defaultBrowserTokenStore } from "@/api/tokenStore"
 import type { UserResponse } from "@/api/types"
+import { BrandLogo } from "@/components/BrandLogo"
 import { FoodsPage } from "@/components/food/FoodsPage"
 import { HistoryPage } from "@/components/history/HistoryPage"
 import { PlanPage } from "@/components/plan/PlanPage"
@@ -13,7 +14,6 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 
@@ -149,8 +149,8 @@ export function AuthShell({
   if (status.kind === "bootstrapping") {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle>quickapp</CardTitle>
+        <CardHeader className="items-center text-center">
+          <BrandLogo variant="full" className="mx-auto max-w-xs" />
           <CardDescription>Checking session…</CardDescription>
         </CardHeader>
         <CardContent>
@@ -166,9 +166,9 @@ export function AuthShell({
     return (
       <div className="flex w-full flex-col gap-8">
         <header className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="text-lg font-semibold tracking-tight">quickapp</p>
-            <p role="status" className="text-sm text-muted-foreground">
+          <div className="min-w-0">
+            <BrandLogo variant="compact" className="shrink-0" />
+            <p role="status" className="mt-1 text-sm text-muted-foreground">
               Signed in as {user.email}
             </p>
           </div>
@@ -240,8 +240,8 @@ export function AuthShell({
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>quickapp</CardTitle>
+      <CardHeader className="items-center text-center">
+        <BrandLogo variant="full" className="mx-auto max-w-xs sm:max-w-sm" />
         <CardDescription>
           {mode === "sign-in"
             ? "Sign in to plan tasting sessions from your laptop."

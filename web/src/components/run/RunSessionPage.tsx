@@ -11,6 +11,7 @@ import type {
   Texture,
 } from "@/api/types"
 import { FoodIcon } from "@/components/food/FoodIcon"
+import { BrandLogo } from "@/components/BrandLogo"
 import { RewardFlow } from "@/components/run/RewardFlow"
 import { IconChoiceStep, SpeechNoteStep } from "@/components/run/RunSteps"
 import { RUN_THEME } from "@/components/run/runTheme"
@@ -275,6 +276,7 @@ export function RunSessionPage({
     >
       <header className="run-header flex items-center justify-between gap-3 border-b border-border px-4 py-3">
         <div className="flex min-w-0 items-center gap-3">
+          <BrandLogo variant="compact" className="shrink-0" />
           {!inReward && currentFood ? (
             <FoodIcon
               iconKey={currentFood.iconKey}

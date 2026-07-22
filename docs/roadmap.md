@@ -37,13 +37,12 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | brand-identity | planned | 2026-07-21 · enhancement | Official logo + palette/fonts across web shell, run, and game chrome |
-| 2 | reward-match | planned | 2026-07-20 · re-rank split | Add Match (memory / 3-in-a-row lite) beside Catch + Cross |
-| 3 | custom-food-icons | planned | 2026-07-20 · enhancement | Distinctive on-brand food illustrations / run symbols (less stock emoji) |
-| 4 | pace-insights | planned | 2026-07-11 · initial | Parent dashboard: trends on what’s working; gentle suggestions you can ignore |
-| 5 | suggested-next-session | planned | 2026-07-11 · initial | App proposes next two foods + levels; parent approves or swaps |
-| 6 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
-| 7 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
+| 1 | reward-match | planned | 2026-07-20 · re-rank split | Add Match (memory / 3-in-a-row lite) beside Catch + Cross |
+| 2 | custom-food-icons | planned | 2026-07-20 · enhancement | Distinctive on-brand food illustrations / run symbols (less stock emoji) |
+| 3 | pace-insights | planned | 2026-07-11 · initial | Parent dashboard: trends on what’s working; gentle suggestions you can ignore |
+| 4 | suggested-next-session | planned | 2026-07-11 · initial | App proposes next two foods + levels; parent approves or swaps |
+| 5 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
+| 6 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
 
 Status values: `parking` · `planned` · `active` · `done` · `cancelled`  
 Added: `YYYY-MM-DD · initial` | `enhancement` | `re-rank split`
@@ -71,6 +70,7 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Completed | Spec |
 |----|-----------|------|
+| brand-identity | 2026-07-21 | [archive](specs/archive/brand-identity.md) |
 | reward-cross | 2026-07-21 | [archive](specs/archive/reward-cross.md) |
 | kid-run-ui | 2026-07-20 | [archive](specs/archive/kid-run-ui.md) |
 | reward-mini-games | 2026-07-19 | [archive](specs/archive/reward-mini-games.md) |
@@ -107,3 +107,4 @@ Only notable events (first carve-up, major re-rank, cancelled theme) — not eve
 | 2026-07-20 | Split `reward-cross-match` → `reward-cross` + `reward-match`; deprioritize `custom-food-icons`. Next up: `reward-cross`. |
 | 2026-07-21 | Added `brand-identity` (logo + palette/fonts on all web screens & games); ranked after active `reward-cross`, ahead of Match / custom icons. |
 | 2026-07-21 | reward-cross shipped (Cross + Catch/Cross/Surprise pick). Next up: `brand-identity`. |
+| 2026-07-21 | brand-identity shipped (logo + palette/fonts + button contrast). Next up: `reward-match`. |
