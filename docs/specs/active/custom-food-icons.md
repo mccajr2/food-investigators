@@ -95,7 +95,7 @@ Match, Surprise (e.g. `RunGameSymbol`). Sibling style to food icons.
       for Cheese pizza, Soft pretzels, Raspberries; tests.
 - [x] Web: Redraw / add SVG for all 10 hero `FoodIcon`s + labels; extend
       `FOOD_ICON_KEYS`.
-- [ ] Web: Catch / Cross / Match / Surprise SVG symbols; wire RewardFlow tiles.
+- [x] Web: Catch / Cross / Match / Surprise SVG symbols; wire RewardFlow tiles.
 - [ ] Tests: Hero smoke + new starters + Which game? symbols; keep foods / run /
       reward suites green.
 
