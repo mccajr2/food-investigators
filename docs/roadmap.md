@@ -37,12 +37,15 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | reward-match | planned | 2026-07-20 · re-rank split | Add Match (memory / 3-in-a-row lite) beside Catch + Cross |
-| 2 | custom-food-icons | planned | 2026-07-20 · enhancement | Distinctive on-brand food illustrations / run symbols (less stock emoji) |
-| 3 | pace-insights | planned | 2026-07-11 · initial | Parent dashboard: trends on what’s working; gentle suggestions you can ignore |
-| 4 | suggested-next-session | planned | 2026-07-11 · initial | App proposes next two foods + levels; parent approves or swaps |
-| 5 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
-| 6 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
+| 1 | reward-game-audio | planned | 2026-07-21 · enhancement | Richer Catch/Cross SFX + beds (ouch, cheer, catch blip, distinct Catch music) |
+| 2 | reward-game-visuals | planned | 2026-07-21 · enhancement | Catch basket, diverse Cross obstacles, consistent celebrate/HUD text |
+| 3 | reward-high-scores | planned | 2026-07-21 · enhancement | Local best/recent scores per Catch & Cross for something to beat |
+| 4 | reward-match | planned | 2026-07-20 · re-rank split | Add Match (memory / 3-in-a-row lite) beside Catch + Cross |
+| 5 | custom-food-icons | planned | 2026-07-20 · enhancement | Distinctive on-brand food illustrations / run symbols (less stock emoji) |
+| 6 | pace-insights | planned | 2026-07-11 · initial | Parent dashboard: trends on what’s working; gentle suggestions you can ignore |
+| 7 | suggested-next-session | planned | 2026-07-11 · initial | App proposes next two foods + levels; parent approves or swaps |
+| 8 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
+| 9 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
 
 Status values: `parking` · `planned` · `active` · `done` · `cancelled`  
 Added: `YYYY-MM-DD · initial` | `enhancement` | `re-rank split`
@@ -58,6 +61,11 @@ Unranked ideas. Promote into **Upcoming** with `/roadmap` (re-rank).
 | multi-child-profiles | 2026-07-11 · initial | More than one kid under one household |
 | app-driven-schedule | 2026-07-11 · initial | App owns the calendar; parent mostly follows (after suggestions prove useful) |
 | free-play-games | 2026-07-11 · initial | Play mini-games outside a tasting reward |
+| reward-combo-streaks | 2026-07-21 · enhancement | Short combo / streak feedback in Catch or Cross for momentum |
+| reward-difficulty-ramp | 2026-07-21 · enhancement | Gentle mid-round speed/pattern ramp without harsh fail loops |
+| reward-mute-control | 2026-07-21 · enhancement | Parent mute / volume for reward game audio |
+| reward-scores-sync | 2026-07-21 · enhancement | Household-synced high scores via API (after local scores prove useful) |
+| reward-celebrate-fx | 2026-07-21 · enhancement | Light confetti / motion-lines on cheer moments (brand motion style) |
 
 ## Active specs
 
@@ -108,3 +116,4 @@ Only notable events (first carve-up, major re-rank, cancelled theme) — not eve
 | 2026-07-21 | Added `brand-identity` (logo + palette/fonts on all web screens & games); ranked after active `reward-cross`, ahead of Match / custom icons. |
 | 2026-07-21 | reward-cross shipped (Cross + Catch/Cross/Surprise pick). Next up: `brand-identity`. |
 | 2026-07-21 | brand-identity shipped (logo + palette/fonts + button contrast). Next up: `reward-match`. |
+| 2026-07-21 | Split Catch/Cross polish into `reward-game-audio` → `reward-game-visuals` → `reward-high-scores` (ahead of Match). Next up: `reward-game-audio`. |
