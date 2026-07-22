@@ -51,6 +51,9 @@ export const FOOD_ICON_KEYS = [
   "carrot",
   "corn",
   "sweet_potato",
+  "cheese_pizza",
+  "soft_pretzel",
+  "raspberry",
 ] as const
 
 export type FoodIconKey = (typeof FOOD_ICON_KEYS)[number]

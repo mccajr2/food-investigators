@@ -93,7 +93,7 @@ Match, Surprise (e.g. `RunGameSymbol`). Sibling style to food icons.
 
 - [x] Backend + contract alignment: add three icon keys to allowlist; Flyway seed
       for Cheese pizza, Soft pretzels, Raspberries; tests.
-- [ ] Web: Redraw / add SVG for all 10 hero `FoodIcon`s + labels; extend
+- [x] Web: Redraw / add SVG for all 10 hero `FoodIcon`s + labels; extend
       `FOOD_ICON_KEYS`.
 - [ ] Web: Catch / Cross / Match / Surprise SVG symbols; wire RewardFlow tiles.
 - [ ] Tests: Hero smoke + new starters + Which game? symbols; keep foods / run /

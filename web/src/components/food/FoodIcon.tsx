@@ -10,6 +10,33 @@ import {
 } from "@/lib/generatedFoodIcon"
 import { cn } from "@/lib/utils"
 
+/** Logo palette hexes (from `--brand-*` oklch tokens) for inline SVG fills. */
+const B = {
+  navy: "#153160",
+  cream: "#F7F2E3",
+  lime: "#7AB953",
+  coral: "#DE4E4B",
+  amber: "#E48E26",
+  sky: "#5BB0D7",
+  white: "#FFFEF8",
+  crust: "#C56A1E",
+  chip: "#3A2A1C",
+} as const
+
+/** His top-10 eat list — logo-aligned art this PR. */
+export const HERO_FOOD_ICON_KEYS = [
+  "strawberry",
+  "banana",
+  "ramen",
+  "bagel_cream_cheese",
+  "yogurt_plain",
+  "pancakes_choc_chip",
+  "cheese_pizza",
+  "soft_pretzel",
+  "chicken_tenders",
+  "raspberry",
+] as const satisfies readonly FoodIconKey[]
+
 export const FOOD_ICON_LABELS: Record<FoodIconKey, string> = {
   bagel_cream_cheese: "Bagel and cream cheese",
   ramen: "Instant ramen",
@@ -31,6 +58,9 @@ export const FOOD_ICON_LABELS: Record<FoodIconKey, string> = {
   carrot: "Carrot",
   corn: "Corn",
   sweet_potato: "Sweet potato",
+  cheese_pizza: "Cheese pizza",
+  soft_pretzel: "Soft pretzels",
+  raspberry: "Raspberries",
 }
 
 type SvgProps = { className?: string }
@@ -62,21 +92,50 @@ const icons: Record<FoodIconKey, (props: SvgProps) => ReactElement> = {
     </Frame>
   ),
   strawberry: (p) => (
-    <Frame {...p} bg="#F8D6DC">
-      <path d="M32 18c8 2 16 10 16 20 0 8-7 14-16 14S16 46 16 38c0-10 8-18 16-20z" fill="#E23B4A" />
-      <path d="M24 18c4-6 12-6 16 0-5 2-11 2-16 0z" fill="#3F7A3C" />
-      <circle cx="26" cy="34" r="1.5" fill="#fff" />
-      <circle cx="34" cy="40" r="1.5" fill="#fff" />
-      <circle cx="38" cy="30" r="1.5" fill="#fff" />
+    <Frame {...p} bg="#F8E4E2">
+      <path
+        d="M32 16c9 2 18 12 18 24 0 10-8 16-18 16S14 50 14 40c0-12 9-22 18-24z"
+        fill={B.coral}
+      />
+      <path
+        d="M32 16c9 2 18 12 18 24 0 10-8 16-18 16"
+        fill="#C93C3A"
+        opacity="0.35"
+      />
+      <path
+        d="M22 18c5-8 15-8 20 0-6 3-14 3-20 0z"
+        fill={B.lime}
+      />
+      <ellipse cx="28" cy="14" rx="3" ry="5" fill={B.lime} transform="rotate(-20 28 14)" />
+      <ellipse cx="36" cy="14" rx="3" ry="5" fill={B.lime} transform="rotate(18 36 14)" />
+      <circle cx="26" cy="34" r="1.6" fill={B.cream} />
+      <circle cx="34" cy="42" r="1.6" fill={B.cream} />
+      <circle cx="38" cy="30" r="1.6" fill={B.cream} />
+      <circle cx="28" cy="44" r="1.4" fill={B.cream} />
+      <circle cx="36" cy="36" r="1.4" fill={B.cream} />
     </Frame>
   ),
   banana: (p) => (
-    <Frame {...p} bg="#FFF1C9">
+    <Frame {...p} bg="#FFF4DC">
       <path
-        d="M18 40c6 10 22 14 30 4 2-2 2-6 0-8-8 8-20 6-26-2-2 2-4 4-4 6z"
-        fill="#F2C14E"
+        d="M16 38c4 12 24 18 34 6 3-3 2-8-1-10-10 10-24 8-30-2-2 2-4 4-3 6z"
+        fill={B.amber}
       />
-      <path d="M46 34c2 0 4 2 4 4" stroke="#C9932A" strokeWidth="2" fill="none" />
+      <path
+        d="M20 36c6 8 18 10 26 2"
+        stroke="#F6C46A"
+        strokeWidth="3"
+        fill="none"
+        strokeLinecap="round"
+      />
+      <path
+        d="M48 32c3 1 5 4 5 7"
+        stroke={B.navy}
+        strokeWidth="2.5"
+        fill="none"
+        strokeLinecap="round"
+      />
+      <circle cx="17" cy="39" r="2.5" fill={B.navy} />
     </Frame>
   ),
   blueberry: (p) => (
@@ -124,10 +183,28 @@ const icons: Record<FoodIconKey, (props: SvgProps) => ReactElement> = {
     </Frame>
   ),
   bagel_cream_cheese: (p) => (
-    <Frame {...p} bg="#F3E2C8">
-      <circle cx="32" cy="34" r="16" fill="#D2A06A" />
-      <circle cx="32" cy="34" r="9" fill="#F7F2E8" />
-      <circle cx="32" cy="34" r="4" fill="#F3E2C8" />
+    <Frame {...p} bg="#F4E8D4">
+      <ellipse cx="32" cy="36" rx="20" ry="18" fill={B.amber} />
+      <ellipse cx="32" cy="36" rx="20" ry="18" fill={B.crust} opacity="0.25" />
+      <ellipse cx="32" cy="36" rx="8" ry="7" fill="#F4E8D4" />
+      <path
+        d="M18 30c4-6 10-8 16-6 6 2 10 2 14-1"
+        stroke={B.white}
+        strokeWidth="7"
+        fill="none"
+        strokeLinecap="round"
+        opacity="0.95"
+      />
+      <path
+        d="M20 38c5 4 12 5 18 2"
+        stroke={B.cream}
+        strokeWidth="5"
+        fill="none"
+        strokeLinecap="round"
+      />
+      <circle cx="24" cy="26" r="1.4" fill={B.navy} opacity="0.45" />
+      <circle cx="40" cy="28" r="1.4" fill={B.navy} opacity="0.45" />
+      <circle cx="36" cy="44" r="1.4" fill={B.navy} opacity="0.45" />
     </Frame>
   ),
   toast: (p) => (
@@ -137,18 +214,73 @@ const icons: Record<FoodIconKey, (props: SvgProps) => ReactElement> = {
     </Frame>
   ),
   ramen: (p) => (
-    <Frame {...p} bg="#F8E6D8">
-      <ellipse cx="32" cy="42" rx="18" ry="8" fill="#C46A3A" />
-      <path d="M14 34c0-10 8-18 18-18s18 8 18 18" fill="#E08955" />
-      <path d="M22 30c4 2 8 2 12 0M24 36c4 2 8 2 12 0" stroke="#F2C14E" strokeWidth="2" />
-      <path d="M40 18v16M44 20v14" stroke="#222" strokeWidth="2" />
+    <Frame {...p} bg="#FFE8D8">
+      <ellipse cx="32" cy="46" rx="20" ry="7" fill={B.coral} />
+      <path
+        d="M12 36c0-12 9-20 20-20s20 8 20 20"
+        fill={B.amber}
+      />
+      <path
+        d="M14 36c2-10 9-16 18-16s16 6 18 16"
+        fill="#F6B85A"
+        opacity="0.55"
+      />
+      <path
+        d="M20 32c5 3 10 3 16 0M22 38c4 2 10 2 14 0"
+        stroke={B.cream}
+        strokeWidth="2.5"
+        fill="none"
+        strokeLinecap="round"
+      />
+      <circle cx="26" cy="28" r="3" fill={B.lime} />
+      <circle cx="38" cy="30" r="2.5" fill={B.coral} />
+      <path
+        d="M42 14v22M48 16v20"
+        stroke={B.navy}
+        strokeWidth="2.5"
+        strokeLinecap="round"
+      />
     </Frame>
   ),
   chicken_tenders: (p) => (
-    <Frame {...p} bg="#F8E6D0">
-      <rect x="18" y="22" width="10" height="26" rx="5" fill="#D2A06A" transform="rotate(-12 23 35)" />
-      <rect x="30" y="20" width="10" height="28" rx="5" fill="#C9932A" transform="rotate(8 35 34)" />
-      <rect x="40" y="24" width="10" height="24" rx="5" fill="#D2A06A" transform="rotate(-6 45 36)" />
+    <Frame {...p} bg="#FFE9D4">
+      <rect
+        x="16"
+        y="20"
+        width="11"
+        height="30"
+        rx="5.5"
+        fill={B.amber}
+        transform="rotate(-14 21.5 35)"
+      />
+      <rect
+        x="28"
+        y="16"
+        width="12"
+        height="34"
+        rx="6"
+        fill="#F0A84A"
+        transform="rotate(6 34 33)"
+      />
+      <rect
+        x="40"
+        y="22"
+        width="11"
+        height="28"
+        rx="5.5"
+        fill={B.amber}
+        transform="rotate(-8 45.5 36)"
+      />
+      <ellipse cx="22" cy="24" rx="3" ry="2" fill="#F6C46A" transform="rotate(-14 22 24)" />
+      <ellipse cx="34" cy="20" rx="3.5" ry="2" fill="#F8D090" transform="rotate(6 34 20)" />
+      <path
+        d="M48 48c4 2 8 1 10-2"
+        stroke={B.coral}
+        strokeWidth="3"
+        fill="none"
+        strokeLinecap="round"
+        opacity="0.7"
+      />
     </Frame>
   ),
   chicken_nuggets: (p) => (
@@ -166,13 +298,24 @@ const icons: Record<FoodIconKey, (props: SvgProps) => ReactElement> = {
     </Frame>
   ),
   pancakes_choc_chip: (p) => (
-    <Frame {...p} bg="#FFF1D6">
-      <ellipse cx="32" cy="40" rx="18" ry="6" fill="#D2A06A" />
-      <ellipse cx="32" cy="34" rx="18" ry="6" fill="#E0B070" />
-      <ellipse cx="32" cy="28" rx="18" ry="6" fill="#F0D19A" />
-      <circle cx="26" cy="28" r="2" fill="#4A2C1A" />
-      <circle cx="36" cy="32" r="2" fill="#4A2C1A" />
-      <circle cx="30" cy="36" r="2" fill="#4A2C1A" />
+    <Frame {...p} bg="#FFF3DC">
+      <ellipse cx="32" cy="44" rx="20" ry="7" fill={B.crust} />
+      <ellipse cx="32" cy="36" rx="20" ry="7" fill={B.amber} />
+      <ellipse cx="32" cy="28" rx="20" ry="7" fill="#F0B85A" />
+      <ellipse cx="32" cy="22" rx="18" ry="6" fill="#F6C97A" />
+      <circle cx="24" cy="22" r="2.2" fill={B.chip} />
+      <circle cx="34" cy="26" r="2.2" fill={B.chip} />
+      <circle cx="28" cy="32" r="2" fill={B.chip} />
+      <circle cx="38" cy="34" r="2" fill={B.chip} />
+      <circle cx="30" cy="40" r="1.8" fill={B.chip} />
+      <path
+        d="M40 18c4-1 8 2 8 6"
+        stroke={B.amber}
+        strokeWidth="3"
+        fill="none"
+        strokeLinecap="round"
+        opacity="0.85"
+      />
     </Frame>
   ),
   waffle: (p) => (
@@ -182,9 +325,31 @@ const icons: Record<FoodIconKey, (props: SvgProps) => ReactElement> = {
     </Frame>
   ),
   yogurt_plain: (p) => (
-    <Frame {...p} bg="#E8F2F4">
-      <path d="M22 20h20l4 28H18z" fill="#F7F7F2" stroke="#C5D0D4" strokeWidth="2" />
-      <ellipse cx="32" cy="20" rx="10" ry="4" fill="#FFFFFF" stroke="#C5D0D4" strokeWidth="2" />
+    <Frame {...p} bg="#E6F3F7">
+      <path
+        d="M20 24h24l5 26a6 6 0 0 1-6 6H21a6 6 0 0 1-6-6z"
+        fill={B.white}
+        stroke={B.sky}
+        strokeWidth="2"
+      />
+      <ellipse
+        cx="32"
+        cy="24"
+        rx="12"
+        ry="5"
+        fill={B.cream}
+        stroke={B.sky}
+        strokeWidth="2"
+      />
+      <ellipse cx="32" cy="24" rx="7" ry="2.5" fill={B.white} />
+      <path
+        d="M24 38c3 4 13 4 16 0"
+        stroke={B.sky}
+        strokeWidth="2"
+        fill="none"
+        strokeLinecap="round"
+        opacity="0.5"
+      />
     </Frame>
   ),
   yogurt_vanilla: (p) => (
@@ -198,6 +363,69 @@ const icons: Record<FoodIconKey, (props: SvgProps) => ReactElement> = {
       <path d="M20 24h24v20a8 8 0 0 1-8 8H28a8 8 0 0 1-8-8z" fill="#E8B86D" />
       <ellipse cx="32" cy="24" rx="12" ry="5" fill="#F0D19A" />
       <circle cx="32" cy="36" r="6" fill="#D94A3D" opacity="0.35" />
+    </Frame>
+  ),
+  cheese_pizza: (p) => (
+    <Frame {...p} bg="#FFE8D6">
+      <path d="M32 12L52 48H12z" fill={B.crust} />
+      <path d="M32 18L46 44H18z" fill={B.amber} />
+      <path d="M32 22L42 42H22z" fill="#F6C46A" />
+      <circle cx="30" cy="32" r="2.2" fill={B.lime} />
+      <circle cx="36" cy="38" r="2" fill={B.lime} />
+      <circle cx="28" cy="40" r="1.8" fill={B.lime} />
+      <path
+        d="M24 36c3-2 6-1 8 1"
+        stroke={B.cream}
+        strokeWidth="2"
+        fill="none"
+        strokeLinecap="round"
+        opacity="0.8"
+      />
+    </Frame>
+  ),
+  soft_pretzel: (p) => (
+    <Frame {...p} bg="#FFF0DC">
+      <path
+        d="M20 40c-4-10 2-22 14-24 10-2 18 6 16 16-1 6-6 10-12 10-8 0-12-6-10-12 1-4 6-6 10-4"
+        fill="none"
+        stroke={B.amber}
+        strokeWidth="7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M22 42c-2-8 4-18 12-20 8-2 14 4 13 12"
+        fill="none"
+        stroke={B.crust}
+        strokeWidth="3"
+        strokeLinecap="round"
+        opacity="0.45"
+      />
+      <circle cx="28" cy="28" r="1.5" fill={B.cream} />
+      <circle cx="36" cy="24" r="1.5" fill={B.cream} />
+      <circle cx="40" cy="32" r="1.5" fill={B.cream} />
+      <circle cx="32" cy="36" r="1.4" fill={B.cream} />
+      <circle cx="24" cy="36" r="1.4" fill={B.cream} />
+    </Frame>
+  ),
+  raspberry: (p) => (
+    <Frame {...p} bg="#F8E2E8">
+      <circle cx="26" cy="30" r="7" fill={B.coral} />
+      <circle cx="36" cy="28" r="7" fill="#C93C4A" />
+      <circle cx="30" cy="38" r="7" fill="#E45A58" />
+      <circle cx="38" cy="38" r="6" fill={B.coral} />
+      <circle cx="22" cy="38" r="5.5" fill="#C93C4A" />
+      <circle cx="32" cy="24" r="5" fill="#E45A58" />
+      <path
+        d="M32 14c0 6-2 10-4 12"
+        stroke={B.lime}
+        strokeWidth="3"
+        fill="none"
+        strokeLinecap="round"
+      />
+      <ellipse cx="30" cy="14" rx="4" ry="2.5" fill={B.lime} />
+      <circle cx="26" cy="28" r="1.2" fill={B.cream} opacity="0.7" />
+      <circle cx="34" cy="34" r="1.2" fill={B.cream} opacity="0.7" />
     </Frame>
   ),
 }
