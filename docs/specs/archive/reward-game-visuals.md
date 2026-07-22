@@ -1,6 +1,6 @@
 # Spec: reward-game-visuals
 
-Status: draft  
+Status: done  
 Created: 2026-07-21  
 Parent: [docs/roadmap.md](../../roadmap.md)  
 Added: 2026-07-21 · enhancement
@@ -69,31 +69,31 @@ light Cross board pattern upgrade.
 
 ## Acceptance criteria
 
-- [ ] Catch catcher reads as a **basket/bowl** (not a flat paddle bar) while
+- [x] Catch catcher reads as a **basket/bowl** (not a flat paddle bar) while
       play; falling pieces still use `FoodIcon` for the theme food.
-- [ ] Catch hit detection remains fair (same effective catch band unless a
+- [x] Catch hit detection remains fair (same effective catch band unless a
       documented tiny tweak); Left/Right / pointer controls still work.
-- [ ] Cross moving hazards include **≥3 visually distinct kinds**.
-- [ ] Cross includes **static** obstacles; contact still bumps home (forgiving).
-- [ ] Every active pattern has **≥1 static obstacle in the starting column** on
+- [x] Cross moving hazards include **≥3 visually distinct kinds**.
+- [x] Cross includes **static** obstacles; contact still bumps home (forgiving).
+- [x] Every active pattern has **≥1 static obstacle in the starting column** on
       a traffic lane so straight-up alone cannot reach the goal (L/R required).
-- [ ] After each successful crossing, the **static pattern changes** (next
+- [x] After each successful crossing, the **static pattern changes** (next
       layout); still solvable and forgiving.
-- [ ] Catch and Cross finish titles + HUD score/timer lines use a **consistent**
+- [x] Catch and Cross finish titles + HUD score/timer lines use a **consistent**
       run-prompt / brand type hierarchy (parallel layout/classes).
-- [ ] No OpenAPI / backend / audio module changes required for this PR.
-- [ ] Catch + Cross (+ reward) tests stay green; assertions cover basket,
+- [x] No OpenAPI / backend / audio module changes required for this PR.
+- [x] Catch + Cross (+ reward) tests stay green; assertions cover basket,
       multi-kind movers, start-column static gate, and post-crossing pattern
       change.
 
 ## Tasks
 
-- [ ] Web: Catch basket silhouette + kitchen-run CSS; keep hitbox fair; update
+- [x] Web: Catch basket silhouette + kitchen-run CSS; keep hitbox fair; update
       Catch smoke tests.
-- [ ] Web: Cross moving hazard kinds (≥3) + static obstacles; start-column
+- [x] Web: Cross moving hazard kinds (≥3) + static obstacles; start-column
       static gate; pattern advances after each crossing; helper + UI tests.
-- [ ] Web: Align Catch/Cross HUD + finish / celebrate typography classes.
-- [ ] Tests: Basket, multi-kind, start-column static, pattern-after-crossing;
+- [x] Web: Align Catch/Cross HUD + finish / celebrate typography classes.
+- [x] Tests: Basket, multi-kind, start-column static, pattern-after-crossing;
       keep Catch/Cross/reward suites green.
 
 ## Decisions (locked)

@@ -3,6 +3,14 @@ import { useEffect, useRef, useState } from "react"
 import type { SessionFoodResponse } from "@/api/types"
 import { FoodIcon } from "@/components/food/FoodIcon"
 import { createCrossAudio } from "@/components/run/crossAudio"
+import {
+  RUN_GAME_CELEBRATE,
+  RUN_GAME_FINISH_SUB,
+  RUN_GAME_FINISH_TITLE,
+  RUN_GAME_HUD,
+  RUN_GAME_THEME,
+  RUN_GAME_TITLE,
+} from "@/components/run/runTheme"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
@@ -17,17 +25,39 @@ const CHEER_THEN_STOP_MS = 650
 const TICK_MS = 80
 const HAZARD_STEP_EVERY_MS = 400
 
+export type HazardKind = "block" | "car" | "puddle"
+
+export const HAZARD_KINDS: readonly HazardKind[] = [
+  "block",
+  "car",
+  "puddle",
+] as const
+
+export const HAZARD_GLYPH: Record<HazardKind, string> = {
+  block: "▨",
+  car: "🚗",
+  puddle: "💧",
+}
+
+export type StaticCell = {
+  lane: number
+  col: number
+}
+
 type Hazard = {
   id: number
   lane: number
   col: number
   dir: 1 | -1
+  kind: HazardKind
 }
 
 export type CrossBoard = {
   playerLane: number
   playerCol: number
   hazards: Hazard[]
+  statics: StaticCell[]
+  patternIndex: number
   crossings: number
 }
 
@@ -40,12 +70,93 @@ type CrossGameProps = {
   roundMs?: number
 }
 
+/** Start / home column (center). */
+export function startColumn(): number {
+  return Math.floor(CROSS_COLS / 2)
+}
+
+/**
+ * Static layouts — each includes ≥1 cell in the start column on a traffic lane
+ * so straight-up alone cannot reach the goal.
+ */
+export const STATIC_PATTERNS: readonly StaticCell[][] = [
+  [
+    { lane: 2, col: 2 },
+    { lane: 3, col: 0 },
+    { lane: 4, col: 4 },
+  ],
+  [
+    { lane: 1, col: 2 },
+    { lane: 3, col: 3 },
+    { lane: 4, col: 1 },
+  ],
+  [
+    { lane: 2, col: 2 },
+    { lane: 1, col: 4 },
+    { lane: 3, col: 1 },
+  ],
+  [
+    { lane: 3, col: 2 },
+    { lane: 2, col: 0 },
+    { lane: 4, col: 3 },
+  ],
+]
+
+export function staticsForPattern(index: number): StaticCell[] {
+  const pattern = STATIC_PATTERNS[index % STATIC_PATTERNS.length] ?? []
+  return pattern.map((cell) => ({ ...cell }))
+}
+
+/** True when a traffic-lane static sits in the starting column. */
+export function patternHasStartColumnStatic(statics: StaticCell[]): boolean {
+  const col = startColumn()
+  return statics.some(
+    (cell) => cell.col === col && cell.lane > 0 && cell.lane < GOAL_LANE,
+  )
+}
+
 export function initialCrossBoard(): CrossBoard {
   return {
     playerLane: 0,
-    playerCol: Math.floor(CROSS_COLS / 2),
+    playerCol: startColumn(),
     hazards: [],
+    statics: staticsForPattern(0),
+    patternIndex: 0,
     crossings: 0,
+  }
+}
+
+export function cellHasStatic(
+  statics: StaticCell[],
+  lane: number,
+  col: number,
+): boolean {
+  return statics.some((cell) => cell.lane === lane && cell.col === col)
+}
+
+export function playerHitObstacle(board: CrossBoard): boolean {
+  if (
+    cellHasStatic(board.statics, board.playerLane, board.playerCol)
+  ) {
+    return true
+  }
+  return board.hazards.some(
+    (hazard) =>
+      hazard.lane === board.playerLane && hazard.col === board.playerCol,
+  )
+}
+
+/** @deprecated use playerHitObstacle — kept name alias for clarity in call sites. */
+export function playerHitHazard(board: CrossBoard): boolean {
+  return playerHitObstacle(board)
+}
+
+/** Forgiving bump: send player back to the start pad. */
+export function resetPlayerAfterHit(board: CrossBoard): CrossBoard {
+  return {
+    ...board,
+    playerLane: 0,
+    playerCol: startColumn(),
   }
 }
 
@@ -63,31 +174,18 @@ export function movePlayer(board: CrossBoard, move: CrossMove): CrossBoard {
 
   const next = { ...board, playerLane, playerCol }
   if (playerLane === GOAL_LANE) {
+    const patternIndex = (board.patternIndex + 1) % STATIC_PATTERNS.length
     return {
       ...next,
       playerLane: 0,
-      playerCol: Math.floor(CROSS_COLS / 2),
+      playerCol: startColumn(),
       crossings: board.crossings + 1,
+      patternIndex,
+      statics: staticsForPattern(patternIndex),
+      hazards: [],
     }
   }
   return next
-}
-
-/** True when player shares a cell with a hazard. */
-export function playerHitHazard(board: CrossBoard): boolean {
-  return board.hazards.some(
-    (hazard) =>
-      hazard.lane === board.playerLane && hazard.col === board.playerCol,
-  )
-}
-
-/** Forgiving bump: send player back to the start pad. */
-export function resetPlayerAfterHit(board: CrossBoard): CrossBoard {
-  return {
-    ...board,
-    playerLane: 0,
-    playerCol: Math.floor(CROSS_COLS / 2),
-  }
 }
 
 /** Pure hazard step — safe under Strict Mode double-invoked updaters. */
@@ -98,12 +196,15 @@ export function advanceHazards(board: CrossBoard): CrossBoard {
       if (col < 0 || col >= CROSS_COLS) {
         return null
       }
+      if (cellHasStatic(board.statics, hazard.lane, col)) {
+        return null
+      }
       return { ...hazard, col }
     })
     .filter((hazard): hazard is Hazard => hazard !== null)
 
   const next: CrossBoard = { ...board, hazards: moved }
-  if (playerHitHazard(next)) {
+  if (playerHitObstacle(next)) {
     return resetPlayerAfterHit(next)
   }
   return next
@@ -121,12 +222,17 @@ export function spawnHazard(
   const lane = trafficLanes[Math.floor(random() * trafficLanes.length)] ?? 1
   const dir: 1 | -1 = random() < 0.5 ? 1 : -1
   const col = dir === 1 ? 0 : CROSS_COLS - 1
-  const hazard: Hazard = { id, lane, col, dir }
+  if (cellHasStatic(board.statics, lane, col)) {
+    return board
+  }
+  const kind =
+    HAZARD_KINDS[Math.floor(random() * HAZARD_KINDS.length)] ?? "block"
+  const hazard: Hazard = { id, lane, col, dir, kind }
   const next: CrossBoard = {
     ...board,
     hazards: [...board.hazards, hazard],
   }
-  if (playerHitHazard(next)) {
+  if (playerHitObstacle(next)) {
     return resetPlayerAfterHit(next)
   }
   return next
@@ -201,7 +307,7 @@ export function CrossGame({
 
     setBoard((current) => {
       const moved = movePlayer(current, move)
-      if (playerHitHazard(moved)) {
+      if (playerHitObstacle(moved)) {
         window.setTimeout(() => {
           audio?.playOuch()
         }, 0)
@@ -334,15 +440,15 @@ export function CrossGame({
             className="size-12 shrink-0"
           />
           <div className="min-w-0">
-            <h2 className="run-prompt text-xl md:text-2xl">Cross</h2>
-            <p className="truncate text-sm text-muted-foreground">
-              Theme: {themeLabel}
-            </p>
+            <h2 className={RUN_GAME_TITLE}>Cross</h2>
+            <p className={RUN_GAME_THEME}>Theme: {themeLabel}</p>
           </div>
         </div>
-        <div className="run-prompt flex items-center gap-4 text-base font-medium md:text-lg">
+        <div className={RUN_GAME_HUD}>
           <p aria-live="polite">Crossings: {board.crossings}</p>
-          <p aria-live="polite">{finished ? "Time!" : `${remainingSec}s`}</p>
+          <p aria-live="polite">
+            {finished ? "Time!" : `${remainingSec}s`}
+          </p>
         </div>
       </div>
 
@@ -351,8 +457,8 @@ export function CrossGame({
           className="run-enter flex flex-1 flex-col items-center justify-center gap-4 text-center"
           aria-label="Cross finished"
         >
-          <p className="run-prompt text-3xl md:text-4xl">Nice crossing!</p>
-          <p className="text-lg text-muted-foreground">
+          <p className={RUN_GAME_FINISH_TITLE}>Nice crossing!</p>
+          <p className={RUN_GAME_FINISH_SUB}>
             You crossed {board.crossings} time
             {board.crossings === 1 ? "" : "s"}.
           </p>
@@ -380,7 +486,10 @@ export function CrossGame({
           >
             {celebrating ? (
               <p
-                className="cross-celebrate-banner run-prompt pointer-events-none absolute inset-x-0 top-3 z-10 text-center text-2xl md:text-3xl"
+                className={cn(
+                  "cross-celebrate-banner pointer-events-none absolute inset-x-0 top-3 z-10 text-center",
+                  RUN_GAME_CELEBRATE,
+                )}
                 aria-live="polite"
               >
                 Crossed!
@@ -408,18 +517,34 @@ export function CrossGame({
                     const hazard = board.hazards.find(
                       (item) => item.lane === lane && item.col === col,
                     )
+                    const isStatic = cellHasStatic(board.statics, lane, col)
                     return (
                       <div
                         key={col}
                         className="relative flex items-center justify-center"
                       >
-                        {hazard ? (
+                        {isStatic ? (
                           <span
-                            className="run-catcher flex size-10 items-center justify-center text-lg md:size-12"
-                            data-testid="cross-hazard"
+                            className="run-cross-static flex size-10 items-center justify-center text-lg md:size-12"
+                            data-testid="cross-static"
+                            data-lane={lane}
+                            data-col={col}
                             aria-hidden
                           >
-                            ▨
+                            🪨
+                          </span>
+                        ) : null}
+                        {hazard ? (
+                          <span
+                            className={cn(
+                              "run-cross-hazard flex size-10 items-center justify-center text-lg md:size-12",
+                              `run-cross-hazard--${hazard.kind}`,
+                            )}
+                            data-testid="cross-hazard"
+                            data-kind={hazard.kind}
+                            aria-hidden
+                          >
+                            {HAZARD_GLYPH[hazard.kind]}
                           </span>
                         ) : null}
                         {hasPlayer ? (

@@ -184,6 +184,62 @@
   background: oklch(0.72 0.1 230 / 0.3);
 }
 
+[data-theme="kitchen-run"] .run-cross-static {
+  border-radius: 0.85rem;
+  border: 3px solid oklch(0.45 0.04 260);
+  background: oklch(0.72 0.03 90 / 0.85);
+}
+
+[data-theme="kitchen-run"] .run-cross-hazard {
+  border-radius: 1rem;
+  border: 3px solid var(--primary);
+  background: oklch(0.72 0.1 230 / 0.3);
+}
+
+[data-theme="kitchen-run"] .run-cross-hazard--car {
+  background: oklch(0.78 0.12 25 / 0.35);
+  border-color: var(--brand-coral);
+}
+
+[data-theme="kitchen-run"] .run-cross-hazard--puddle {
+  background: oklch(0.78 0.1 230 / 0.4);
+  border-color: var(--brand-sky);
+  border-radius: 999px;
+}
+
+/* Catch basket silhouette — hitbox still uses CATCHER_WIDTH; this is visual only. */
+[data-theme="kitchen-run"] .run-basket {
+  display: flex;
+  height: 2.75rem;
+  flex-direction: column;
+  align-items: stretch;
+  pointer-events: none;
+}
+
+[data-theme="kitchen-run"] .run-basket-rim {
+  z-index: 1;
+  height: 0.5rem;
+  border-radius: 999px;
+  border: 2px solid var(--primary);
+  background: var(--brand-amber);
+  box-shadow: 0 1px 0 oklch(1 0 0 / 0.35);
+}
+
+[data-theme="kitchen-run"] .run-basket-bowl {
+  flex: 1;
+  margin: -3px 10% 0;
+  border: 3px solid var(--primary);
+  border-top: none;
+  border-radius: 0 0 1.35rem 1.35rem;
+  background: linear-gradient(
+    180deg,
+    oklch(0.88 0.08 65 / 0.65),
+    oklch(0.72 0.12 65 / 0.45)
+  );
+  clip-path: polygon(2% 0, 98% 0, 86% 100%, 14% 100%);
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.35);
+}
+
 [data-theme="kitchen-run"] .cross-celebrate {
   animation: cross-celebrate-pulse 0.55s ease-out;
 }
