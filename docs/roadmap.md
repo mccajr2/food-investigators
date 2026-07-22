@@ -37,14 +37,13 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | reward-game-visuals | planned | 2026-07-21 · enhancement | Catch basket, diverse Cross obstacles, consistent celebrate/HUD text |
-| 2 | reward-high-scores | planned | 2026-07-21 · enhancement | Local best/recent scores per Catch & Cross for something to beat |
-| 3 | reward-match | planned | 2026-07-20 · re-rank split | Add Match (memory / 3-in-a-row lite) beside Catch + Cross |
-| 4 | custom-food-icons | planned | 2026-07-20 · enhancement | Distinctive on-brand food illustrations / run symbols (less stock emoji) |
-| 5 | pace-insights | planned | 2026-07-11 · initial | Parent dashboard: trends on what’s working; gentle suggestions you can ignore |
-| 6 | suggested-next-session | planned | 2026-07-11 · initial | App proposes next two foods + levels; parent approves or swaps |
-| 7 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
-| 8 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
+| 1 | reward-high-scores | planned | 2026-07-21 · enhancement | Local best/recent scores per Catch & Cross for something to beat |
+| 2 | reward-match | planned | 2026-07-20 · re-rank split | Add Match (memory / 3-in-a-row lite) beside Catch + Cross |
+| 3 | custom-food-icons | planned | 2026-07-20 · enhancement | Distinctive on-brand food illustrations / run symbols (less stock emoji) |
+| 4 | pace-insights | planned | 2026-07-11 · initial | Parent dashboard: trends on what’s working; gentle suggestions you can ignore |
+| 5 | suggested-next-session | planned | 2026-07-11 · initial | App proposes next two foods + levels; parent approves or swaps |
+| 6 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
+| 7 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
 
 Status values: `parking` · `planned` · `active` · `done` · `cancelled`  
 Added: `YYYY-MM-DD · initial` | `enhancement` | `re-rank split`
@@ -72,11 +71,13 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Branch | Spec |
 |----|--------|------|
+| — | — | _(none)_ |
 
 ## Done
 
 | Id | Completed | Spec |
 |----|-----------|------|
+| reward-game-visuals | 2026-07-21 | [archive](specs/archive/reward-game-visuals.md) |
 | reward-game-audio | 2026-07-21 | [archive](specs/archive/reward-game-audio.md) |
 | brand-identity | 2026-07-21 | [archive](specs/archive/brand-identity.md) |
 | reward-cross | 2026-07-21 | [archive](specs/archive/reward-cross.md) |
@@ -118,3 +119,4 @@ Only notable events (first carve-up, major re-rank, cancelled theme) — not eve
 | 2026-07-21 | brand-identity shipped (logo + palette/fonts + button contrast). Next up: `reward-match`. |
 | 2026-07-21 | Split Catch/Cross polish into `reward-game-audio` → `reward-game-visuals` → `reward-high-scores` (ahead of Match). Next up: `reward-game-audio`. |
 | 2026-07-21 | reward-game-audio shipped (Catch/Cross beds, ouch, catch blip, cheers). Next up: `reward-game-visuals`. |
+| 2026-07-21 | reward-game-visuals shipped (Catch basket, Cross multi-kind + statics/pattern gate, shared HUD type). Next up: `reward-high-scores`. |

@@ -4,11 +4,16 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 
 import type { SessionFoodResponse } from "@/api/types"
 import {
-  advanceBoard,
   CatchGame,
   CATCHER_WIDTH,
   PIECE_SIZE,
+  advanceBoard,
 } from "@/components/run/CatchGame"
+import {
+  RUN_GAME_FINISH_TITLE,
+  RUN_GAME_HUD,
+  RUN_GAME_TITLE,
+} from "@/components/run/runTheme"
 
 const food: SessionFoodResponse = {
   foodId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa04",
@@ -54,9 +59,14 @@ describe("CatchGame", () => {
     expect(screen.getByLabelText("Catch play area").className).toContain(
       "run-play-frame",
     )
-    expect(screen.getByTestId("catcher").className).toContain("run-catcher")
-    expect(screen.getByRole("heading", { name: "Catch" }).className).toContain(
-      "run-prompt",
+    expect(screen.getByTestId("catcher").className).toContain("run-basket")
+    expect(screen.getByTestId("catcher").querySelector(".run-basket-bowl")).toBeTruthy()
+    expect(screen.getByTestId("catcher").querySelector(".run-basket-rim")).toBeTruthy()
+    expect(screen.getByRole("heading", { name: "Catch" }).className).toBe(
+      RUN_GAME_TITLE,
+    )
+    expect(screen.getByText(/Caught:/).parentElement?.className).toBe(
+      RUN_GAME_HUD,
     )
 
     await user.click(screen.getByRole("button", { name: "Move basket right" }))
@@ -76,7 +86,8 @@ describe("CatchGame", () => {
     })
 
     expect(screen.getByLabelText("Catch finished")).toBeInTheDocument()
-    expect(screen.getByText(/Nice catching/)).toBeInTheDocument()
+    const finishTitle = screen.getByText(/Nice catching/)
+    expect(finishTitle.className).toBe(RUN_GAME_FINISH_TITLE)
 
     screen.getByRole("button", { name: "Done" }).click()
     expect(onDone).toHaveBeenCalled()

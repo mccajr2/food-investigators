@@ -3,6 +3,13 @@ import { useEffect, useRef, useState } from "react"
 import type { SessionFoodResponse } from "@/api/types"
 import { FoodIcon } from "@/components/food/FoodIcon"
 import { createCatchAudio } from "@/components/run/catchAudio"
+import {
+  RUN_GAME_FINISH_SUB,
+  RUN_GAME_FINISH_TITLE,
+  RUN_GAME_HUD,
+  RUN_GAME_THEME,
+  RUN_GAME_TITLE,
+} from "@/components/run/runTheme"
 import { Button } from "@/components/ui/button"
 
 export const CATCH_ROUND_MS = 30_000
@@ -203,13 +210,11 @@ export function CatchGame({
         <div className="flex min-w-0 items-center gap-3">
           <FoodIcon iconKey={food.iconKey} name={food.name} className="size-12 shrink-0" />
           <div className="min-w-0">
-            <h2 className="run-prompt text-xl md:text-2xl">Catch</h2>
-            <p className="truncate text-sm text-muted-foreground">
-              Theme: {themeLabel}
-            </p>
+            <h2 className={RUN_GAME_TITLE}>Catch</h2>
+            <p className={RUN_GAME_THEME}>Theme: {themeLabel}</p>
           </div>
         </div>
-        <div className="run-prompt flex items-center gap-4 text-base font-medium md:text-lg">
+        <div className={RUN_GAME_HUD}>
           <p aria-live="polite">Caught: {board.score}</p>
           <p aria-live="polite">
             {finished ? "Time!" : `${remainingSec}s`}
@@ -222,8 +227,8 @@ export function CatchGame({
           className="run-enter flex flex-1 flex-col items-center justify-center gap-4 text-center"
           aria-label="Catch finished"
         >
-          <p className="run-prompt text-3xl md:text-4xl">Nice catching!</p>
-          <p className="text-lg text-muted-foreground">
+          <p className={RUN_GAME_FINISH_TITLE}>Nice catching!</p>
+          <p className={RUN_GAME_FINISH_SUB}>
             You caught {board.score} {food.name.toLowerCase()}
             {board.score === 1 ? "" : "s"}.
           </p>
@@ -268,14 +273,17 @@ export function CatchGame({
               </div>
             ))}
             <div
-              className="run-catcher absolute bottom-3 h-10"
+              className="run-basket absolute bottom-2"
               style={{
                 left: `${catcherX}%`,
                 width: `${CATCHER_WIDTH}%`,
               }}
               data-testid="catcher"
               aria-label="Basket"
-            />
+            >
+              <span className="run-basket-rim" aria-hidden />
+              <span className="run-basket-bowl" aria-hidden />
+            </div>
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-3">

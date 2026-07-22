@@ -8,10 +8,22 @@ import {
   CrossGame,
   CROSS_COLS,
   GOAL_LANE,
+  HAZARD_KINDS,
   initialCrossBoard,
   movePlayer,
+  patternHasStartColumnStatic,
+  playerHitObstacle,
   spawnHazard,
+  startColumn,
+  STATIC_PATTERNS,
+  staticsForPattern,
 } from "@/components/run/CrossGame"
+import {
+  RUN_GAME_CELEBRATE,
+  RUN_GAME_FINISH_TITLE,
+  RUN_GAME_HUD,
+  RUN_GAME_TITLE,
+} from "@/components/run/runTheme"
 
 const crossAudioApi = vi.hoisted(() => ({
   resume: vi.fn().mockResolvedValue(undefined),
@@ -36,15 +48,45 @@ const food: SessionFoodResponse = {
   ateEnough: true,
 }
 
+/** Path around pattern 0 start-column gate (static at lane 2, col 2). */
+async function crossAroundPattern0(
+  user: ReturnType<typeof userEvent.setup>,
+) {
+  await user.click(screen.getByRole("button", { name: "Move up" }))
+  await user.click(screen.getByRole("button", { name: "Move left" }))
+  await user.click(screen.getByRole("button", { name: "Move up" }))
+  await user.click(screen.getByRole("button", { name: "Move up" }))
+  await user.click(screen.getByRole("button", { name: "Move up" }))
+  await user.click(screen.getByRole("button", { name: "Move right" }))
+  await user.click(screen.getByRole("button", { name: "Move up" }))
+}
+
 describe("cross board helpers", () => {
-  it("movePlayer reaches the goal and counts a crossing", () => {
-    let board = initialCrossBoard()
+  it("every static pattern blocks the start column on a traffic lane", () => {
+    expect(HAZARD_KINDS).toHaveLength(3)
+    for (let index = 0; index < STATIC_PATTERNS.length; index += 1) {
+      const statics = staticsForPattern(index)
+      expect(patternHasStartColumnStatic(statics)).toBe(true)
+    }
+  })
+
+  it("movePlayer reaches the goal, counts a crossing, and advances the pattern", () => {
+    let board = {
+      ...initialCrossBoard(),
+      // Clear start-col gate so a straight path works in the helper test.
+      statics: [{ lane: 2, col: 0 }],
+      patternIndex: 0,
+    }
     for (let step = 0; step < GOAL_LANE; step += 1) {
       board = movePlayer(board, "up")
     }
     expect(board.crossings).toBe(1)
     expect(board.playerLane).toBe(0)
-    expect(board.playerCol).toBe(Math.floor(CROSS_COLS / 2))
+    expect(board.playerCol).toBe(startColumn())
+    expect(board.patternIndex).toBe(1)
+    expect(board.statics).toEqual(staticsForPattern(1))
+    expect(board.hazards).toHaveLength(0)
+    expect(patternHasStartColumnStatic(board.statics)).toBe(true)
   })
 
   it("resets the player when a hazard lands on them (Strict Mode safe)", () => {
@@ -52,7 +94,16 @@ describe("cross board helpers", () => {
       ...initialCrossBoard(),
       playerLane: 2,
       playerCol: 2,
-      hazards: [{ id: 1, lane: 2, col: 1, dir: 1 as const }],
+      statics: [],
+      hazards: [
+        {
+          id: 1,
+          lane: 2,
+          col: 1,
+          dir: 1 as const,
+          kind: "block" as const,
+        },
+      ],
     }
     const first = advanceHazards(board)
     expect(first.playerLane).toBe(0)
@@ -67,12 +118,24 @@ describe("cross board helpers", () => {
       ...initialCrossBoard(),
       playerLane: 1,
       playerCol: 0,
+      statics: [],
     }
-    // random() === 0 → lane 1, dir +1, col 0 (same cell as player)
+    // random() === 0 → lane 1, dir +1, col 0, kind block
     const next = spawnHazard(board, 7, () => 0)
     expect(next.hazards).toHaveLength(1)
+    expect(next.hazards[0]?.kind).toBe("block")
     expect(next.playerLane).toBe(0)
     expect(next.playerCol).toBe(Math.floor(CROSS_COLS / 2))
+  })
+
+  it("detects walking onto a static obstacle", () => {
+    const board = {
+      ...initialCrossBoard(),
+      statics: [{ lane: 1, col: startColumn() }],
+    }
+    const moved = movePlayer(board, "up")
+    expect(moved.playerLane).toBe(1)
+    expect(playerHitObstacle(moved)).toBe(true)
   })
 })
 
@@ -82,7 +145,7 @@ describe("CrossGame", () => {
     vi.clearAllMocks()
   })
 
-  it("shows food theme and large move controls while playing", async () => {
+  it("shows food theme, static gate, and large move controls while playing", async () => {
     const user = userEvent.setup()
     const onDone = vi.fn()
     render(<CrossGame food={food} onDone={onDone} roundMs={30_000} />)
@@ -94,8 +157,21 @@ describe("CrossGame", () => {
       "run-play-frame",
     )
     expect(screen.getByTestId("cross-player")).toBeInTheDocument()
-    expect(screen.getByRole("heading", { name: "Cross" }).className).toContain(
-      "run-prompt",
+    expect(screen.getAllByTestId("cross-static").length).toBeGreaterThan(0)
+    expect(
+      screen
+        .getAllByTestId("cross-static")
+        .some(
+          (node) =>
+            node.getAttribute("data-col") === String(startColumn()) &&
+            Number(node.getAttribute("data-lane")) > 0,
+        ),
+    ).toBe(true)
+    expect(screen.getByRole("heading", { name: "Cross" }).className).toBe(
+      RUN_GAME_TITLE,
+    )
+    expect(screen.getByText(/Crossings:/).parentElement?.className).toBe(
+      RUN_GAME_HUD,
     )
 
     expect(screen.getByLabelText("Move controls")).toBeInTheDocument()
@@ -120,11 +196,11 @@ describe("CrossGame", () => {
     })
     render(<CrossGame food={food} onDone={vi.fn()} roundMs={30_000} />)
 
-    for (let step = 0; step < GOAL_LANE; step += 1) {
-      await user.click(screen.getByRole("button", { name: "Move up" }))
-    }
+    await crossAroundPattern0(user)
 
-    expect(await screen.findByText("Crossed!")).toBeInTheDocument()
+    const banner = await screen.findByText("Crossed!")
+    expect(banner).toBeInTheDocument()
+    expect(banner.className).toContain(RUN_GAME_CELEBRATE)
     expect(screen.getByLabelText("Cross play area").className).toContain(
       "cross-celebrate",
     )
@@ -142,7 +218,8 @@ describe("CrossGame", () => {
     })
 
     expect(screen.getByLabelText("Cross finished")).toBeInTheDocument()
-    expect(screen.getByText(/Nice crossing/)).toBeInTheDocument()
+    const finishTitle = screen.getByText(/Nice crossing/)
+    expect(finishTitle.className).toBe(RUN_GAME_FINISH_TITLE)
     expect(crossAudioApi.playCrossing).toHaveBeenCalled()
 
     screen.getByRole("button", { name: "Done" }).click()
