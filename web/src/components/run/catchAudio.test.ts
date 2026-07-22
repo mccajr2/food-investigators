@@ -1,17 +1,17 @@
 import { describe, expect, it, vi } from "vitest"
 
-import { createCrossAudio } from "@/components/run/crossAudio"
+import { createCatchAudio } from "@/components/run/catchAudio"
 
-describe("createCrossAudio", () => {
+describe("createCatchAudio", () => {
   it("returns null when AudioContext is unavailable", () => {
     expect(
-      createCrossAudio(
+      createCatchAudio(
         undefined as unknown as typeof AudioContext,
       ),
     ).toBeNull()
   })
 
-  it("creates jump, ouch, and crossing tones without throwing", async () => {
+  it("creates catch blip, cheer, and bed tones without throwing", async () => {
     const start = vi.fn()
     const stop = vi.fn()
     const connect = vi.fn()
@@ -39,20 +39,19 @@ describe("createCrossAudio", () => {
       close = vi.fn().mockResolvedValue(undefined)
     }
 
-    const audio = createCrossAudio(
+    const audio = createCatchAudio(
       FakeAudioContext as unknown as typeof AudioContext,
     )
     expect(audio).not.toBeNull()
     await audio?.resume()
-    audio?.playJump()
-    audio?.playOuch()
-    audio?.playCrossing()
+    audio?.playCatch()
+    audio?.playCheer()
     audio?.startBed()
     audio?.stop()
     expect(start).toHaveBeenCalled()
   })
 
-  it("exposes playOuch as a distinct API from jump and crossing", () => {
+  it("exposes catch and cheer as distinct APIs", () => {
     class FakeAudioContext {
       currentTime = 0
       state = "running"
@@ -75,15 +74,14 @@ describe("createCrossAudio", () => {
       close = vi.fn().mockResolvedValue(undefined)
     }
 
-    const audio = createCrossAudio(
+    const audio = createCatchAudio(
       FakeAudioContext as unknown as typeof AudioContext,
     )
     expect(audio).toMatchObject({
-      playJump: expect.any(Function),
-      playOuch: expect.any(Function),
-      playCrossing: expect.any(Function),
+      playCatch: expect.any(Function),
+      playCheer: expect.any(Function),
+      startBed: expect.any(Function),
     })
-    expect(audio?.playOuch).not.toBe(audio?.playJump)
-    expect(audio?.playOuch).not.toBe(audio?.playCrossing)
+    expect(audio?.playCatch).not.toBe(audio?.playCheer)
   })
 })

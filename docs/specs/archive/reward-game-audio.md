@@ -1,6 +1,6 @@
 # Spec: reward-game-audio
 
-Status: draft  
+Status: done  
 Created: 2026-07-21  
 Parent: [docs/roadmap.md](../../roadmap.md)  
 Added: 2026-07-21 · enhancement
@@ -38,7 +38,9 @@ Web-only, client-side Web Audio (same soft-volume, no-asset style as
   (distinct from jump — lower / dissonant / descending).
 - On successful crossing: play a clearer **positive cheer** (may replace or
   extend today’s ascending chime so “made it” is obvious).
-- Stop / cleanup on unmount and when the round finishes (existing `stop`).
+- When the round **timer ends**: play the same positive cheer family (do not
+  cut audio off silently), then stop the bed/context after a short beat.
+- Stop / cleanup on unmount (and after the end-cheer delay when finishing).
 
 **Catch**
 
@@ -55,36 +57,38 @@ Web-only, client-side Web Audio (same soft-volume, no-asset style as
 **Shared**
 
 - Soft gains; no new dependencies; degrade gracefully when `AudioContext` is
-  unavailable (gamesplay still works; helpers return null / no-ops).
+  unavailable (gameplay still works; helpers return null / no-ops).
 - Unit-test factories (tones without throw + API surface); keep Catch/Cross
   component tests green (mock audio if needed).
 
 ## Acceptance criteria
 
-- [ ] Cross plays a distinct **negative** sound when the player hits a hazard
+- [x] Cross plays a distinct **negative** sound when the player hits a hazard
       (bump home), separate from jump and cheer.
-- [ ] Cross plays a clear **positive cheer** on each successful crossing
+- [x] Cross plays a clear **positive cheer** on each successful crossing
       (stronger / more celebratory than a single quiet blip).
-- [ ] Catch plays a quiet **background bed** while playing that is similar in
+- [x] Cross plays a **positive cheer** when the round timer ends / finish UI
+      shows (same cheer family as a successful crossing).
+- [x] Catch plays a quiet **background bed** while playing that is similar in
       style to Cross but audibly distinct (different notes and/or pacing).
-- [ ] Catch plays a short **blip** on each successful catch so score changes are
+- [x] Catch plays a short **blip** on each successful catch so score changes are
       hearable without watching the counter.
-- [ ] Catch plays a **positive cheer** when the round timer ends / finish UI
+- [x] Catch plays a **positive cheer** when the round timer ends / finish UI
       shows (same family as Cross cheer, not identical).
-- [ ] Audio uses Web Audio synth only (no new binary samples / npm audio libs);
+- [x] Audio uses Web Audio synth only (no new binary samples / npm audio libs);
       missing `AudioContext` does not break play.
-- [ ] Beds and contexts stop on unmount / leaving the game (no orphan intervals).
-- [ ] No OpenAPI / backend changes; no visual redesign beyond wiring hooks.
-- [ ] Tests cover new audio helper APIs; Catch + Cross + reward tests stay green.
+- [x] Beds and contexts stop on unmount / leaving the game (no orphan intervals).
+- [x] No OpenAPI / backend changes; no visual redesign beyond wiring hooks.
+- [x] Tests cover new audio helper APIs; Catch + Cross + reward tests stay green.
 
 ## Tasks
 
-- [ ] Web: Extend Cross audio — `playOuch` (or equivalent) + richer
+- [x] Web: Extend Cross audio — `playOuch` (or equivalent) + richer
       `playCrossing` / `playCheer`; wire hazard bump + crossing in `CrossGame`.
-- [ ] Web: Add Catch audio module (bed + catch blip + end cheer); wire in
+- [x] Web: Add Catch audio module (bed + catch blip + end cheer); wire in
       `CatchGame` (start on gesture, blip on catch, cheer on finish, stop on
       cleanup).
-- [ ] Tests: Unit tests for Cross + Catch audio factories; keep Catch/Cross
+- [x] Tests: Unit tests for Cross + Catch audio factories; keep Catch/Cross
       component tests green (mock audio where timers/Strict Mode make real
       AudioContext flaky).
 
