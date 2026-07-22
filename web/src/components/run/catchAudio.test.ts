@@ -46,12 +46,13 @@ describe("createCatchAudio", () => {
     await audio?.resume()
     audio?.playCatch()
     audio?.playCheer()
+    audio?.playNewBest()
     audio?.startBed()
     audio?.stop()
     expect(start).toHaveBeenCalled()
   })
 
-  it("exposes catch and cheer as distinct APIs", () => {
+  it("exposes catch, cheer, and new-best as distinct APIs", () => {
     class FakeAudioContext {
       currentTime = 0
       state = "running"
@@ -80,8 +81,10 @@ describe("createCatchAudio", () => {
     expect(audio).toMatchObject({
       playCatch: expect.any(Function),
       playCheer: expect.any(Function),
+      playNewBest: expect.any(Function),
       startBed: expect.any(Function),
     })
     expect(audio?.playCatch).not.toBe(audio?.playCheer)
+    expect(audio?.playNewBest).not.toBe(audio?.playCheer)
   })
 })

@@ -18,6 +18,7 @@ import {
   STATIC_PATTERNS,
   staticsForPattern,
 } from "@/components/run/CrossGame"
+import * as rewardBestScores from "@/components/run/rewardBestScores"
 import {
   RUN_GAME_CELEBRATE,
   RUN_GAME_FINISH_TITLE,
@@ -30,6 +31,7 @@ const crossAudioApi = vi.hoisted(() => ({
   playJump: vi.fn(),
   playOuch: vi.fn(),
   playCrossing: vi.fn(),
+  playNewBest: vi.fn(),
   startBed: vi.fn(),
   stop: vi.fn(),
 }))
@@ -143,6 +145,8 @@ describe("CrossGame", () => {
   afterEach(() => {
     vi.useRealTimers()
     vi.clearAllMocks()
+    vi.restoreAllMocks()
+    localStorage.clear()
   })
 
   it("shows food theme, static gate, and large move controls while playing", async () => {
@@ -173,6 +177,7 @@ describe("CrossGame", () => {
     expect(screen.getByText(/Crossings:/).parentElement?.className).toBe(
       RUN_GAME_HUD,
     )
+    expect(screen.queryByText(/Best:/)).not.toBeInTheDocument()
 
     expect(screen.getByLabelText("Move controls")).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Move up" })).toBeInTheDocument()
@@ -206,7 +211,7 @@ describe("CrossGame", () => {
     )
   })
 
-  it("ends the round and shows a Done finish screen", async () => {
+  it("ends the round and shows Best on the finish screen", async () => {
     vi.useFakeTimers()
     const onDone = vi.fn()
     render(<CrossGame food={food} onDone={onDone} roundMs={200} />)
@@ -220,9 +225,42 @@ describe("CrossGame", () => {
     expect(screen.getByLabelText("Cross finished")).toBeInTheDocument()
     const finishTitle = screen.getByText(/Nice crossing/)
     expect(finishTitle.className).toBe(RUN_GAME_FINISH_TITLE)
+    expect(screen.getByText(/Best:/)).toBeInTheDocument()
+    expect(screen.queryByText("New best!")).not.toBeInTheDocument()
     expect(crossAudioApi.playCrossing).toHaveBeenCalled()
+    expect(crossAudioApi.playNewBest).not.toHaveBeenCalled()
 
     screen.getByRole("button", { name: "Done" }).click()
     expect(onDone).toHaveBeenCalled()
+  })
+
+  it("shows New best! when recordScore reports a new best", async () => {
+    vi.useFakeTimers()
+    vi.spyOn(rewardBestScores, "recordScore").mockReturnValue({
+      best: 3,
+      isNewBest: true,
+    })
+    render(
+      <CrossGame
+        food={food}
+        onDone={vi.fn()}
+        roundMs={200}
+        householdId="hh-cross"
+      />,
+    )
+
+    await act(async () => {
+      vi.advanceTimersByTime(300)
+    })
+
+    expect(screen.getByText("New best!")).toBeInTheDocument()
+    expect(screen.getByText("Best: 3")).toBeInTheDocument()
+    expect(rewardBestScores.recordScore).toHaveBeenCalledWith(
+      "cross",
+      expect.any(Number),
+      "hh-cross",
+    )
+    expect(crossAudioApi.playNewBest).toHaveBeenCalled()
+    expect(crossAudioApi.playCrossing).not.toHaveBeenCalled()
   })
 })

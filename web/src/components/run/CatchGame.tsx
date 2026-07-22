@@ -4,6 +4,11 @@ import type { SessionFoodResponse } from "@/api/types"
 import { FoodIcon } from "@/components/food/FoodIcon"
 import { createCatchAudio } from "@/components/run/catchAudio"
 import {
+  recordScore,
+  type RecordScoreResult,
+} from "@/components/run/rewardBestScores"
+import {
+  RUN_GAME_CELEBRATE,
   RUN_GAME_FINISH_SUB,
   RUN_GAME_FINISH_TITLE,
   RUN_GAME_HUD,
@@ -20,6 +25,8 @@ const TICK_MS = 50
 export const FALL_SPEED = 2.2
 /** Let the end cheer finish before closing AudioContext. */
 const CHEER_THEN_STOP_MS = 650
+/** New-best fanfare is longer than the normal end cheer. */
+const NEW_BEST_THEN_STOP_MS = 900
 
 type Piece = {
   id: number
@@ -37,6 +44,8 @@ type CatchGameProps = {
   onDone: () => void
   /** Override round length (ms) — tests use a short value. */
   roundMs?: number
+  /** Scopes local best by household when provided. */
+  householdId?: string | null
 }
 
 /** Pure tick — safe under React Strict Mode double-invoked updaters. */
@@ -74,16 +83,19 @@ export function CatchGame({
   food,
   onDone,
   roundMs = CATCH_ROUND_MS,
+  householdId = null,
 }: CatchGameProps) {
   const [catcherX, setCatcherX] = useState(50 - CATCHER_WIDTH / 2)
   const [board, setBoard] = useState<Board>({ pieces: [], score: 0 })
   const [elapsedMs, setElapsedMs] = useState(0)
   const [finished, setFinished] = useState(false)
+  const [finishBest, setFinishBest] = useState<RecordScoreResult | null>(null)
   const nextId = useRef(1)
   const catcherXRef = useRef(catcherX)
   catcherXRef.current = catcherX
   const audioRef = useRef(createCatchAudio())
   const cheerStopTimer = useRef<number | null>(null)
+  const finishHandledRef = useRef(false)
 
   const remainingMs = Math.max(0, roundMs - elapsedMs)
   const remainingSec = Math.ceil(remainingMs / 1000)
@@ -109,19 +121,29 @@ export function CatchGame({
   }, [])
 
   useEffect(() => {
-    if (!finished) {
+    if (!finished || finishHandledRef.current) {
       return
     }
+    finishHandledRef.current = true
+    const result = recordScore("catch", board.score, householdId)
+    setFinishBest(result)
     const audio = audioRef.current
-    audio?.playCheer()
+    if (result.isNewBest) {
+      audio?.playNewBest()
+    } else {
+      audio?.playCheer()
+    }
     if (cheerStopTimer.current !== null) {
       window.clearTimeout(cheerStopTimer.current)
     }
-    cheerStopTimer.current = window.setTimeout(() => {
-      audio?.stop()
-      cheerStopTimer.current = null
-    }, CHEER_THEN_STOP_MS)
-  }, [finished])
+    cheerStopTimer.current = window.setTimeout(
+      () => {
+        audio?.stop()
+        cheerStopTimer.current = null
+      },
+      result.isNewBest ? NEW_BEST_THEN_STOP_MS : CHEER_THEN_STOP_MS,
+    )
+  }, [finished, board.score, householdId])
 
   useEffect(() => {
     if (finished) {
@@ -228,9 +250,17 @@ export function CatchGame({
           aria-label="Catch finished"
         >
           <p className={RUN_GAME_FINISH_TITLE}>Nice catching!</p>
+          {finishBest?.isNewBest ? (
+            <p className={RUN_GAME_CELEBRATE} aria-live="polite">
+              New best!
+            </p>
+          ) : null}
           <p className={RUN_GAME_FINISH_SUB}>
             You caught {board.score} {food.name.toLowerCase()}
             {board.score === 1 ? "" : "s"}.
+          </p>
+          <p className={RUN_GAME_TITLE} aria-live="polite">
+            Best: {finishBest?.best ?? board.score}
           </p>
           <Button
             type="button"
