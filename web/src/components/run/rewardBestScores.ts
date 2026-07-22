@@ -1,6 +1,6 @@
-/** Local personal-best storage for Catch / Cross reward games. */
+/** Local personal-best storage for Catch / Cross / Match reward games. */
 
-export type RewardScoreGame = "catch" | "cross"
+export type RewardScoreGame = "catch" | "cross" | "match"
 
 export type RecordScoreResult = {
   best: number
