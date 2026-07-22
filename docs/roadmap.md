@@ -37,7 +37,7 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | reward-game-audio | planned | 2026-07-21 · enhancement | Richer Catch/Cross SFX + beds (ouch, cheer, catch blip, distinct Catch music) |
+| 1 | reward-game-audio | active | 2026-07-21 · enhancement | Richer Catch/Cross SFX + beds (ouch, cheer, catch blip, distinct Catch music) |
 | 2 | reward-game-visuals | planned | 2026-07-21 · enhancement | Catch basket, diverse Cross obstacles, consistent celebrate/HUD text |
 | 3 | reward-high-scores | planned | 2026-07-21 · enhancement | Local best/recent scores per Catch & Cross for something to beat |
 | 4 | reward-match | planned | 2026-07-20 · re-rank split | Add Match (memory / 3-in-a-row lite) beside Catch + Cross |
@@ -73,6 +73,7 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Branch | Spec |
 |----|--------|------|
+| reward-game-audio | `reward-game-audio` | [active](specs/active/reward-game-audio.md) |
 
 ## Done
 
