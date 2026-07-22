@@ -5,6 +5,7 @@ import { BrandLogo } from "@/components/BrandLogo"
 import { FoodIcon } from "@/components/food/FoodIcon"
 import { CatchGame } from "@/components/run/CatchGame"
 import { CrossGame } from "@/components/run/CrossGame"
+import { MatchGame } from "@/components/run/MatchGame"
 import {
   gameLabel,
   phaseForGame,
@@ -41,10 +42,16 @@ const GAME_OPTIONS: {
     hint: "Cross the lanes",
   },
   {
+    game: "match",
+    label: "Match",
+    symbol: "🃏",
+    hint: "Find matching pairs",
+  },
+  {
     game: "surprise",
     label: "Surprise",
     symbol: "✨",
-    hint: "Catch or Cross — surprise!",
+    hint: "Catch, Cross, or Match — surprise!",
   },
 ]
 
@@ -150,7 +157,7 @@ export function RewardFlow({
               : phase.food.name}
           </p>
         </div>
-        <ul className="grid w-full max-w-2xl grid-cols-1 gap-4 sm:grid-cols-3">
+        <ul className="grid w-full max-w-3xl grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {GAME_OPTIONS.map((option) => (
             <li key={option.game}>
               <button
@@ -210,6 +217,10 @@ export function RewardFlow({
 
   if (phase.kind === "cross") {
     return <CrossGame food={phase.food} onDone={onFinished} />
+  }
+
+  if (phase.kind === "match") {
+    return <MatchGame food={phase.food} onDone={onFinished} />
   }
 
   return <CatchGame food={phase.food} onDone={onFinished} />

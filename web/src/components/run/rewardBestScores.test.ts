@@ -82,12 +82,14 @@ describe("rewardBestScores", () => {
     })
   })
 
-  it("keeps Catch and Cross bests independent", () => {
+  it("keeps Catch, Cross, and Match bests independent", () => {
     const storage = memoryStorage()
     recordScore("catch", 3, "hh", storage)
     recordScore("cross", 9, "hh", storage)
+    recordScore("match", 5, "hh", storage)
     expect(readBest("catch", "hh", storage)).toBe(3)
     expect(readBest("cross", "hh", storage)).toBe(9)
+    expect(readBest("match", "hh", storage)).toBe(5)
   })
 
   it("keeps households independent on the same device", () => {

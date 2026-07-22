@@ -1,4 +1,5 @@
 import { act, render, screen } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import type { SessionFoodResponse } from "@/api/types"
@@ -51,6 +52,51 @@ describe("RewardFlow surprise reveal", () => {
     )
   })
 
+  it("offers Catch, Cross, Match, and Surprise on which-game", () => {
+    render(
+      <RewardFlow
+        phase={{ kind: "pickGame", food }}
+        onPick={vi.fn()}
+        onChooseGame={vi.fn()}
+        onFinished={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByRole("button", { name: "Catch" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Cross" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Match" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Surprise" })).toBeInTheDocument()
+  })
+
+  it("choosing Match advances to the match phase", async () => {
+    const user = userEvent.setup()
+    const onChooseGame = vi.fn()
+    render(
+      <RewardFlow
+        phase={{ kind: "pickGame", food }}
+        onPick={vi.fn()}
+        onChooseGame={onChooseGame}
+        onFinished={vi.fn()}
+      />,
+    )
+
+    await user.click(screen.getByRole("button", { name: "Match" }))
+    expect(onChooseGame).toHaveBeenCalledWith({ kind: "match", food })
+  })
+
+  it("renders Match when the phase is match", () => {
+    render(
+      <RewardFlow
+        phase={{ kind: "match", food }}
+        onPick={vi.fn()}
+        onChooseGame={vi.fn()}
+        onFinished={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByLabelText("Match game: Apples")).toBeInTheDocument()
+  })
+
   it("auto-advances from surprise reveal into the rolled game", async () => {
     vi.useFakeTimers()
     const onChooseGame = vi.fn()
@@ -72,6 +118,30 @@ describe("RewardFlow surprise reveal", () => {
 
     expect(onChooseGame).toHaveBeenCalledWith({
       kind: "cross",
+      food,
+    })
+  })
+
+  it("reveals Match when Surprise rolls Match", async () => {
+    vi.useFakeTimers()
+    const onChooseGame = vi.fn()
+    render(
+      <RewardFlow
+        phase={{ kind: "surpriseReveal", food, game: "match" }}
+        onPick={vi.fn()}
+        onChooseGame={onChooseGame}
+        onFinished={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByText("Surprise: Match!")).toBeInTheDocument()
+
+    await act(async () => {
+      vi.advanceTimersByTime(SURPRISE_REVEAL_MS)
+    })
+
+    expect(onChooseGame).toHaveBeenCalledWith({
+      kind: "match",
       food,
     })
   })

@@ -9,7 +9,13 @@ export function eligibleRewardFoods(
     .sort((a, b) => a.position - b.position)
 }
 
-export type RewardGameKind = "catch" | "cross"
+export type RewardGameKind = "catch" | "cross" | "match"
+
+export const REWARD_GAME_KINDS: readonly RewardGameKind[] = [
+  "catch",
+  "cross",
+  "match",
+] as const
 
 export type RewardPhase =
   | { kind: "encourage" }
@@ -22,6 +28,7 @@ export type RewardPhase =
     }
   | { kind: "catch"; food: SessionFoodResponse }
   | { kind: "cross"; food: SessionFoodResponse }
+  | { kind: "match"; food: SessionFoodResponse }
 
 export function initialRewardPhase(session: SessionResponse): RewardPhase {
   const eligible = eligibleRewardFoods(session)
@@ -42,16 +49,24 @@ export function phaseForGame(
   game: RewardGameKind,
   food: SessionFoodResponse,
 ): RewardPhase {
-  return game === "catch"
-    ? { kind: "catch", food }
-    : { kind: "cross", food }
+  if (game === "catch") {
+    return { kind: "catch", food }
+  }
+  if (game === "cross") {
+    return { kind: "cross", food }
+  }
+  return { kind: "match", food }
 }
 
-/** Equal chance Catch or Cross — inject `random` in tests. */
+/** Equal chance Catch, Cross, or Match — inject `random` in tests. */
 export function rollSurpriseGame(
   random: () => number = Math.random,
 ): RewardGameKind {
-  return random() < 0.5 ? "catch" : "cross"
+  const index = Math.min(
+    REWARD_GAME_KINDS.length - 1,
+    Math.floor(random() * REWARD_GAME_KINDS.length),
+  )
+  return REWARD_GAME_KINDS[index] ?? "catch"
 }
 
 /** Roll then park on the reveal beat before play. */
@@ -67,7 +82,13 @@ export function phaseForSurprise(
 }
 
 export function gameLabel(game: RewardGameKind): string {
-  return game === "catch" ? "Catch" : "Cross"
+  if (game === "catch") {
+    return "Catch"
+  }
+  if (game === "cross") {
+    return "Cross"
+  }
+  return "Match"
 }
 
 /** How long the “Surprise: …” beat stays up before play starts. */
