@@ -1,6 +1,7 @@
 import { useEffect } from "react"
 
 import type { SessionFoodResponse } from "@/api/types"
+import { BrandLogo } from "@/components/BrandLogo"
 import { FoodIcon } from "@/components/food/FoodIcon"
 import { CatchGame } from "@/components/run/CatchGame"
 import { CrossGame } from "@/components/run/CrossGame"
@@ -69,6 +70,7 @@ export function RewardFlow({
         className="run-enter flex h-full flex-col items-center justify-center gap-6 p-6 text-center"
         aria-label="Encouragement"
       >
+        <BrandLogo variant="full" className="max-w-[14rem] sm:max-w-xs" />
         <h2 className="run-prompt text-3xl leading-tight md:text-4xl">
           Nice try tonight
         </h2>
@@ -131,6 +133,7 @@ export function RewardFlow({
         className="run-enter flex h-full flex-col items-center justify-center gap-6 p-6"
         aria-label="Pick game"
       >
+        <BrandLogo variant="full" className="max-w-[14rem] sm:max-w-xs" />
         <div className="flex flex-col items-center gap-2 text-center">
           <FoodIcon
             iconKey={phase.food.iconKey}
@@ -185,6 +188,7 @@ export function RewardFlow({
         aria-label="Surprise reveal"
         aria-live="polite"
       >
+        <BrandLogo variant="full" className="max-w-[14rem] sm:max-w-xs" />
         <p className="text-5xl" aria-hidden>
           ✨
         </p>

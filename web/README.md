@@ -1,6 +1,6 @@
 # web
 
-Vite + React + TypeScript client for quickapp.
+Vite + React + TypeScript client for Food Investigators.
 
 ## Toolchain
 

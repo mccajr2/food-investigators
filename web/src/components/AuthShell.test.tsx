@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { AuthClient, FoodsClient, SessionsClient } from "@/api"
 import { AuthShell } from "@/components/AuthShell"
+import { BRAND_LOGO_SRC, BRAND_NAME } from "@/components/BrandLogo"
 
 afterEach(() => {
   vi.restoreAllMocks()
@@ -64,6 +65,21 @@ function renderShell(
 }
 
 describe("AuthShell", () => {
+  it("shows the full Food Investigators logo on the sign-in screen", async () => {
+    renderShell()
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: "Sign in" }),
+      ).toBeInTheDocument()
+    })
+
+    const logo = screen.getByRole("img", { name: BRAND_NAME })
+    expect(logo).toHaveAttribute("src", BRAND_LOGO_SRC)
+    expect(logo).toHaveAttribute("data-brand-logo", "full")
+    expect(screen.queryByText("quickapp")).not.toBeInTheDocument()
+  })
+
   it("signs in and shows plan by default with foods navigation", async () => {
     const user = userEvent.setup()
     const login = vi.fn().mockResolvedValue({
@@ -89,6 +105,8 @@ describe("AuthShell", () => {
     await user.click(screen.getByRole("button", { name: "Sign in" }))
 
     expect(await screen.findByText("Signed in as parent@example.com")).toBeInTheDocument()
+    const logo = screen.getByRole("img", { name: BRAND_NAME })
+    expect(logo).toHaveAttribute("data-brand-logo", "compact")
     expect(await screen.findByRole("heading", { name: "Plan" })).toBeInTheDocument()
     expect(screen.getByRole("tab", { name: "Plan" })).toHaveAttribute(
       "aria-selected",

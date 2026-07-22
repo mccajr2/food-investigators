@@ -9,6 +9,7 @@ import {
   RunSessionPage,
 } from "@/components/run/RunSessionPage"
 import { RUN_THEME } from "@/components/run/runTheme"
+import { BRAND_NAME } from "@/components/BrandLogo"
 
 const sampleSession: SessionResponse = {
   id: "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
@@ -114,6 +115,10 @@ describe("RunSessionPage", () => {
     const dialog = screen.getByRole("dialog", { name: "Run tasting session" })
     expect(dialog).toHaveAttribute("data-theme", RUN_THEME)
     expect(RUN_THEME).toBe("kitchen-run")
+    expect(screen.getByRole("img", { name: BRAND_NAME })).toHaveAttribute(
+      "data-brand-logo",
+      "compact",
+    )
   })
 
   it("walks both foods and completes the session", async () => {

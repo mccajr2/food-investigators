@@ -1,6 +1,6 @@
 # Spec: brand-identity
 
-Status: draft  
+Status: done  
 Created: 2026-07-21  
 Parent: [docs/roadmap.md](../../roadmap.md)  
 Added: 2026-07-21 · enhancement
@@ -40,8 +40,8 @@ artwork by surface so the kid still sees “himself” without crowding the ritu
 
 **Tokens & type:**
 
-- Copy the official logo into `web/public/` (e.g. `food-investigators-logo.jpg`)
-  and wire `<img>` / CSS with meaningful `alt` (“Food Investigators”).
+- Use `web/public/FoodInvestigatorsLogo.png` and wire `<img>` / CSS with
+  meaningful `alt` (“Food Investigators”).
 - Retune `:root` CSS variables to the logo palette (navy primary, cream surfaces,
   lime / coral / amber / sky as accents — not purple-on-white or terracotta-cream
   cliché). Document token → color mapping in a short comment block in
@@ -62,45 +62,48 @@ header and that run root still exposes the scoped theme hook.
 
 ## Acceptance criteria
 
-- [ ] Official logo asset lives under `web/public/` and is used by the app (not
+- [x] Official logo asset lives under `web/public/` and is used by the app (not
       only under Cursor session assets).
-- [ ] Auth screens show the **full** Food Investigators logo; no “quickapp”
+- [x] Auth screens show the **full** Food Investigators logo; no “quickapp”
       product title remains in the UI or document `<title>`.
-- [ ] Signed-in Plan / History / Foods shell shows the **full** logo in header
+- [x] Signed-in Plan / History / Foods shell shows the **full** logo in header
       chrome.
-- [ ] Tasting run questions and Catch / Cross **play** show a **compact** brand
+- [x] Tasting run questions and Catch / Cross **play** show a **compact** brand
       mark in the run header (not the full banner competing with placemats /
       game board).
-- [ ] Reward encourage and/or Which game? (and Surprise reveal if present) show a
+- [x] Reward encourage and/or Which game? (and Surprise reveal if present) show a
       **fuller** logo once when layout allows; play screens stay compact.
-- [ ] Global shell + kitchen-run tokens use the logo palette (navy / cream /
+- [x] Global shell + kitchen-run tokens use the logo palette (navy / cream /
       multi-accent); Catch and Cross chrome inherit without game-logic changes.
-- [ ] Parent shell and run use on-brand rounded fonts (Fredoka/Nunito or
+- [x] Parent shell and run use on-brand rounded fonts (Fredoka/Nunito or
       equivalent already in the project) — not Inter/Roboto/system-only chrome.
-- [ ] No OpenAPI or backend changes.
-- [ ] AuthShell / run / reward component tests stay green; assertions cover logo
+- [x] No OpenAPI or backend changes.
+- [x] AuthShell / run / reward component tests stay green; assertions cover logo
       presence (Auth + shell) and compact mark on run; kitchen-run theme hook
       smoke still passes.
 
 ## Tasks
 
-- [ ] Web: Add logo file to `web/public/`; shared logo / compact-mark component(s)
+- [x] Web: Add logo file to `web/public/`; shared logo / compact-mark component(s)
       with accessible `alt`.
-- [ ] Web: Retune `:root` + `[data-theme="kitchen-run"]` tokens; apply brand fonts
+- [x] Web: Retune `:root` + `[data-theme="kitchen-run"]` tokens; apply brand fonts
       on shell headings/nav; update `index.html` title (favicon if trivial).
-- [ ] Web: Wire full logo on Auth + signed-in header; compact mark on run play
+- [x] Web: Wire full logo on Auth + signed-in header; compact mark on run play
       header; fuller logo on reward encourage / game-pick beat.
-- [ ] Tests: Replace “quickapp” expectations; smoke for logo / compact mark /
+- [x] Tests: Replace “quickapp” expectations; smoke for logo / compact mark /
       theme hook; keep AuthShell, run, reward, Catch, Cross tests green.
 
 ## Decisions (locked)
 
 - **Platform:** Web only.
-- **Logo spots:** Full on Auth + shell; compact on run/play; fuller once on
-  reward pick / encourage.
+- **Logo spots:** Full on Auth + reward celebrate beats; compact small asset on
+  signed-in shell header + run/play chrome.
 - **Theming:** Global token retune + kitchen-run retune so games inherit; do not
-  invent a second unrelated kid palette.
+  invent a second unrelated kid palette. Outline/secondary controls use card
+  surfaces + stronger navy borders so they read against cream page chrome.
 - **Contract:** No OpenAPI / backend.
+- **Auth storage keys:** Keep `quickapp.auth.token*` localStorage/sessionStorage
+  keys so existing signed-in sessions stay valid (not user-visible product name).
 
 ## Open questions
 
