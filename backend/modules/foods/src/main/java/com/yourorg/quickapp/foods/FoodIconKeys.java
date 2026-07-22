@@ -33,7 +33,10 @@ public final class FoodIconKeys {
                     "yogurt_vanilla",
                     "carrot",
                     "corn",
-                    "sweet_potato");
+                    "sweet_potato",
+                    "cheese_pizza",
+                    "soft_pretzel",
+                    "raspberry");
 
     private static final Pattern CUSTOM_KEY =
             Pattern.compile("^custom_[a-z0-9]+(?:_[a-z0-9]+){0,15}$");

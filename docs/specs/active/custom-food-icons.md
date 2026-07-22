@@ -91,7 +91,7 @@ Match, Surprise (e.g. `RunGameSymbol`). Sibling style to food icons.
 
 ## Tasks
 
-- [ ] Backend + contract alignment: add three icon keys to allowlist; Flyway seed
+- [x] Backend + contract alignment: add three icon keys to allowlist; Flyway seed
       for Cheese pizza, Soft pretzels, Raspberries; tests.
 - [ ] Web: Redraw / add SVG for all 10 hero `FoodIcon`s + labels; extend
       `FOOD_ICON_KEYS`.
