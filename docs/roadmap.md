@@ -37,7 +37,7 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | reward-game-visuals | planned | 2026-07-21 · enhancement | Catch basket, diverse Cross obstacles, consistent celebrate/HUD text |
+| 1 | reward-game-visuals | active | 2026-07-21 · enhancement | Catch basket, diverse Cross obstacles, consistent celebrate/HUD text |
 | 2 | reward-high-scores | planned | 2026-07-21 · enhancement | Local best/recent scores per Catch & Cross for something to beat |
 | 3 | reward-match | planned | 2026-07-20 · re-rank split | Add Match (memory / 3-in-a-row lite) beside Catch + Cross |
 | 4 | custom-food-icons | planned | 2026-07-20 · enhancement | Distinctive on-brand food illustrations / run symbols (less stock emoji) |
@@ -72,6 +72,7 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Branch | Spec |
 |----|--------|------|
+| reward-game-visuals | `reward-game-visuals` | [active](specs/active/reward-game-visuals.md) |
 
 ## Done
 
