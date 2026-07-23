@@ -108,7 +108,7 @@ Enforce the same rules on **backend create/update** and **web Plan** UI.
       injectable clock; unit tests.
 - [x] Contract: OpenAPI 400/409 docs for create/update; fix non-editable 409
       description; align web types/client if needed.
-- [ ] Web: Plan date `min`; same-food UI requires distinct variants; surface
+- [x] Web: Plan date `min`; same-food UI requires distinct variants; surface
       validation errors.
 - [ ] Tests: API integration for past / day conflict / cancelled frees day /
       same-food variant rules; PlanPage coverage for `min` + errors.
