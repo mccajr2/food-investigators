@@ -283,33 +283,64 @@ describe("SessionsClient", () => {
   })
 
   it("surfaces API errors and requires a token", async () => {
-    const fetchFn = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ message: "Exactly two foods are required" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      }),
-    )
+    const fetchFn = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ message: "Exactly two foods are required" }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ message: "A session already exists on that date" }),
+          {
+            status: 409,
+            headers: { "Content-Type": "application/json" },
+          },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ message: "Scheduled date can't be in the past" }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          },
+        ),
+      )
     const client = new SessionsClient(
       "http://localhost:8080",
       fetchFn,
       memoryStore(),
     )
 
-    await expect(
-      client.create({
-        scheduledOn: "2026-07-20",
-        foods: [
-          {
-            foodId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa04",
-            familiarity: "likes",
-          },
-          {
-            foodId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa05",
-            familiarity: "likes",
-          },
-        ],
-      }),
-    ).rejects.toThrow("Exactly two foods are required")
+    const request = {
+      scheduledOn: "2026-07-20",
+      foods: [
+        {
+          foodId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa04",
+          familiarity: "likes" as const,
+        },
+        {
+          foodId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa05",
+          familiarity: "likes" as const,
+        },
+      ],
+    } as const
+
+    await expect(client.create(request)).rejects.toThrow(
+      "Exactly two foods are required",
+    )
+    await expect(client.create(request)).rejects.toThrow(
+      "A session already exists on that date",
+    )
+    await expect(client.create(request)).rejects.toThrow(
+      "Scheduled date can't be in the past",
+    )
 
     const unsigned = new SessionsClient(
       "http://localhost:8080",

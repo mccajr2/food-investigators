@@ -92,9 +92,11 @@ export type Smell = "like" | "so_so" | "no"
 export type SessionFoodRequest = {
   foodId: string
   familiarity: Familiarity
+  /** Brand/variety/prep note — required + distinct when both slots share foodId. */
   variantNote?: string | null
 }
 
+/** Mirrors CreateSessionRequest — scheduledOn must be today+; one planned/completed per day. */
 export type CreateSessionRequest = {
   scheduledOn: string
   foods: [SessionFoodRequest, SessionFoodRequest]

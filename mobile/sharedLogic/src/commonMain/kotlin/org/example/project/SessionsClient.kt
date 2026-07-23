@@ -20,9 +20,11 @@ import kotlinx.serialization.json.Json
 data class SessionFoodRequest(
     val foodId: String,
     val familiarity: String,
+    /** Brand/variety/prep — required + distinct when both slots share foodId. */
     val variantNote: String? = null,
 )
 
+/** scheduledOn must be today+; one planned/completed session per household day. */
 @Serializable
 data class CreateSessionRequest(
     val scheduledOn: String,
