@@ -15,9 +15,11 @@ on the iPad with large icons and simple words, capture what he liked and *why*
 (in kid language), unlock simple food-themed mini-games when a serving goes well,
 and keep a therapist-ready history of what was tried and what worked.
 
-Familiarity ladder (parent-set at first): foods he already likes → familiar-but-new
-(prep/brand) → truly new. Pace stays parent-led early; later the app may suggest
-the next session for approval.
+Familiarity ladder (parent-set at first): safe foods he consistently eats →
+familiar-but-new (prep/brand) → truly new → retrying (tried before, trying again).
+Pace stays parent-led early; later the app may suggest the next session for
+approval. Taste basics (sweet/salty/bitter/sour/…) deepen the run survey and
+Insights without becoming a clinical sensory panel.
 
 ## Product non-goals
 
@@ -37,9 +39,13 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | suggested-next-session | planned | 2026-07-11 · initial | App proposes next two foods + levels; parent approves or swaps |
-| 2 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
-| 3 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
+| 1 | familiarity-retry | active | 2026-07-23 · enhancement | Plan ladder: Safe / Familiar-but-new / Truly new / Retrying (`likes`→`safe`) |
+| 2 | run-taste-basics | planned | 2026-07-23 · enhancement | Capture sweet/salty/bitter/sour(/umami) on the tasting run survey |
+| 3 | insights-taste-basics | planned | 2026-07-23 · enhancement | Insights aggregates + tips from taste basics |
+| 4 | taste-profile-matches | planned | 2026-07-23 · enhancement | Show a small set of food icons matching a taste profile |
+| 5 | suggested-next-session | planned | 2026-07-11 · initial | App proposes next two foods + levels; parent approves or swaps |
+| 6 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
+| 7 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
 
 Status values: `parking` · `planned` · `active` · `done` · `cancelled`  
 Added: `YYYY-MM-DD · initial` | `enhancement` | `re-rank split`
@@ -68,7 +74,7 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Branch | Spec |
 |----|--------|------|
-| — | — | _(none)_ |
+| familiarity-retry | `familiarity-retry` | [active](specs/active/familiarity-retry.md) |
 
 ## Done
 
@@ -134,3 +140,4 @@ Only notable events (first carve-up, major re-rank, cancelled theme) — not eve
 | 2026-07-23 | Parking: `signup-starter-snacks` (optional signup picks for child tasting foods + snacks; after snack-taste-log). |
 | 2026-07-23 | snack-taste-log shipped (snack foods + liked/texture/taste note; excluded from Plan). Next up: `pace-insights`. |
 | 2026-07-23 | pace-insights shipped (aggregates + dismissible tips; snacks merged into liked/texture). Next up: `suggested-next-session`. |
+| 2026-07-23 | Added taste-basics + familiarity-retry slices; re-rank: `familiarity-retry` Next up, then taste capture → insights → icon matches; `suggested-next-session` deferred. |
