@@ -23,8 +23,18 @@ public class SessionExceptionHandler {
                 .body(Map.of("message", "Session cannot be edited"));
     }
 
+    @ExceptionHandler(SessionDateOccupiedException.class)
+    ResponseEntity<Map<String, String>> dateOccupied(SessionDateOccupiedException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", ex.getMessage()));
+    }
+
     @ExceptionHandler(InvalidSessionFoodException.class)
     ResponseEntity<Map<String, String>> invalidFood(InvalidSessionFoodException ex) {
+        return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
+    }
+
+    @ExceptionHandler(InvalidSessionScheduleException.class)
+    ResponseEntity<Map<String, String>> invalidSchedule(InvalidSessionScheduleException ex) {
         return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
     }
 

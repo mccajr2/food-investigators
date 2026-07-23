@@ -37,10 +37,11 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | pace-insights | planned | 2026-07-11 · initial | Parent dashboard: trends on what’s working; gentle suggestions you can ignore |
-| 2 | suggested-next-session | planned | 2026-07-11 · initial | App proposes next two foods + levels; parent approves or swaps |
-| 3 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
-| 4 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
+| 1 | session-parent-notes | planned | 2026-07-22 · enhancement | Optional parent notes after reward (History + therapist PDF) |
+| 2 | pace-insights | planned | 2026-07-11 · initial | Parent dashboard: trends on what’s working; gentle suggestions you can ignore |
+| 3 | suggested-next-session | planned | 2026-07-11 · initial | App proposes next two foods + levels; parent approves or swaps |
+| 4 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
+| 5 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
 
 Status values: `parking` · `planned` · `active` · `done` · `cancelled`  
 Added: `YYYY-MM-DD · initial` | `enhancement` | `re-rank split`
@@ -74,6 +75,7 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Completed | Spec |
 |----|-----------|------|
+| session-plan-guards | 2026-07-22 | [archive](specs/archive/session-plan-guards.md) |
 | custom-food-icons | 2026-07-22 | [archive](specs/archive/custom-food-icons.md) |
 | reward-match | 2026-07-21 | [archive](specs/archive/reward-match.md) |
 | reward-high-scores | 2026-07-21 | [archive](specs/archive/reward-high-scores.md) |
@@ -123,3 +125,5 @@ Only notable events (first carve-up, major re-rank, cancelled theme) — not eve
 | 2026-07-21 | reward-high-scores shipped (local Best + New best! cheer on Catch/Cross finish). Next up: `reward-match`. |
 | 2026-07-21 | reward-match shipped (memory pairs + Surprise includes Match). Next up: `custom-food-icons`. |
 | 2026-07-22 | custom-food-icons shipped (hero SVG foods + run game symbols; pizza/pretzel/raspberry starters). Next up: `pace-insights`. |
+| 2026-07-22 | UX cleanup ahead of insights: `session-plan-guards` → `session-parent-notes`, then `pace-insights`. |
+| 2026-07-22 | session-plan-guards shipped (past dates blocked, one session/day, same-food needs distinct variants). Next up: `session-parent-notes`. |

@@ -8,6 +8,8 @@ import com.yourorg.quickapp.sessions.FoodOutcomeRequest;
 import com.yourorg.quickapp.sessions.InvalidHistoryPdfRequestException;
 import com.yourorg.quickapp.sessions.InvalidSessionFoodException;
 import com.yourorg.quickapp.sessions.InvalidSessionOutcomeException;
+import com.yourorg.quickapp.sessions.InvalidSessionScheduleException;
+import com.yourorg.quickapp.sessions.SessionDateOccupiedException;
 import com.yourorg.quickapp.sessions.SessionFoodRequest;
 import com.yourorg.quickapp.sessions.SessionFoodResponse;
 import com.yourorg.quickapp.sessions.SessionNotEditableException;
@@ -19,6 +21,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -28,6 +31,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class SessionService {
+
+    private static final Set<SessionStatus> DAY_OCCUPYING_STATUSES =
+            EnumSet.of(SessionStatus.planned, SessionStatus.completed);
 
     private final TastingSessionRepository sessions;
     private final FoodCatalog foodCatalog;
@@ -42,6 +48,8 @@ public class SessionService {
     @Transactional
     public SessionResponse create(UUID householdId, CreateSessionRequest request) {
         Instant now = clock.instant();
+        requireNotPast(request.scheduledOn());
+        requireDayAvailable(householdId, request.scheduledOn(), null);
         List<ResolvedFood> resolved = resolveFoods(householdId, request.foods());
         TastingSession session = TastingSession.planned(householdId, request.scheduledOn(), now);
         session.replaceFoods(toEntities(resolved), now);
@@ -104,6 +112,8 @@ public class SessionService {
         TastingSession session = requireSession(householdId, sessionId);
         requireEditable(session);
         Instant now = clock.instant();
+        requireNotPast(request.scheduledOn());
+        requireDayAvailable(householdId, request.scheduledOn(), session.getId());
         List<ResolvedFood> resolved = resolveFoods(householdId, request.foods());
         session.reschedule(request.scheduledOn(), now);
         session.getFoods().clear();
@@ -167,6 +177,25 @@ public class SessionService {
         }
     }
 
+    private void requireNotPast(LocalDate scheduledOn) {
+        LocalDate today = LocalDate.now(clock);
+        if (scheduledOn.isBefore(today)) {
+            throw new InvalidSessionScheduleException("Scheduled date can't be in the past");
+        }
+    }
+
+    private void requireDayAvailable(UUID householdId, LocalDate scheduledOn, UUID excludeId) {
+        boolean occupied =
+                excludeId == null
+                        ? sessions.existsByHouseholdIdAndScheduledOnAndStatusIn(
+                                householdId, scheduledOn, DAY_OCCUPYING_STATUSES)
+                        : sessions.existsByHouseholdIdAndScheduledOnAndStatusInAndIdNot(
+                                householdId, scheduledOn, DAY_OCCUPYING_STATUSES, excludeId);
+        if (occupied) {
+            throw new SessionDateOccupiedException();
+        }
+    }
+
     private TastingSession requireSession(UUID householdId, UUID sessionId) {
         return sessions
                 .findByIdAndHouseholdId(sessionId, householdId)
@@ -196,7 +225,24 @@ public class SessionService {
             String note = normalizeNote(item.variantNote(), 200);
             resolved.add(new ResolvedFood(catalog, item.familiarity(), note, i + 1));
         }
+        requireSameFoodHasDistinctVariants(resolved);
         return resolved;
+    }
+
+    private static void requireSameFoodHasDistinctVariants(List<ResolvedFood> resolved) {
+        ResolvedFood first = resolved.get(0);
+        ResolvedFood second = resolved.get(1);
+        if (!first.catalog().id().equals(second.catalog().id())) {
+            return;
+        }
+        String firstNote = first.variantNote();
+        String secondNote = second.variantNote();
+        if (firstNote == null
+                || secondNote == null
+                || firstNote.equalsIgnoreCase(secondNote)) {
+            throw new InvalidSessionFoodException(
+                    "Same food needs two different brand/variety notes");
+        }
     }
 
     private static String normalizeNote(String note, int maxLength) {

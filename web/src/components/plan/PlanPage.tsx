@@ -38,6 +38,8 @@ type PlanPageProps = {
   sessionsClient?: SessionsClient
   foodsClient?: FoodsClient
   onUnauthorized?: () => void
+  /** ISO date (YYYY-MM-DD) for the date picker's min — defaults to local today. */
+  todayIso?: string
 }
 
 const emptySlot = (): FoodSlot => ({
@@ -46,10 +48,35 @@ const emptySlot = (): FoodSlot => ({
   variantNote: "",
 })
 
+/** Local calendar today as YYYY-MM-DD for `<input type="date" min>`. */
+export function localTodayIsoDate(now: Date = new Date()): string {
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, "0")
+  const day = String(now.getDate()).padStart(2, "0")
+  return `${year}-${month}-${day}`
+}
+
+/** Client-side same-food / variant rule (mirrors backend). */
+export function sameFoodVariantError(
+  first: FoodSlot,
+  second: FoodSlot,
+): string | null {
+  if (!first.foodId || !second.foodId || first.foodId !== second.foodId) {
+    return null
+  }
+  const a = first.variantNote.trim()
+  const b = second.variantNote.trim()
+  if (!a || !b || a.toLowerCase() === b.toLowerCase()) {
+    return "Same food needs two different brand/variety notes"
+  }
+  return null
+}
+
 export function PlanPage({
   sessionsClient: sessionsClientProp,
   foodsClient: foodsClientProp,
   onUnauthorized,
+  todayIso,
 }: PlanPageProps) {
   const [sessionsClient] = useState(
     () => sessionsClientProp ?? new SessionsClient(),
@@ -67,6 +94,9 @@ export function PlanPage({
   )
   const onUnauthorizedRef = useRef(onUnauthorized)
   onUnauthorizedRef.current = onUnauthorized
+  const minDate = todayIso ?? localTodayIsoDate()
+  const sameFoodSelected =
+    Boolean(slot1.foodId) && slot1.foodId === slot2.foodId
 
   useEffect(() => {
     let cancelled = false
@@ -138,12 +168,43 @@ export function PlanPage({
     }
   }
 
+  function plannedNightOccupiesDate(date: string): boolean {
+    return sessions.some((session) => {
+      if (session.scheduledOn !== date) {
+        return false
+      }
+      if (editor.mode === "edit" && editor.session.id === session.id) {
+        return false
+      }
+      return true
+    })
+  }
+
   async function onSave(event: FormEvent) {
     event.preventDefault()
     if (!scheduledOn || !slot1.foodId || !slot2.foodId) {
       setStatus({
         kind: "error",
         message: "Pick a date and two foods before saving.",
+      })
+      return
+    }
+    if (scheduledOn < minDate) {
+      setStatus({
+        kind: "error",
+        message: "Scheduled date can't be in the past",
+      })
+      return
+    }
+    const variantError = sameFoodVariantError(slot1, slot2)
+    if (variantError) {
+      setStatus({ kind: "error", message: variantError })
+      return
+    }
+    if (plannedNightOccupiesDate(scheduledOn)) {
+      setStatus({
+        kind: "error",
+        message: "A session already exists on that date",
       })
       return
     }
@@ -259,6 +320,7 @@ export function PlanPage({
             aria-label="Date"
             type="date"
             value={scheduledOn}
+            min={minDate}
             onChange={(event) => setScheduledOn(event.target.value)}
             required
             disabled={status.kind === "saving"}
@@ -269,6 +331,7 @@ export function PlanPage({
             slot={slot1}
             foods={foods}
             disabled={status.kind === "saving"}
+            variantRequired={sameFoodSelected}
             onChange={setSlot1}
           />
           <FoodSlotFields
@@ -276,6 +339,7 @@ export function PlanPage({
             slot={slot2}
             foods={foods}
             disabled={status.kind === "saving"}
+            variantRequired={sameFoodSelected}
             onChange={setSlot2}
           />
 
@@ -373,6 +437,7 @@ type FoodSlotFieldsProps = {
   slot: FoodSlot
   foods: FoodResponse[]
   disabled: boolean
+  variantRequired: boolean
   onChange: (slot: FoodSlot) => void
 }
 
@@ -381,6 +446,7 @@ function FoodSlotFields({
   slot,
   foods,
   disabled,
+  variantRequired,
   onChange,
 }: FoodSlotFieldsProps) {
   return (
@@ -424,7 +490,12 @@ function FoodSlotFields({
         onChange={(event) =>
           onChange({ ...slot, variantNote: event.target.value })
         }
-        placeholder="Optional brand, variety, or prep"
+        placeholder={
+          variantRequired
+            ? "Brand or variety (required)"
+            : "Optional brand, variety, or prep"
+        }
+        required={variantRequired}
         maxLength={200}
       />
     </fieldset>
