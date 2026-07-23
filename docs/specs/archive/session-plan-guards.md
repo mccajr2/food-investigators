@@ -1,6 +1,6 @@
 # Spec: session-plan-guards
 
-Status: in-progress  
+Status: done  
 Created: 2026-07-22  
 Parent: [docs/roadmap.md](../../roadmap.md)  
 Added: 2026-07-22 · enhancement
@@ -80,25 +80,25 @@ Enforce the same rules on **backend create/update** and **web Plan** UI.
 
 ## Acceptance criteria
 
-- [ ] Create with `scheduledOn` before today returns **400**; today and future
+- [x] Create with `scheduledOn` before today returns **400**; today and future
       succeed (other fields valid).
-- [ ] Update of a **planned** session to a past `scheduledOn` returns **400**.
-- [ ] Create on a date that already has a **planned** or **completed** session
+- [x] Update of a **planned** session to a past `scheduledOn` returns **400**.
+- [x] Create on a date that already has a **planned** or **completed** session
       for the household returns **409**; a date with only a **cancelled** session
       (or no session) succeeds.
-- [ ] Update that **moves** a planned session onto another session’s
+- [x] Update that **moves** a planned session onto another session’s
       planned/completed date returns **409**; update that keeps the same date
       (or moves onto a free / cancelled-only date) succeeds.
-- [ ] Completed sessions still cannot be updated (existing **409** editability).
-- [ ] Same `foodId` + two different non-blank `variantNote`s is accepted.
-- [ ] Same `foodId` with either variant missing/blank, or with matching variants
+- [x] Completed sessions still cannot be updated (existing **409** editability).
+- [x] Same `foodId` + two different non-blank `variantNote`s is accepted.
+- [x] Same `foodId` with either variant missing/blank, or with matching variants
       (trim, case-insensitive), returns **400**.
-- [ ] Two different `foodId`s still work with empty variants.
-- [ ] Web Plan date picker sets `min` to today so past dates are grayed out /
+- [x] Two different `foodId`s still work with empty variants.
+- [x] Web Plan date picker sets `min` to today so past dates are grayed out /
       unselectable before save; create/update errors for day conflict and
       same-food/variant rules (and any past-date bypass) show clear copy.
-- [ ] OpenAPI documents the new validation responses; web client stays aligned.
-- [ ] Session unit + API integration tests and PlanPage tests cover the cases
+- [x] OpenAPI documents the new validation responses; web client stays aligned.
+- [x] Session unit + API integration tests and PlanPage tests cover the cases
       above.
 
 ## Tasks
@@ -110,7 +110,7 @@ Enforce the same rules on **backend create/update** and **web Plan** UI.
       description; align web types/client if needed.
 - [x] Web: Plan date `min`; same-food UI requires distinct variants; surface
       validation errors.
-- [ ] Tests: API integration for past / day conflict / cancelled frees day /
+- [x] Tests: API integration for past / day conflict / cancelled frees day /
       same-food variant rules; PlanPage coverage for `min` + errors.
 
 ## Decisions (locked)

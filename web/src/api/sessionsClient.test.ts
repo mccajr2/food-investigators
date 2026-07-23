@@ -2,7 +2,11 @@ import { describe, expect, it, vi } from "vitest"
 
 import { SessionsClient } from "@/api/sessionsClient"
 import type { TokenStore } from "@/api/tokenStore"
-import type { CompleteSessionRequest, SessionResponse } from "@/api/types"
+import type {
+  CompleteSessionRequest,
+  CreateSessionRequest,
+  SessionResponse,
+} from "@/api/types"
 
 function memoryStore(token: string | null = "tok"): TokenStore {
   let stored = token
@@ -318,19 +322,19 @@ describe("SessionsClient", () => {
       memoryStore(),
     )
 
-    const request = {
+    const request: CreateSessionRequest = {
       scheduledOn: "2026-07-20",
       foods: [
         {
           foodId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa04",
-          familiarity: "likes" as const,
+          familiarity: "likes",
         },
         {
           foodId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa05",
-          familiarity: "likes" as const,
+          familiarity: "likes",
         },
       ],
-    } as const
+    }
 
     await expect(client.create(request)).rejects.toThrow(
       "Exactly two foods are required",
