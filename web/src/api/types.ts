@@ -122,6 +122,10 @@ export type CompleteSessionRequest = {
   foods: [FoodOutcomeRequest, FoodOutcomeRequest]
 }
 
+export type UpdateParentNoteRequest = {
+  parentNote: string | null
+}
+
 export type SessionFoodResponse = {
   foodId: string
   name: string
@@ -143,6 +147,7 @@ export type SessionResponse = {
   scheduledOn: string
   status: SessionStatus
   foods: SessionFoodResponse[]
+  parentNote?: string | null
   createdAt: string
   updatedAt: string
 }

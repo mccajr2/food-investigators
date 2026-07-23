@@ -6,6 +6,7 @@ import type {
   CreateSessionRequest,
   ErrorMessage,
   SessionResponse,
+  UpdateParentNoteRequest,
   UpdateSessionRequest,
 } from "@/api/types"
 
@@ -120,6 +121,26 @@ export class SessionsClient {
     })
     if (!response.ok) {
       throw new Error(await readErrorMessage(response, "Complete session failed"))
+    }
+    return (await response.json()) as SessionResponse
+  }
+
+  async updateParentNote(
+    sessionId: string,
+    request: UpdateParentNoteRequest,
+  ): Promise<SessionResponse> {
+    const response = await this.authorized(
+      `/api/sessions/${sessionId}/parent-note`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(request),
+      },
+    )
+    if (!response.ok) {
+      throw new Error(
+        await readErrorMessage(response, "Update parent note failed"),
+      )
     }
     return (await response.json()) as SessionResponse
   }

@@ -59,6 +59,7 @@ class OpenApiContractTest {
         assertThat(yaml).contains("/api/sessions/{sessionId}");
         assertThat(yaml).contains("/api/sessions/{sessionId}/cancel");
         assertThat(yaml).contains("/api/sessions/{sessionId}/complete");
+        assertThat(yaml).contains("/api/sessions/{sessionId}/parent-note");
         assertThat(yaml).contains("listUpcomingSessions");
         assertThat(yaml).contains("listSessionHistory");
         assertThat(yaml).contains("exportSessionHistoryPdf");
@@ -67,10 +68,12 @@ class OpenApiContractTest {
         assertThat(yaml).contains("updateSession");
         assertThat(yaml).contains("cancelSession");
         assertThat(yaml).contains("completeSession");
+        assertThat(yaml).contains("updateSessionParentNote");
         assertThat(yaml).contains("SessionResponse");
         assertThat(yaml).contains("CreateSessionRequest");
         assertThat(yaml).contains("UpdateSessionRequest");
         assertThat(yaml).contains("CompleteSessionRequest");
+        assertThat(yaml).contains("UpdateParentNoteRequest");
         assertThat(yaml).contains("FoodOutcomeRequest");
         assertThat(yaml).contains("SessionFoodRequest");
         assertThat(yaml).contains("SessionFoodResponse");
@@ -87,6 +90,7 @@ class OpenApiContractTest {
         assertThat(yaml).contains("whyNote");
         assertThat(yaml).contains("changeNote");
         assertThat(yaml).contains("ateEnough");
+        assertThat(yaml).contains("parentNote");
         assertThat(yaml).contains("likes");
         assertThat(yaml).contains("familiar_but_new");
         assertThat(yaml).contains("truly_new");

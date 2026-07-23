@@ -286,6 +286,36 @@ describe("SessionsClient", () => {
     expect(init.body).toBe(JSON.stringify(request))
   })
 
+  it("patches parent note on a completed session", async () => {
+    const withNote = {
+      ...sampleSession,
+      status: "completed" as const,
+      parentNote: "Tired after school",
+    }
+    const fetchFn = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify(withNote), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    )
+    const client = new SessionsClient(
+      "http://localhost:8080",
+      fetchFn,
+      memoryStore(),
+    )
+    const request = { parentNote: "Tired after school" }
+
+    const result = await client.updateParentNote(sampleSession.id, request)
+
+    expect(result.parentNote).toBe("Tired after school")
+    const init = fetchFn.mock.calls[0]?.[1] as RequestInit
+    expect(init.method).toBe("PATCH")
+    expect(String(fetchFn.mock.calls[0]?.[0])).toBe(
+      `http://localhost:8080/api/sessions/${sampleSession.id}/parent-note`,
+    )
+    expect(init.body).toBe(JSON.stringify(request))
+  })
+
   it("surfaces API errors and requires a token", async () => {
     const fetchFn = vi
       .fn()

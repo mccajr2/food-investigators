@@ -77,7 +77,7 @@ it forward (and later `pace-insights`).
 
 - [x] Backend: Flyway `parent_note`; entity/DTO; PATCH endpoint + validation;
       PDF line; unit tests.
-- [ ] Contract: OpenAPI path + `parentNote` on `SessionResponse`; align web +
+- [x] Contract: OpenAPI path + `parentNote` on `SessionResponse`; align web +
       mobile clients.
 - [ ] Web: Post-reward/encourage notes screen (Save/Skip); wire PATCH; History
       display.

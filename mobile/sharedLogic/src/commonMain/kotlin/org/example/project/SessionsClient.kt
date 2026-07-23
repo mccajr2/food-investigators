@@ -4,6 +4,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.request.header
+import io.ktor.client.request.patch
 import io.ktor.client.request.post
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
@@ -72,11 +73,17 @@ data class CompleteSessionRequest(
 )
 
 @Serializable
+data class UpdateParentNoteRequest(
+    val parentNote: String? = null,
+)
+
+@Serializable
 data class SessionResponse(
     val id: String,
     val scheduledOn: String,
     val status: String,
     val foods: List<SessionFoodResponse>,
+    val parentNote: String? = null,
     val createdAt: String,
     val updatedAt: String,
 )
@@ -172,6 +179,23 @@ class SessionsClient(
     ): SessionResponse {
         val response =
             httpClient.post("$baseUrl/api/sessions/$sessionId/complete") {
+                header(HttpHeaders.Authorization, bearerOrThrow())
+                contentType(ContentType.Application.Json)
+                setBody(request)
+            }
+        clearTokenIfUnauthorized(response)
+        if (!response.status.isSuccess()) {
+            throw SessionsException(readError(response))
+        }
+        return response.body()
+    }
+
+    suspend fun updateParentNote(
+        sessionId: String,
+        request: UpdateParentNoteRequest,
+    ): SessionResponse {
+        val response =
+            httpClient.patch("$baseUrl/api/sessions/$sessionId/parent-note") {
                 header(HttpHeaders.Authorization, bearerOrThrow())
                 contentType(ContentType.Application.Json)
                 setBody(request)

@@ -21,6 +21,7 @@ export type {
   Temperature,
   Texture,
   UpdateFoodRequest,
+  UpdateParentNoteRequest,
   UpdateSessionRequest,
   UserResponse,
 } from "@/api/types"
