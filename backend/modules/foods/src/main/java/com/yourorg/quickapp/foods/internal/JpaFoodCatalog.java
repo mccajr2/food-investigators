@@ -29,6 +29,7 @@ class JpaFoodCatalog implements FoodCatalog {
     public Optional<CatalogFood> findSelectable(UUID householdId, UUID foodId) {
         return foods.findById(foodId)
                 .filter(food -> !food.isArchived())
+                .filter(Food::isSessionEligible)
                 .filter(food -> food.isSystem() || householdId.equals(food.getHouseholdId()))
                 .map(this::toCatalog);
     }

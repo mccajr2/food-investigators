@@ -8,9 +8,12 @@ import static org.mockito.Mockito.when;
 
 import com.yourorg.quickapp.foods.CreateFoodRequest;
 import com.yourorg.quickapp.foods.DuplicateFoodNameException;
+import com.yourorg.quickapp.foods.FoodLiked;
 import com.yourorg.quickapp.foods.FoodNotFoundException;
 import com.yourorg.quickapp.foods.FoodResponse;
+import com.yourorg.quickapp.foods.FoodTexture;
 import com.yourorg.quickapp.foods.InvalidFoodIconKeyException;
+import com.yourorg.quickapp.foods.InvalidFoodPreferenceException;
 import com.yourorg.quickapp.foods.SystemFoodImmutableException;
 import com.yourorg.quickapp.foods.UpdateFoodRequest;
 import java.time.Clock;
@@ -52,6 +55,8 @@ class FoodServiceTest {
         List<FoodResponse> listed = service.list(householdId, false);
 
         assertThat(listed).extracting(FoodResponse::name).containsExactly("Apples", "My mash");
+        assertThat(listed.get(0).sessionEligible()).isTrue();
+        assertThat(listed.get(1).sessionEligible()).isTrue();
     }
 
     @Test
@@ -59,7 +64,9 @@ class FoodServiceTest {
         assertThatThrownBy(
                         () ->
                                 service.create(
-                                        householdId, new CreateFoodRequest("Soup", "nope")))
+                                        householdId,
+                                        new CreateFoodRequest(
+                                                "Soup", "nope", null, null, null, null)))
                 .isInstanceOf(InvalidFoodIconKeyException.class);
     }
 
@@ -69,16 +76,62 @@ class FoodServiceTest {
         when(foods.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         FoodResponse created =
-                service.create(householdId, new CreateFoodRequest("  Extra apple  ", "apple"));
+                service.create(
+                        householdId,
+                        new CreateFoodRequest(
+                                "  Extra apple  ", "apple", null, null, null, null));
 
         assertThat(created.name()).isEqualTo("Extra apple");
         assertThat(created.iconKey()).isEqualTo("apple");
         assertThat(created.system()).isFalse();
         assertThat(created.householdId()).isEqualTo(householdId);
+        assertThat(created.sessionEligible()).isTrue();
 
         ArgumentCaptor<Food> captor = ArgumentCaptor.forClass(Food.class);
         verify(foods).save(captor.capture());
         assertThat(captor.getValue().getName()).isEqualTo("Extra apple");
+    }
+
+    @Test
+    void createPersistsSnackWithPreferences() {
+        when(foods.existsVisibleName(householdId, "Salt chips", null)).thenReturn(false);
+        when(foods.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        FoodResponse created =
+                service.create(
+                        householdId,
+                        new CreateFoodRequest(
+                                "Salt chips",
+                                "custom_chips",
+                                false,
+                                FoodLiked.like,
+                                FoodTexture.crunchy,
+                                "  salt & vinegar  "));
+
+        assertThat(created.sessionEligible()).isFalse();
+        assertThat(created.liked()).isEqualTo(FoodLiked.like);
+        assertThat(created.texture()).isEqualTo(FoodTexture.crunchy);
+        assertThat(created.tasteNote()).isEqualTo("salt & vinegar");
+    }
+
+    @Test
+    void createRejectsTasteNoteOverMax() {
+        when(foods.existsVisibleName(householdId, "Chips", null)).thenReturn(false);
+        String tooLong = "x".repeat(101);
+
+        assertThatThrownBy(
+                        () ->
+                                service.create(
+                                        householdId,
+                                        new CreateFoodRequest(
+                                                "Chips",
+                                                "apple",
+                                                false,
+                                                FoodLiked.like,
+                                                null,
+                                                tooLong)))
+                .isInstanceOf(InvalidFoodPreferenceException.class)
+                .hasMessageContaining("100");
     }
 
     @Test
@@ -88,7 +141,9 @@ class FoodServiceTest {
         assertThatThrownBy(
                         () ->
                                 service.create(
-                                        householdId, new CreateFoodRequest("watermelon", "apple")))
+                                        householdId,
+                                        new CreateFoodRequest(
+                                                "watermelon", "apple", null, null, null, null)))
                 .isInstanceOf(DuplicateFoodNameException.class);
     }
 
@@ -103,7 +158,8 @@ class FoodServiceTest {
                                 service.update(
                                         householdId,
                                         mine.getId(),
-                                        new UpdateFoodRequest("Apples", null)))
+                                        new UpdateFoodRequest(
+                                                "Apples", null, null, null, null, null)))
                 .isInstanceOf(DuplicateFoodNameException.class);
     }
 
@@ -116,10 +172,36 @@ class FoodServiceTest {
 
         FoodResponse updated =
                 service.update(
-                        householdId, mine.getId(), new UpdateFoodRequest("My mash", "banana"));
+                        householdId,
+                        mine.getId(),
+                        new UpdateFoodRequest("My mash", "banana", null, null, null, null));
 
         assertThat(updated.name()).isEqualTo("My mash");
         assertThat(updated.iconKey()).isEqualTo("banana");
+    }
+
+    @Test
+    void updateMarksSnackAndPreferences() {
+        Food mine = Food.household(householdId, "Chips", "apple", now);
+        when(foods.findById(mine.getId())).thenReturn(Optional.of(mine));
+        when(foods.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        FoodResponse updated =
+                service.update(
+                        householdId,
+                        mine.getId(),
+                        new UpdateFoodRequest(
+                                null,
+                                null,
+                                false,
+                                FoodLiked.so_so,
+                                FoodTexture.crunchy,
+                                "bbq"));
+
+        assertThat(updated.sessionEligible()).isFalse();
+        assertThat(updated.liked()).isEqualTo(FoodLiked.so_so);
+        assertThat(updated.texture()).isEqualTo(FoodTexture.crunchy);
+        assertThat(updated.tasteNote()).isEqualTo("bbq");
     }
 
     @Test
@@ -131,10 +213,14 @@ class FoodServiceTest {
         assertThatThrownBy(
                         () ->
                                 service.update(
-                                        householdId, systemId, new UpdateFoodRequest("X", null)))
+                                        householdId,
+                                        systemId,
+                                        new UpdateFoodRequest(
+                                                "X", null, false, null, null, null)))
                 .isInstanceOf(SystemFoodImmutableException.class);
         assertThatThrownBy(() -> service.archive(householdId, systemId))
                 .isInstanceOf(SystemFoodImmutableException.class);
+        assertThat(system.isSessionEligible()).isTrue();
     }
 
     @Test
@@ -147,7 +233,10 @@ class FoodServiceTest {
         assertThatThrownBy(
                         () ->
                                 service.update(
-                                        householdId, foodId, new UpdateFoodRequest("Mine", null)))
+                                        householdId,
+                                        foodId,
+                                        new UpdateFoodRequest(
+                                                "Mine", null, null, null, null, null)))
                 .isInstanceOf(FoodNotFoundException.class);
     }
 
@@ -162,7 +251,8 @@ class FoodServiceTest {
                 service.update(
                         householdId,
                         mine.getId(),
-                        new UpdateFoodRequest("Renamed", "sweet_potato"));
+                        new UpdateFoodRequest(
+                                "Renamed", "sweet_potato", null, null, null, null));
         assertThat(updated.name()).isEqualTo("Renamed");
         assertThat(updated.iconKey()).isEqualTo("sweet_potato");
 

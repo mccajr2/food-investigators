@@ -1,6 +1,6 @@
 # Spec: snack-taste-log
 
-Status: draft  
+Status: in-progress  
 Created: 2026-07-23  
 Parent: [docs/roadmap.md](../../roadmap.md)  
 Added: 2026-07-23 · enhancement  
@@ -89,7 +89,7 @@ later Insights can use them — without treating snacks as Plan/run session food
 
 ## Tasks
 
-- [ ] Backend: Flyway columns; entity/DTOs; selectable + validation; unit tests.
+- [x] Backend: Flyway columns; entity/DTOs; selectable + validation; unit tests.
 - [ ] Contract: OpenAPI Food schemas; align web + mobile clients.
 - [ ] Web: Foods snack flag + preference fields + tasting/snack presentation;
       Plan picker filters snacks.

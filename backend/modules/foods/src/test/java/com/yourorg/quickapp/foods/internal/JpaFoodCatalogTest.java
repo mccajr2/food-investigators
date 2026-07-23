@@ -56,4 +56,15 @@ class JpaFoodCatalogTest {
         assertThat(catalog.findVisible(householdId, archived.getId()))
                 .contains(new CatalogFood(archived.getId(), "Old", "apple"));
     }
+
+    @Test
+    void findSelectableRejectsSnackFoodsButVisibleStillReturnsThem() {
+        Food snack = Food.household(householdId, "Chips", "apple", now);
+        snack.setSessionEligible(false, now);
+        when(foods.findById(snack.getId())).thenReturn(Optional.of(snack));
+
+        assertThat(catalog.findSelectable(householdId, snack.getId())).isEmpty();
+        assertThat(catalog.findVisible(householdId, snack.getId()))
+                .contains(new CatalogFood(snack.getId(), "Chips", "apple"));
+    }
 }

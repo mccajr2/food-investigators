@@ -9,6 +9,6 @@ public interface FoodCatalog {
     /** System or this household's food, including archived (for reading past plans). */
     Optional<CatalogFood> findVisible(UUID householdId, UUID foodId);
 
-    /** Visible and not archived — eligible when creating or updating a plan. */
+    /** Visible and not archived and session-eligible — for creating or updating a plan. */
     Optional<CatalogFood> findSelectable(UUID householdId, UUID foodId);
 }
