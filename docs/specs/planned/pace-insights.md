@@ -27,3 +27,4 @@ losing him to boredom or frustration — while still choosing foods themselves.
 
 - Parent-led phase: insights + ignorable tips only.
 - Depends on a meaningful amount of `session-history` data.
+- Benefits from `session-parent-notes` when that ships (parent context for tips).
