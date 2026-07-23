@@ -1,7 +1,13 @@
 import { useEffect, useRef, useState, type FormEvent } from "react"
 
 import { FoodsClient } from "@/api"
-import { FOOD_ICON_KEYS, type FoodIconKey, type FoodResponse } from "@/api/types"
+import {
+  FOOD_ICON_KEYS,
+  type FoodIconKey,
+  type FoodResponse,
+  type Liked,
+  type Texture,
+} from "@/api/types"
 import { FoodIcon, FOOD_ICON_LABELS } from "@/components/food/FoodIcon"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -24,6 +30,32 @@ type Editor =
 /** Library starters, or generate a custom icon from the food name. */
 type IconChoice = "fromName" | FoodIconKey
 
+const LIKED_OPTIONS: { value: Liked; label: string }[] = [
+  { value: "like", label: "Like" },
+  { value: "so_so", label: "So-so" },
+  { value: "no", label: "No" },
+]
+
+const TEXTURE_OPTIONS: { value: Texture; label: string }[] = [
+  { value: "soft", label: "Soft" },
+  { value: "crunchy", label: "Crunchy" },
+  { value: "chewy", label: "Chewy" },
+  { value: "wet", label: "Wet" },
+]
+
+const LIKED_LABELS: Record<Liked, string> = {
+  like: "Like",
+  so_so: "So-so",
+  no: "No",
+}
+
+const TEXTURE_LABELS: Record<Texture, string> = {
+  soft: "Soft",
+  crunchy: "Crunchy",
+  chewy: "Chewy",
+  wet: "Wet",
+}
+
 type FoodsPageProps = {
   client?: FoodsClient
   onUnauthorized?: () => void
@@ -39,6 +71,10 @@ export function FoodsPage({
   const [editor, setEditor] = useState<Editor>({ mode: "closed" })
   const [name, setName] = useState("")
   const [iconChoice, setIconChoice] = useState<IconChoice>("fromName")
+  const [isSnack, setIsSnack] = useState(false)
+  const [liked, setLiked] = useState<Liked | "">("")
+  const [texture, setTexture] = useState<Texture | "">("")
+  const [tasteNote, setTasteNote] = useState("")
   const onUnauthorizedRef = useRef(onUnauthorized)
   onUnauthorizedRef.current = onUnauthorized
 
@@ -72,15 +108,28 @@ export function FoodsPage({
   }, [client])
 
   const starters = foods.filter((food) => food.system)
-  const mine = foods.filter((food) => !food.system)
+  const tastingMine = foods.filter(
+    (food) => !food.system && food.sessionEligible !== false,
+  )
+  const snacks = foods.filter(
+    (food) => !food.system && food.sessionEligible === false,
+  )
   const previewIconKey =
     iconChoice === "fromName"
       ? customIconKeyFromName(name || "food")
       : iconChoice
 
+  function resetPreferenceFields() {
+    setIsSnack(false)
+    setLiked("")
+    setTexture("")
+    setTasteNote("")
+  }
+
   function openCreate() {
     setName("")
     setIconChoice("fromName")
+    resetPreferenceFields()
     setEditor({ mode: "create" })
   }
 
@@ -94,6 +143,10 @@ export function FoodsPage({
     } else {
       setIconChoice(food.iconKey as FoodIconKey)
     }
+    setIsSnack(food.sessionEligible === false)
+    setLiked(food.liked ?? "")
+    setTexture(food.texture ?? "")
+    setTasteNote(food.tasteNote ?? "")
     setEditor({ mode: "edit", food })
   }
 
@@ -108,6 +161,16 @@ export function FoodsPage({
     return iconChoice
   }
 
+  function preferencePayload() {
+    const trimmedNote = tasteNote.trim()
+    return {
+      sessionEligible: !isSnack,
+      liked: liked === "" ? null : liked,
+      texture: texture === "" ? null : texture,
+      tasteNote: trimmedNote === "" ? null : trimmedNote,
+    }
+  }
+
   async function onSave(event: FormEvent) {
     event.preventDefault()
     const trimmed = name.trim()
@@ -115,10 +178,15 @@ export function FoodsPage({
       return
     }
     const iconKey = resolveIconKey(trimmed)
+    const prefs = preferencePayload()
     setStatus({ kind: "saving" })
     try {
       if (editor.mode === "create") {
-        const created = await client.create({ name: trimmed, iconKey })
+        const created = await client.create({
+          name: trimmed,
+          iconKey,
+          ...prefs,
+        })
         setFoods((current) =>
           [...current, created].sort((a, b) =>
             a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
@@ -128,6 +196,7 @@ export function FoodsPage({
         const updated = await client.update(editor.food.id, {
           name: trimmed,
           iconKey,
+          ...prefs,
         })
         setFoods((current) =>
           current
@@ -176,7 +245,7 @@ export function FoodsPage({
             Foods
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Starter library and foods for this household.
+            Starter library, tasting foods, and snacks for this household.
           </p>
         </div>
         <Button
@@ -273,6 +342,89 @@ export function FoodsPage({
             </div>
           </fieldset>
 
+          <label className="flex items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              className="mt-0.5 size-4 rounded border border-input"
+              checked={isSnack}
+              onChange={(event) => setIsSnack(event.target.checked)}
+              disabled={status.kind === "saving"}
+              aria-label="Snack (not for tasting)"
+            />
+            <span>
+              <span className="font-medium">Snack (not for tasting)</span>
+              <span className="mt-0.5 block text-xs text-muted-foreground">
+                Snacks stay in Foods but are not offered when planning a night.
+              </span>
+            </span>
+          </label>
+
+          {isSnack ? (
+            <fieldset
+              disabled={status.kind === "saving"}
+              className="flex flex-col gap-3 rounded-md border border-border bg-background p-3"
+            >
+              <legend className="px-1 text-sm font-medium">
+                Snack preferences
+              </legend>
+              <div className="flex flex-col gap-1">
+                <label htmlFor="snack-liked" className="text-sm font-medium">
+                  Liked
+                </label>
+                <select
+                  id="snack-liked"
+                  aria-label="Liked"
+                  className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                  value={liked}
+                  onChange={(event) =>
+                    setLiked(event.target.value as Liked | "")
+                  }
+                >
+                  <option value="">Not set</option>
+                  {LIKED_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col gap-1">
+                <label htmlFor="snack-texture" className="text-sm font-medium">
+                  Texture
+                </label>
+                <select
+                  id="snack-texture"
+                  aria-label="Texture"
+                  className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                  value={texture}
+                  onChange={(event) =>
+                    setTexture(event.target.value as Texture | "")
+                  }
+                >
+                  <option value="">Not set</option>
+                  {TEXTURE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col gap-1">
+                <label htmlFor="snack-taste-note" className="text-sm font-medium">
+                  Taste note
+                </label>
+                <Input
+                  id="snack-taste-note"
+                  aria-label="Taste note"
+                  value={tasteNote}
+                  onChange={(event) => setTasteNote(event.target.value)}
+                  placeholder="e.g. salt & vinegar"
+                  maxLength={100}
+                />
+              </div>
+            </fieldset>
+          ) : null}
+
           <div className="flex flex-wrap gap-2">
             <Button type="submit" disabled={status.kind === "saving"}>
               {status.kind === "saving"
@@ -296,12 +448,22 @@ export function FoodsPage({
       <FoodSection title="Starter foods" foods={starters} />
 
       <FoodSection
-        title="My foods"
-        foods={mine}
-        empty="No household foods yet. Add one to get started."
+        title="Tasting foods"
+        foods={tastingMine}
+        empty="No tasting foods yet. Add one to get started."
         onEdit={openEdit}
         onArchive={(food) => void onArchive(food)}
         busy={status.kind === "saving"}
+      />
+
+      <FoodSection
+        title="Snacks"
+        foods={snacks}
+        empty="No snacks yet. Mark a food as a snack to track preferences."
+        onEdit={openEdit}
+        onArchive={(food) => void onArchive(food)}
+        busy={status.kind === "saving"}
+        showSnackDetails
       />
     </section>
   )
@@ -314,6 +476,7 @@ type FoodSectionProps = {
   onEdit?: (food: FoodResponse) => void
   onArchive?: (food: FoodResponse) => void
   busy?: boolean
+  showSnackDetails?: boolean
 }
 
 function isUnauthorizedMessage(message: string): boolean {
@@ -325,6 +488,20 @@ function isUnauthorizedMessage(message: string): boolean {
   )
 }
 
+function snackDetailLine(food: FoodResponse): string | null {
+  const parts: string[] = []
+  if (food.liked) {
+    parts.push(LIKED_LABELS[food.liked])
+  }
+  if (food.texture) {
+    parts.push(TEXTURE_LABELS[food.texture])
+  }
+  if (food.tasteNote?.trim()) {
+    parts.push(food.tasteNote.trim())
+  }
+  return parts.length > 0 ? parts.join(" · ") : null
+}
+
 function FoodSection({
   title,
   foods,
@@ -332,6 +509,7 @@ function FoodSection({
   onEdit,
   onArchive,
   busy,
+  showSnackDetails,
 }: FoodSectionProps) {
   return (
     <section className="flex flex-col gap-3">
@@ -342,39 +520,50 @@ function FoodSection({
         <p className="text-sm text-muted-foreground">{empty}</p>
       ) : (
         <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {foods.map((food) => (
-            <li
-              key={food.id}
-              className="flex flex-col items-center gap-2 rounded-xl border border-border bg-card p-3 text-center"
-            >
-              <div className="size-20 sm:size-24">
-                <FoodIcon iconKey={food.iconKey} name={food.name} />
-              </div>
-              <p className="text-sm font-medium leading-snug">{food.name}</p>
-              {onEdit && onArchive ? (
-                <div className="flex flex-wrap justify-center gap-2">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => onEdit(food)}
-                    disabled={busy}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => onArchive(food)}
-                    disabled={busy}
-                  >
-                    Archive
-                  </Button>
+          {foods.map((food) => {
+            const details = showSnackDetails ? snackDetailLine(food) : null
+            return (
+              <li
+                key={food.id}
+                className="flex flex-col items-center gap-2 rounded-xl border border-border bg-card p-3 text-center"
+              >
+                <div className="size-20 sm:size-24">
+                  <FoodIcon iconKey={food.iconKey} name={food.name} />
                 </div>
-              ) : null}
-            </li>
-          ))}
+                <p className="text-sm font-medium leading-snug">{food.name}</p>
+                {showSnackDetails ? (
+                  <p className="text-[0.65rem] font-medium uppercase tracking-wide text-muted-foreground">
+                    Snack
+                  </p>
+                ) : null}
+                {details ? (
+                  <p className="text-xs text-muted-foreground">{details}</p>
+                ) : null}
+                {onEdit && onArchive ? (
+                  <div className="flex flex-wrap justify-center gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onEdit(food)}
+                      disabled={busy}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => onArchive(food)}
+                      disabled={busy}
+                    >
+                      Archive
+                    </Button>
+                  </div>
+                ) : null}
+              </li>
+            )
+          })}
         </ul>
       )}
     </section>

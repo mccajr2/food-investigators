@@ -91,7 +91,7 @@ later Insights can use them — without treating snacks as Plan/run session food
 
 - [x] Backend: Flyway columns; entity/DTOs; selectable + validation; unit tests.
 - [x] Contract: OpenAPI Food schemas; align web + mobile clients.
-- [ ] Web: Foods snack flag + preference fields + tasting/snack presentation;
+- [x] Web: Foods snack flag + preference fields + tasting/snack presentation;
       Plan picker filters snacks.
 - [ ] Tests: Foods API integration; FoodsPage + PlanPage coverage.
 

@@ -151,6 +151,35 @@ describe("PlanPage", () => {
     expect(screen.getByLabelText("Date")).toHaveAttribute("min", TODAY);
   });
 
+  it("excludes snacks from food pickers", async () => {
+    const user = userEvent.setup();
+    const snack: FoodResponse = {
+      id: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+      name: "Salt chips",
+      iconKey: "custom_salt_chips",
+      householdId: "22222222-2222-2222-2222-222222222222",
+      system: false,
+      sessionEligible: false,
+      liked: "like",
+      texture: "crunchy",
+      tasteNote: "salt & vinegar",
+    };
+    renderPlan(
+      mockSessionsClient(),
+      mockFoodsClient({
+        list: vi.fn().mockResolvedValue([...foods, snack]),
+      }),
+    );
+
+    await screen.findByRole("heading", { name: "Plan" });
+    await user.click(screen.getByRole("button", { name: "Plan a night" }));
+
+    const form = screen.getByRole("form", { name: "Plan a night" });
+    const picker = within(form).getByLabelText("Food 1 picker");
+    expect(within(picker).getByText("Apples")).toBeInTheDocument();
+    expect(within(picker).queryByText("Salt chips")).not.toBeInTheDocument();
+  });
+
   it("creates a planned night with two foods", async () => {
     const user = userEvent.setup();
     const create = vi.fn().mockResolvedValue(sampleSession);

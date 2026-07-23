@@ -95,6 +95,7 @@ export function PlanPage({
   const onUnauthorizedRef = useRef(onUnauthorized)
   onUnauthorizedRef.current = onUnauthorized
   const minDate = todayIso ?? localTodayIsoDate()
+  const selectableFoods = foods.filter((food) => food.sessionEligible !== false)
   const sameFoodSelected =
     Boolean(slot1.foodId) && slot1.foodId === slot2.foodId
 
@@ -329,7 +330,7 @@ export function PlanPage({
           <FoodSlotFields
             label="Food 1"
             slot={slot1}
-            foods={foods}
+            foods={selectableFoods}
             disabled={status.kind === "saving"}
             variantRequired={sameFoodSelected}
             onChange={setSlot1}
@@ -337,7 +338,7 @@ export function PlanPage({
           <FoodSlotFields
             label="Food 2"
             slot={slot2}
-            foods={foods}
+            foods={selectableFoods}
             disabled={status.kind === "saving"}
             variantRequired={sameFoodSelected}
             onChange={setSlot2}

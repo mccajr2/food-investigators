@@ -81,8 +81,15 @@ describe("FoodsPage", () => {
     expect(create).toHaveBeenCalledWith({
       name: "Cucumber",
       iconKey: "custom_cucumber",
+      sessionEligible: true,
+      liked: null,
+      texture: null,
+      tasteNote: null,
     });
     expect(await screen.findByText("Cucumber")).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Tasting foods" }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Edit" })).toBeInTheDocument();
   });
 
@@ -112,6 +119,10 @@ describe("FoodsPage", () => {
     expect(create).toHaveBeenCalledWith({
       name: "Extra mash",
       iconKey: "sweet_potato",
+      sessionEligible: true,
+      liked: null,
+      texture: null,
+      tasteNote: null,
     });
   });
 
@@ -151,6 +162,10 @@ describe("FoodsPage", () => {
     expect(create).toHaveBeenCalledWith({
       name: "Friday pizza",
       iconKey: "cheese_pizza",
+      sessionEligible: true,
+      liked: null,
+      texture: null,
+      tasteNote: null,
     });
   });
 
@@ -198,6 +213,10 @@ describe("FoodsPage", () => {
     expect(update).toHaveBeenCalledWith(mine.id, {
       name: "Vanilla cup",
       iconKey: "yogurt_vanilla",
+      sessionEligible: true,
+      liked: null,
+      texture: null,
+      tasteNote: null,
     });
     expect(await screen.findByText("Vanilla cup")).toBeInTheDocument();
 
@@ -206,6 +225,61 @@ describe("FoodsPage", () => {
     await waitFor(() => {
       expect(screen.queryByText("Vanilla cup")).not.toBeInTheDocument();
     });
+  });
+
+  it("creates a snack with liked, texture, and taste note under Snacks", async () => {
+    const user = userEvent.setup();
+    const created: FoodResponse = {
+      id: "cccccccc-cccc-cccc-cccc-cccccccccccc",
+      name: "Salt chips",
+      iconKey: "custom_salt_chips",
+      householdId: "22222222-2222-2222-2222-222222222222",
+      system: false,
+      sessionEligible: false,
+      liked: "like",
+      texture: "crunchy",
+      tasteNote: "salt & vinegar",
+    };
+    const create = vi.fn().mockResolvedValue(created);
+    render(<FoodsPage client={mockFoodsClient({ create })} />);
+
+    await screen.findByText("Apples");
+    await user.click(screen.getByRole("button", { name: "Add food" }));
+
+    const form = screen.getByRole("form", { name: "Add food" });
+    await user.type(within(form).getByLabelText("Food name"), "Salt chips");
+    await user.click(
+      within(form).getByLabelText("Snack (not for tasting)"),
+    );
+    await user.selectOptions(within(form).getByLabelText("Liked"), "like");
+    await user.selectOptions(
+      within(form).getByLabelText("Texture"),
+      "crunchy",
+    );
+    await user.type(
+      within(form).getByLabelText("Taste note"),
+      "salt & vinegar",
+    );
+    await user.click(within(form).getByRole("button", { name: "Save food" }));
+
+    expect(create).toHaveBeenCalledWith({
+      name: "Salt chips",
+      iconKey: "custom_salt_chips",
+      sessionEligible: false,
+      liked: "like",
+      texture: "crunchy",
+      tasteNote: "salt & vinegar",
+    });
+
+    const snacks = screen.getByRole("heading", { name: "Snacks" }).closest(
+      "section",
+    );
+    expect(snacks).not.toBeNull();
+    expect(within(snacks!).getByText("Salt chips")).toBeInTheDocument();
+    expect(within(snacks!).getByText("Snack")).toBeInTheDocument();
+    expect(
+      within(snacks!).getByText("Like · Crunchy · salt & vinegar"),
+    ).toBeInTheDocument();
   });
 
   it("surfaces create errors including duplicate names", async () => {
