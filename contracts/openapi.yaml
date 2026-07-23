@@ -7,7 +7,8 @@ info:
     (email/password register and login, Bearer session tokens, /api/auth/me),
     the household food catalog (system starters + custom foods, archive), and
     tasting sessions (create, list upcoming, history of completed, download
-    history PDF, get, update, cancel, complete with run outcomes).
+    history PDF, get, update, cancel, complete with run outcomes, optional
+    parent notes on completed sessions).
 servers:
   - url: http://localhost:8080
     description: Local development
@@ -649,6 +650,59 @@ paths:
                 $ref: "#/components/schemas/ErrorMessage"
               example:
                 message: Session cannot be edited
+  /api/sessions/{sessionId}/parent-note:
+    patch:
+      operationId: updateSessionParentNote
+      summary: Save or clear optional parent notes on a completed session
+      description: >
+        Sets `parentNote` on a `completed` tasting session (trim; blank or null
+        clears to null; max 2000 characters). Planned or cancelled sessions
+        return 409. Does not reopen general session update for completed rows.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/SessionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateParentNoteRequest"
+            example:
+              parentNote: Tired after school; clinic was loud
+      responses:
+        "200":
+          description: Parent note updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionResponse"
+        "400":
+          description: Invalid request (e.g. note too long)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+        "401":
+          description: Missing or invalid session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+        "404":
+          description: Session not found for this household
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+        "409":
+          description: Session is not completed (planned or cancelled)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+              example:
+                message: Parent notes can only be saved on completed sessions
 components:
   parameters:
     FoodId:
@@ -1010,6 +1064,16 @@ components:
           type: boolean
           nullable: true
           description: Set after the session is completed
+    UpdateParentNoteRequest:
+      type: object
+      properties:
+        parentNote:
+          type: string
+          maxLength: 2000
+          nullable: true
+          description: >
+            Optional parent context after the tasting. Trimmed on save; blank
+            or null clears the stored note.
     SessionResponse:
       type: object
       required:
@@ -1035,6 +1099,11 @@ components:
           maxItems: 2
           items:
             $ref: "#/components/schemas/SessionFoodResponse"
+        parentNote:
+          type: string
+          maxLength: 2000
+          nullable: true
+          description: Optional parent notes saved after the kid reward beat
         createdAt:
           type: string
           format: date-time

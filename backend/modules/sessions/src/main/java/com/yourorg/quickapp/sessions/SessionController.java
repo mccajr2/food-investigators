@@ -13,6 +13,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -96,6 +97,14 @@ public class SessionController {
             @PathVariable("sessionId") UUID sessionId,
             @Valid @RequestBody CompleteSessionRequest request) {
         return sessionService.complete(requireHouseholdId(principal), sessionId, request);
+    }
+
+    @PatchMapping("/{sessionId}/parent-note")
+    public SessionResponse updateParentNote(
+            @AuthenticationPrincipal AccountPrincipal principal,
+            @PathVariable("sessionId") UUID sessionId,
+            @Valid @RequestBody UpdateParentNoteRequest request) {
+        return sessionService.updateParentNote(requireHouseholdId(principal), sessionId, request);
     }
 
     private static UUID requireHouseholdId(AccountPrincipal principal) {

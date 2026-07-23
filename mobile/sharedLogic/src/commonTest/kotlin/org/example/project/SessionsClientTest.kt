@@ -282,6 +282,37 @@ class SessionsClientTest {
         }
 
     @Test
+    fun updateParentNotePatchesAndParsesSession() =
+        runTest {
+            val store = InMemoryTokenStore()
+            store.saveToken("tok", rememberMe = true)
+            val engine =
+                MockEngine { request ->
+                    assertEquals(HttpMethod.Patch, request.method)
+                    assertEquals(
+                        "/api/sessions/eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee/parent-note",
+                        request.url.encodedPath,
+                    )
+                    assertEquals("Bearer tok", request.headers[HttpHeaders.Authorization])
+                    respond(
+                        content = completedSessionJson(parentNote = "Tired after school"),
+                        status = HttpStatusCode.OK,
+                        headers = headersOf(HttpHeaders.ContentType, "application/json"),
+                    )
+                }
+
+            val client = SessionsClient("http://localhost:8080", httpClient(engine), store)
+            val updated =
+                client.updateParentNote(
+                    "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+                    UpdateParentNoteRequest(parentNote = "Tired after school"),
+                )
+
+            assertEquals("completed", updated.status)
+            assertEquals("Tired after school", updated.parentNote)
+        }
+
+    @Test
     fun requiresSignedInToken() =
         runTest {
             val client =
@@ -294,8 +325,14 @@ class SessionsClientTest {
             assertEquals("Not signed in", error.message)
         }
 
-    private fun completedSessionJson(): String =
-        """
+    private fun completedSessionJson(parentNote: String? = null): String {
+        val noteJson =
+            if (parentNote == null) {
+                "null"
+            } else {
+                "\"$parentNote\""
+            }
+        return """
         {"id":"eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
          "scheduledOn":"2026-07-20",
          "status":"completed",
@@ -327,9 +364,11 @@ class SessionsClientTest {
             "changeNote":null,
             "ateEnough":false}
          ],
+         "parentNote":$noteJson,
          "createdAt":"2026-07-15T00:00:00Z",
          "updatedAt":"2026-07-15T00:00:00Z"}
         """.trimIndent()
+    }
 
     private fun sampleSessionJson(): String =
         """
@@ -350,6 +389,7 @@ class SessionsClientTest {
             "variantNote":null,
             "position":2}
          ],
+         "parentNote":null,
          "createdAt":"2026-07-15T00:00:00Z",
          "updatedAt":"2026-07-15T00:00:00Z"}
         """.trimIndent()

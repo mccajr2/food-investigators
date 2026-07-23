@@ -23,6 +23,12 @@ public class SessionExceptionHandler {
                 .body(Map.of("message", "Session cannot be edited"));
     }
 
+    @ExceptionHandler(SessionParentNoteNotAllowedException.class)
+    ResponseEntity<Map<String, String>> parentNoteNotAllowed(
+            SessionParentNoteNotAllowedException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", ex.getMessage()));
+    }
+
     @ExceptionHandler(SessionDateOccupiedException.class)
     ResponseEntity<Map<String, String>> dateOccupied(SessionDateOccupiedException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", ex.getMessage()));

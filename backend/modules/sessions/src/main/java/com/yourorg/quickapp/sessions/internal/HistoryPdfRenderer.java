@@ -51,6 +51,12 @@ final class HistoryPdfRenderer {
                 for (SessionResponse session : sessions) {
                     writer.ensureSpace(8 * LINE);
                     writer.line(bold, BODY_SIZE, "Session: " + session.scheduledOn());
+                    if (session.parentNote() != null && !session.parentNote().isBlank()) {
+                        writer.line(
+                                regular,
+                                BODY_SIZE,
+                                "  Parent notes: " + safe(session.parentNote()));
+                    }
                     List<SessionFoodResponse> foods =
                             session.foods().stream()
                                     .sorted((a, b) -> Integer.compare(a.position(), b.position()))

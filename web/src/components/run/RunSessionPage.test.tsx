@@ -49,6 +49,7 @@ function mockSessionsClient(
     update: vi.fn(),
     cancel: vi.fn(),
     complete: vi.fn(),
+    updateParentNote: vi.fn(),
     ...overrides,
   } as SessionsClient
 }
@@ -195,6 +196,9 @@ describe("RunSessionPage", () => {
     expect(screen.getByText(/Theme: Apples/)).toBeInTheDocument()
 
     await user.click(screen.getByRole("button", { name: "Done" }))
+    expect(onComplete).not.toHaveBeenCalled()
+    expect(await screen.findByLabelText("Parent notes")).toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: "Skip" }))
     expect(onComplete).toHaveBeenCalledWith(completed)
   })
 
@@ -252,6 +256,8 @@ describe("RunSessionPage", () => {
     )
 
     await user.click(screen.getByRole("button", { name: "Done" }))
+    expect(await screen.findByLabelText("Parent notes")).toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: "Skip" }))
     expect(onComplete).toHaveBeenCalledWith(completed)
   })
 
@@ -291,6 +297,48 @@ describe("RunSessionPage", () => {
     expect(screen.getByText(/Theme: Apples/)).toBeInTheDocument()
 
     await user.click(screen.getByRole("button", { name: "Done" }))
+    expect(await screen.findByLabelText("Parent notes")).toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: "Skip" }))
+    expect(onComplete).toHaveBeenCalledWith(completed)
+  })
+
+  it("shows parent notes after Match finishes", async () => {
+    const user = userEvent.setup()
+    const completed: SessionResponse = {
+      ...sampleSession,
+      status: "completed",
+      foods: sampleSession.foods.map((food, index) => ({
+        ...food,
+        ateEnough: index === 0,
+      })),
+    }
+    const onComplete = vi.fn()
+
+    render(
+      <RunSessionPage
+        session={sampleSession}
+        sessionsClient={mockSessionsClient({
+          complete: vi.fn().mockResolvedValue(completed),
+        })}
+        onComplete={onComplete}
+        onExit={vi.fn()}
+      />,
+    )
+
+    await skipAllOptionalSteps(user)
+    await user.click(screen.getByRole("option", { name: "Yes" }))
+    await skipAllOptionalSteps(user)
+    await user.click(screen.getByRole("option", { name: "No" }))
+
+    expect(await screen.findByLabelText("Pick game")).toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: "Match" }))
+    expect(
+      await screen.findByLabelText("Match game: Apples"),
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "Done" }))
+    expect(await screen.findByLabelText("Parent notes")).toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: "Skip" }))
     expect(onComplete).toHaveBeenCalledWith(completed)
   })
 
@@ -335,6 +383,8 @@ describe("RunSessionPage", () => {
 
     randomSpy.mockRestore()
     await user.click(screen.getByRole("button", { name: "Done" }))
+    expect(await screen.findByLabelText("Parent notes")).toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: "Skip" }))
     expect(onComplete).toHaveBeenCalledWith(completed)
   })
 
@@ -376,7 +426,63 @@ describe("RunSessionPage", () => {
     expect(screen.queryByLabelText(/Cross game/)).not.toBeInTheDocument()
 
     await user.click(screen.getByRole("button", { name: "Back to Plan" }))
+    expect(onComplete).not.toHaveBeenCalled()
+    expect(await screen.findByLabelText("Parent notes")).toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: "Skip" }))
     expect(onComplete).toHaveBeenCalledWith(completed)
+  })
+
+  it("saves parent notes after reward before returning to Plan", async () => {
+    const user = userEvent.setup()
+    const completed: SessionResponse = {
+      ...sampleSession,
+      status: "completed",
+      foods: sampleSession.foods.map((food, index) => ({
+        ...food,
+        ateEnough: index === 0,
+      })),
+    }
+    const withNote: SessionResponse = {
+      ...completed,
+      parentNote: "Tired after school",
+    }
+    const updateParentNote = vi.fn().mockResolvedValue(withNote)
+    const onComplete = vi.fn()
+
+    render(
+      <RunSessionPage
+        session={sampleSession}
+        sessionsClient={mockSessionsClient({
+          complete: vi.fn().mockResolvedValue(completed),
+          updateParentNote,
+        })}
+        onComplete={onComplete}
+        onExit={vi.fn()}
+      />,
+    )
+
+    await skipAllOptionalSteps(user)
+    await user.click(screen.getByRole("option", { name: "Yes" }))
+    await skipAllOptionalSteps(user)
+    await user.click(screen.getByRole("option", { name: "No" }))
+
+    expect(await screen.findByLabelText("Pick game")).toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: "Catch" }))
+    await user.click(await screen.findByRole("button", { name: "Done" }))
+
+    expect(await screen.findByLabelText("Parent notes")).toBeInTheDocument()
+    await user.type(
+      screen.getByRole("textbox", { name: "Optional parent note" }),
+      "Tired after school",
+    )
+    await user.click(screen.getByRole("button", { name: "Save" }))
+
+    await waitFor(() => {
+      expect(updateParentNote).toHaveBeenCalledWith(completed.id, {
+        parentNote: "Tired after school",
+      })
+    })
+    expect(onComplete).toHaveBeenCalledWith(withNote)
   })
 
   it("supports typing mic answers when speech is unavailable", async () => {

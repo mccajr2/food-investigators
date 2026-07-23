@@ -301,6 +301,14 @@ function SessionDetail({ session, onClose }: SessionDetailProps) {
           Close
         </Button>
       </div>
+      {session.parentNote?.trim() ? (
+        <section aria-label="Parent notes" className="flex flex-col gap-1">
+          <h4 className="font-medium">Parent notes</h4>
+          <p className="whitespace-pre-wrap text-sm">
+            {session.parentNote.trim()}
+          </p>
+        </section>
+      ) : null}
       <div className="flex flex-col gap-4">
         {sortedFoods(session).map((food) => (
           <article

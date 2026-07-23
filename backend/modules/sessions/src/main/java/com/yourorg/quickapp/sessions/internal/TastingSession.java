@@ -39,6 +39,9 @@ class TastingSession {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+    @Column(name = "parent_note", length = 2000)
+    private String parentNote;
+
     @OneToMany(mappedBy = "session", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("position ASC")
     private List<TastingSessionFood> foods = new ArrayList<>();
@@ -80,12 +83,20 @@ class TastingSession {
         return updatedAt;
     }
 
+    String getParentNote() {
+        return parentNote;
+    }
+
     List<TastingSessionFood> getFoods() {
         return foods;
     }
 
     boolean isPlanned() {
         return status == SessionStatus.planned;
+    }
+
+    boolean isCompleted() {
+        return status == SessionStatus.completed;
     }
 
     void reschedule(LocalDate scheduledOn, Instant now) {
@@ -109,6 +120,11 @@ class TastingSession {
 
     void complete(Instant now) {
         this.status = SessionStatus.completed;
+        this.updatedAt = now;
+    }
+
+    void setParentNote(String parentNote, Instant now) {
+        this.parentNote = parentNote;
         this.updatedAt = now;
     }
 }
