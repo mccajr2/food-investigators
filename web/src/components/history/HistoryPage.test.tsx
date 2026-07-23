@@ -69,6 +69,7 @@ function mockSessionsClient(
     update: vi.fn(),
     cancel: vi.fn(),
     complete: vi.fn(),
+    updateParentNote: vi.fn(),
     ...overrides,
   } as SessionsClient
 }
@@ -113,6 +114,27 @@ describe("HistoryPage", () => {
     expect(within(food2).getByText("Warm")).toBeInTheDocument()
 
     expect(within(detail).queryByRole("textbox")).not.toBeInTheDocument()
+    expect(screen.queryByLabelText("Parent notes")).not.toBeInTheDocument()
+  })
+
+  it("shows parent notes in detail when present", async () => {
+    const user = userEvent.setup()
+    const withNote: SessionResponse = {
+      ...completedSession,
+      parentNote: "Clinic was loud; tired after school",
+    }
+    render(
+      <HistoryPage
+        sessionsClient={mockSessionsClient({
+          listHistory: vi.fn().mockResolvedValue([withNote]),
+        })}
+      />,
+    )
+
+    await user.click(await screen.findByRole("button", { name: /Honeycrisp/ }))
+
+    const notes = screen.getByLabelText("Parent notes")
+    expect(notes).toHaveTextContent("Clinic was loud; tired after school")
   })
 
   it("filters the list client-side and downloads PDF with the same range", async () => {

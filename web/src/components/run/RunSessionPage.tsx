@@ -12,6 +12,7 @@ import type {
 } from "@/api/types"
 import { FoodIcon } from "@/components/food/FoodIcon"
 import { BrandLogo } from "@/components/BrandLogo"
+import { ParentNotesStep } from "@/components/run/ParentNotesStep"
 import { RewardFlow } from "@/components/run/RewardFlow"
 import { IconChoiceStep, SpeechNoteStep } from "@/components/run/RunSteps"
 import { RUN_THEME } from "@/components/run/runTheme"
@@ -160,6 +161,10 @@ export function RunSessionPage({
     null,
   )
   const [rewardPhase, setRewardPhase] = useState<RewardPhase | null>(null)
+  const [showParentNotes, setShowParentNotes] = useState(false)
+  const [parentNoteDraft, setParentNoteDraft] = useState("")
+  const [parentNoteError, setParentNoteError] = useState<string | null>(null)
+  const [savingParentNote, setSavingParentNote] = useState(false)
   const speechSupported = isSpeechRecognitionSupported()
   const recognitionRef = useRef<ReturnType<typeof createSpeechRecognition>>(null)
   const onUnauthorizedRef = useRef(onUnauthorized)
@@ -170,7 +175,9 @@ export function RunSessionPage({
     session.foods[foodIndex]
   const step = RUN_STEPS[stepIndex] ?? "liked"
   const currentDraft = outcomes[foodIndex]
-  const inReward = rewardPhase !== null && completedSession !== null
+  const inParentNotes = showParentNotes && completedSession !== null
+  const inReward =
+    !inParentNotes && rewardPhase !== null && completedSession !== null
 
   function advance(nextOutcomes?: [FoodOutcomeDraft, FoodOutcomeDraft]) {
     if (stepIndex < RUN_STEPS.length - 1) {
@@ -207,6 +214,36 @@ export function RunSessionPage({
   }
 
   function finishReward() {
+    setShowParentNotes(true)
+    setParentNoteDraft("")
+    setParentNoteError(null)
+  }
+
+  async function saveParentNote() {
+    if (!completedSession) {
+      return
+    }
+    setSavingParentNote(true)
+    setParentNoteError(null)
+    try {
+      const trimmed = parentNoteDraft.trim()
+      const updated = await sessionsClient.updateParentNote(completedSession.id, {
+        parentNote: trimmed.length > 0 ? trimmed : null,
+      })
+      onComplete(updated)
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Could not save parent note"
+      if (isUnauthorizedMessage(message)) {
+        onUnauthorizedRef.current?.()
+        return
+      }
+      setParentNoteError(message)
+      setSavingParentNote(false)
+    }
+  }
+
+  function skipParentNote() {
     if (completedSession) {
       onComplete(completedSession)
     }
@@ -277,7 +314,7 @@ export function RunSessionPage({
       <header className="run-header flex items-center justify-between gap-3 border-b border-border px-4 py-3">
         <div className="flex min-w-0 items-center gap-3">
           <BrandLogo variant="compact" className="shrink-0" />
-          {!inReward && currentFood ? (
+          {!inReward && !inParentNotes && currentFood ? (
             <FoodIcon
               iconKey={currentFood.iconKey}
               name={currentFood.name}
@@ -285,7 +322,11 @@ export function RunSessionPage({
             />
           ) : null}
           <div className="min-w-0">
-            {inReward ? (
+            {inParentNotes ? (
+              <p className="run-prompt truncate text-lg font-semibold">
+                Parent notes
+              </p>
+            ) : inReward ? (
               <p className="run-prompt truncate text-lg font-semibold">Reward</p>
             ) : (
               <>
@@ -307,13 +348,24 @@ export function RunSessionPage({
           variant="ghost"
           size="sm"
           onClick={onExit}
-          disabled={busy}
+          disabled={busy || savingParentNote}
         >
           Exit
         </Button>
       </header>
 
       <main className="flex-1 overflow-y-auto">
+        {inParentNotes ? (
+          <ParentNotesStep
+            note={parentNoteDraft}
+            busy={savingParentNote}
+            error={parentNoteError}
+            onNoteChange={setParentNoteDraft}
+            onSave={() => void saveParentNote()}
+            onSkip={skipParentNote}
+          />
+        ) : null}
+
         {inReward && rewardPhase ? (
           <RewardFlow
             phase={rewardPhase}
@@ -323,13 +375,13 @@ export function RunSessionPage({
           />
         ) : null}
 
-        {!inReward && status.kind === "error" ? (
+        {!inReward && !inParentNotes && status.kind === "error" ? (
           <p role="alert" className="px-4 py-3 text-sm text-destructive">
             {status.message}
           </p>
         ) : null}
 
-        {!inReward && step === "liked" ? (
+        {!inReward && !inParentNotes && step === "liked" ? (
           <IconChoiceStep
             prompt="Did you like it?"
             options={LIKED_OPTIONS}
@@ -345,7 +397,7 @@ export function RunSessionPage({
           />
         ) : null}
 
-        {!inReward && step === "texture" ? (
+        {!inReward && !inParentNotes && step === "texture" ? (
           <IconChoiceStep
             prompt="What was the texture?"
             options={TEXTURE_OPTIONS}
@@ -360,7 +412,7 @@ export function RunSessionPage({
           />
         ) : null}
 
-        {!inReward && step === "temperature" ? (
+        {!inReward && !inParentNotes && step === "temperature" ? (
           <IconChoiceStep
             prompt="What was the temperature?"
             options={TEMPERATURE_OPTIONS}
@@ -375,7 +427,7 @@ export function RunSessionPage({
           />
         ) : null}
 
-        {!inReward && step === "smell" ? (
+        {!inReward && !inParentNotes && step === "smell" ? (
           <IconChoiceStep
             prompt="How did it smell?"
             options={SMELL_OPTIONS}
@@ -390,7 +442,7 @@ export function RunSessionPage({
           />
         ) : null}
 
-        {!inReward && step === "why" ? (
+        {!inReward && !inParentNotes && step === "why" ? (
           <SpeechNoteStep
             prompt={whyPrompt(currentDraft.liked)}
             note={noteDraft}
@@ -403,7 +455,7 @@ export function RunSessionPage({
           />
         ) : null}
 
-        {!inReward && step === "change" ? (
+        {!inReward && !inParentNotes && step === "change" ? (
           <SpeechNoteStep
             prompt="Is there something we could change next time?"
             note={noteDraft}
@@ -416,7 +468,7 @@ export function RunSessionPage({
           />
         ) : null}
 
-        {!inReward && step === "ateEnough" ? (
+        {!inReward && !inParentNotes && step === "ateEnough" ? (
           <IconChoiceStep
             prompt="Did they eat enough?"
             options={ATE_ENOUGH_OPTIONS}

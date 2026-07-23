@@ -79,7 +79,7 @@ it forward (and later `pace-insights`).
       PDF line; unit tests.
 - [x] Contract: OpenAPI path + `parentNote` on `SessionResponse`; align web +
       mobile clients.
-- [ ] Web: Post-reward/encourage notes screen (Save/Skip); wire PATCH; History
+- [x] Web: Post-reward/encourage notes screen (Save/Skip); wire PATCH; History
       display.
 - [ ] Tests: API integration for PATCH + history/PDF; RunSession/RewardFlow +
       HistoryPage coverage.
