@@ -1,6 +1,6 @@
 # Spec: pace-insights
 
-Status: in-progress  
+Status: done  
 Created: 2026-07-11  
 Parent: [docs/roadmap.md](../../roadmap.md)  
 Added: 2026-07-11 · initial  
@@ -106,25 +106,25 @@ product.
 
 ## Acceptance criteria
 
-- [ ] Authenticated `GET /api/insights` returns household aggregates over
+- [x] Authenticated `GET /api/insights` returns household aggregates over
       completed sessions plus merged snack liked/texture into liked/texture
       counters; includes `completedSessionCount`, `ready`, and `snackCount`.
-- [ ] When `completedSessionCount` < 3, `ready` is false and `tips` is `[]`;
+- [x] When `completedSessionCount` < 3, `ready` is false and `tips` is `[]`;
       web shows an insufficient-data state (snacks alone never make it ready).
-- [ ] When ready, response includes the locked aggregate fields and **0–3** tips
+- [x] When ready, response includes the locked aggregate fields and **0–3** tips
       from the fixed catalog (evaluation order above), excluding dismissed tip
       ids for this household.
-- [ ] `POST /api/insights/tips/{tipId}/dismiss` persists dismissal; subsequent
+- [x] `POST /api/insights/tips/{tipId}/dismiss` persists dismissal; subsequent
       GET omits that tip; repeat dismiss is **200** idempotent; unknown tip id →
       **400**; other household cannot see or dismiss this household’s state.
-- [ ] Web Insights tab loads the API, shows summaries + tips, and Dismiss
+- [x] Web Insights tab loads the API, shows summaries + tips, and Dismiss
       removes the tip from the UI after a successful POST (and stays gone on
       reload).
-- [ ] Unauthenticated insights/dismiss → **401**.
-- [ ] OpenAPI + web + mobile sharedLogic clients aligned; unit + API + web
+- [x] Unauthenticated insights/dismiss → **401**.
+- [x] OpenAPI + web + mobile sharedLogic clients aligned; unit + API + web
       tests cover ready/not-ready, merged snack signal in aggregates, tip
       exclusion after dismiss, and Insights empty/ready UI.
-- [ ] Plan / History / run / PDF behavior unchanged except nav gains Insights;
+- [x] Plan / History / run / PDF behavior unchanged except nav gains Insights;
       `ModularityTests` still pass.
 
 ## Tasks
@@ -134,7 +134,7 @@ product.
 - [x] Contract: OpenAPI schemas/paths; align web + mobile clients.
 - [x] Web: AuthShell Insights tab + page (summaries, tips, dismiss, empty
       state).
-- [ ] Tests: API integration (ready/not-ready, dismiss, scoping, snack merge);
+- [x] Tests: API integration (ready/not-ready, dismiss, scoping, snack merge);
       InsightsPage + shell nav coverage.
 
 ## Decisions (locked)
