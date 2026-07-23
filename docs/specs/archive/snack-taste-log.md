@@ -1,6 +1,6 @@
 # Spec: snack-taste-log
 
-Status: in-progress  
+Status: done  
 Created: 2026-07-23  
 Parent: [docs/roadmap.md](../../roadmap.md)  
 Added: 2026-07-23 · enhancement  
@@ -71,20 +71,20 @@ later Insights can use them — without treating snacks as Plan/run session food
 
 ## Acceptance criteria
 
-- [ ] Household foods can be created/updated with `sessionEligible=false` and
+- [x] Household foods can be created/updated with `sessionEligible=false` and
       optional `liked`, `texture`, `tasteNote` (trim; blank note → null; note
       max 100).
-- [ ] System foods always remain session-eligible; attempts to mark them snack
-      → **400**.
-- [ ] `FoodCatalog.findSelectable` / Plan create+update reject snack foods
+- [x] System foods always remain session-eligible; attempts to mark them snack
+      → **403** (same as other system-food mutations).
+- [x] `FoodCatalog.findSelectable` / Plan create+update reject snack foods
       (same class of failure as archived / unknown).
-- [ ] Web Plan food pickers never list snacks.
-- [ ] Web Foods can add/edit snacks with liked, texture, and optional taste
+- [x] Web Plan food pickers never list snacks.
+- [x] Web Foods can add/edit snacks with liked, texture, and optional taste
       note; tasting vs snack foods are distinguishable in the UI.
-- [ ] `FoodResponse` (list/create/update) includes the new fields; OpenAPI +
+- [x] `FoodResponse` (list/create/update) includes the new fields; OpenAPI +
       web + mobile sharedLogic clients aligned.
-- [ ] Unauthenticated food writes still **401**; other-household rules unchanged.
-- [ ] Unit + API + web tests cover snack create/update, selectable rejection,
+- [x] Unauthenticated food writes still **401**; other-household rules unchanged.
+- [x] Unit + API + web tests cover snack create/update, selectable rejection,
       Plan picker exclusion, and Foods snack UI fields.
 
 ## Tasks
@@ -93,7 +93,7 @@ later Insights can use them — without treating snacks as Plan/run session food
 - [x] Contract: OpenAPI Food schemas; align web + mobile clients.
 - [x] Web: Foods snack flag + preference fields + tasting/snack presentation;
       Plan picker filters snacks.
-- [ ] Tests: Foods API integration; FoodsPage + PlanPage coverage.
+- [x] Tests: Foods API integration; FoodsPage + PlanPage coverage.
 
 ## Decisions (locked)
 

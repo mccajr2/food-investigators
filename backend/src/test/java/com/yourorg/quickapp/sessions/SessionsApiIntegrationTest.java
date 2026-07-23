@@ -176,6 +176,79 @@ class SessionsApiIntegrationTest {
     }
 
     @Test
+    void createRejectsSnackFood() throws Exception {
+        String token = register("sessions-snack-" + System.nanoTime() + "@example.com");
+        String day0 = day(0);
+
+        MvcResult snackResult =
+                mockMvc.perform(
+                                post("/api/foods")
+                                        .header("Authorization", "Bearer " + token)
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(
+                                                """
+                                                {
+                                                  "name":"Salt chips",
+                                                  "iconKey":"custom_salt_chips",
+                                                  "sessionEligible":false,
+                                                  "liked":"like",
+                                                  "texture":"crunchy"
+                                                }
+                                                """))
+                        .andExpect(status().isCreated())
+                        .andReturn();
+        String snackId = idFrom(snackResult);
+
+        mockMvc.perform(
+                        post("/api/sessions")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        createBody(
+                                                day0,
+                                                snackId,
+                                                "likes",
+                                                null,
+                                                STRAWBERRIES,
+                                                "likes",
+                                                null)))
+                .andExpect(status().isBadRequest());
+
+        MvcResult planned =
+                mockMvc.perform(
+                                post("/api/sessions")
+                                        .header("Authorization", "Bearer " + token)
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(
+                                                createBody(
+                                                        day0,
+                                                        APPLES,
+                                                        "likes",
+                                                        null,
+                                                        STRAWBERRIES,
+                                                        "likes",
+                                                        null)))
+                        .andExpect(status().isCreated())
+                        .andReturn();
+        String sessionId = idFrom(planned);
+
+        mockMvc.perform(
+                        put("/api/sessions/" + sessionId)
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        createBody(
+                                                day(1),
+                                                snackId,
+                                                "likes",
+                                                null,
+                                                BLUEBERRIES,
+                                                "likes",
+                                                null)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void planGuardsRejectPastDateDayConflictsAndSameFoodVariants() throws Exception {
         String token = register("sessions-guards-" + System.nanoTime() + "@example.com");
         String today = day(0);
