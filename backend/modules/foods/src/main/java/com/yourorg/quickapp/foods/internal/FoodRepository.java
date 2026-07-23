@@ -13,6 +13,9 @@ interface FoodRepository extends JpaRepository<Food, UUID> {
 
     List<Food> findByHouseholdIdAndArchivedAtIsNullOrderByNameAsc(UUID householdId);
 
+    List<Food> findByHouseholdIdAndSessionEligibleFalseAndArchivedAtIsNullOrderByNameAsc(
+            UUID householdId);
+
     List<Food> findByHouseholdIdOrderByNameAsc(UUID householdId);
 
     Optional<Food> findByIdAndHouseholdId(UUID id, UUID householdId);

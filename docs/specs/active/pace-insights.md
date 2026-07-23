@@ -1,6 +1,6 @@
 # Spec: pace-insights
 
-Status: draft  
+Status: in-progress  
 Created: 2026-07-11  
 Parent: [docs/roadmap.md](../../roadmap.md)  
 Added: 2026-07-11 · initial  
@@ -129,7 +129,7 @@ product.
 
 ## Tasks
 
-- [ ] Backend: Flyway dismissals; tip catalog + aggregate service (sessions +
+- [x] Backend: Flyway dismissals; tip catalog + aggregate service (sessions +
       foods preference port); GET insights + POST dismiss; unit tests.
 - [ ] Contract: OpenAPI schemas/paths; align web + mobile clients.
 - [ ] Web: AuthShell Insights tab + page (summaries, tips, dismiss, empty
