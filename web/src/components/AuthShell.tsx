@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react"
 
-import { AuthClient, FoodsClient, SessionsClient } from "@/api"
+import { AuthClient, FoodsClient, InsightsClient, SessionsClient } from "@/api"
 import { apiBaseUrl } from "@/config"
 import { defaultBrowserTokenStore } from "@/api/tokenStore"
 import type { UserResponse } from "@/api/types"
 import { BrandLogo } from "@/components/BrandLogo"
 import { FoodsPage } from "@/components/food/FoodsPage"
 import { HistoryPage } from "@/components/history/HistoryPage"
+import { InsightsPage } from "@/components/insights/InsightsPage"
 import { PlanPage } from "@/components/plan/PlanPage"
 import { Button } from "@/components/ui/button"
 import {
@@ -18,7 +19,7 @@ import {
 import { Input } from "@/components/ui/input"
 
 type AuthMode = "sign-in" | "register"
-type SignedInView = "plan" | "history" | "foods"
+type SignedInView = "plan" | "history" | "foods" | "insights"
 
 type Status =
   | { kind: "idle" }
@@ -30,12 +31,14 @@ type AuthShellProps = {
   client?: AuthClient
   foodsClient?: FoodsClient
   sessionsClient?: SessionsClient
+  insightsClient?: InsightsClient
 }
 
 export function AuthShell({
   client: clientProp,
   foodsClient: foodsClientProp,
   sessionsClient: sessionsClientProp,
+  insightsClient: insightsClientProp,
 }: AuthShellProps) {
   // Create clients once. Share one token store so auth + foods + sessions see
   // the same session.
@@ -64,6 +67,16 @@ export function AuthShell({
       return sessionsClientProp
     }
     return new SessionsClient(
+      apiBaseUrl,
+      globalThis.fetch.bind(globalThis),
+      defaultBrowserTokenStore(),
+    )
+  })
+  const [insightsClient] = useState(() => {
+    if (insightsClientProp) {
+      return insightsClientProp
+    }
+    return new InsightsClient(
       apiBaseUrl,
       globalThis.fetch.bind(globalThis),
       defaultBrowserTokenStore(),
@@ -210,6 +223,16 @@ export function AuthShell({
           <Button
             type="button"
             role="tab"
+            aria-selected={view === "insights"}
+            variant={view === "insights" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setView("insights")}
+          >
+            Insights
+          </Button>
+          <Button
+            type="button"
+            role="tab"
             aria-selected={view === "foods"}
             variant={view === "foods" ? "default" : "outline"}
             size="sm"
@@ -228,6 +251,12 @@ export function AuthShell({
         {view === "history" ? (
           <HistoryPage
             sessionsClient={sessionsClient}
+            onUnauthorized={onSessionExpired}
+          />
+        ) : null}
+        {view === "insights" ? (
+          <InsightsPage
+            client={insightsClient}
             onUnauthorized={onSessionExpired}
           />
         ) : null}
