@@ -37,7 +37,7 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | session-parent-notes | planned | 2026-07-22 · enhancement | Optional parent notes after reward (History + therapist PDF) |
+| 1 | session-parent-notes | active | 2026-07-22 · enhancement | Optional parent notes after reward (History + therapist PDF) |
 | 2 | pace-insights | planned | 2026-07-11 · initial | Parent dashboard: trends on what’s working; gentle suggestions you can ignore |
 | 3 | suggested-next-session | planned | 2026-07-11 · initial | App proposes next two foods + levels; parent approves or swaps |
 | 4 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
@@ -69,7 +69,7 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Branch | Spec |
 |----|--------|------|
-| — | — | — |
+| session-parent-notes | `session-parent-notes` | [active](specs/active/session-parent-notes.md) |
 
 ## Done
 
