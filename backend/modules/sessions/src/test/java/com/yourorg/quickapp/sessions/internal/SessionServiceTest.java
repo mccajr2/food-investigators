@@ -14,6 +14,8 @@ import com.yourorg.quickapp.sessions.Familiarity;
 import com.yourorg.quickapp.sessions.FoodOutcomeRequest;
 import com.yourorg.quickapp.sessions.InvalidHistoryPdfRequestException;
 import com.yourorg.quickapp.sessions.InvalidSessionFoodException;
+import com.yourorg.quickapp.sessions.InvalidSessionScheduleException;
+import com.yourorg.quickapp.sessions.SessionDateOccupiedException;
 import com.yourorg.quickapp.sessions.Liked;
 import com.yourorg.quickapp.sessions.SessionFoodRequest;
 import com.yourorg.quickapp.sessions.SessionNotEditableException;
@@ -111,6 +113,226 @@ class SessionServiceTest {
                                                                 Familiarity.familiar_but_new,
                                                                 null)))))
                 .isInstanceOf(InvalidSessionFoodException.class);
+    }
+
+    @Test
+    void createRejectsPastScheduledOn() {
+        assertThatThrownBy(
+                        () ->
+                                service.create(
+                                        householdId,
+                                        new CreateSessionRequest(
+                                                LocalDate.of(2026, 7, 14),
+                                                List.of(
+                                                        new SessionFoodRequest(
+                                                                foodA, Familiarity.likes, null),
+                                                        new SessionFoodRequest(
+                                                                foodB, Familiarity.likes, null)))))
+                .isInstanceOf(InvalidSessionScheduleException.class)
+                .hasMessageContaining("past");
+    }
+
+    @Test
+    void createAllowsToday() {
+        stubSelectable(foodA, "Apples", "apple");
+        stubSelectable(foodB, "Bananas", "banana");
+        stubVisible(foodA, "Apples", "apple");
+        stubVisible(foodB, "Bananas", "banana");
+        when(sessions.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        SessionResponse created =
+                service.create(
+                        householdId,
+                        new CreateSessionRequest(
+                                LocalDate.of(2026, 7, 15),
+                                List.of(
+                                        new SessionFoodRequest(foodA, Familiarity.likes, null),
+                                        new SessionFoodRequest(foodB, Familiarity.likes, null))));
+
+        assertThat(created.scheduledOn()).isEqualTo(LocalDate.of(2026, 7, 15));
+    }
+
+    @Test
+    void createRejectsWhenPlannedOrCompletedOccupiesDay() {
+        when(sessions.existsByHouseholdIdAndScheduledOnAndStatusIn(
+                        org.mockito.ArgumentMatchers.eq(householdId),
+                        org.mockito.ArgumentMatchers.eq(LocalDate.of(2026, 7, 20)),
+                        any()))
+                .thenReturn(true);
+
+        assertThatThrownBy(
+                        () ->
+                                service.create(
+                                        householdId,
+                                        new CreateSessionRequest(
+                                                LocalDate.of(2026, 7, 20),
+                                                List.of(
+                                                        new SessionFoodRequest(
+                                                                foodA, Familiarity.likes, null),
+                                                        new SessionFoodRequest(
+                                                                foodB, Familiarity.likes, null)))))
+                .isInstanceOf(SessionDateOccupiedException.class);
+    }
+
+    @Test
+    void createAllowsDayWithOnlyCancelledSession() {
+        stubSelectable(foodA, "Apples", "apple");
+        stubSelectable(foodB, "Bananas", "banana");
+        stubVisible(foodA, "Apples", "apple");
+        stubVisible(foodB, "Bananas", "banana");
+        when(sessions.existsByHouseholdIdAndScheduledOnAndStatusIn(any(), any(), any()))
+                .thenReturn(false);
+        when(sessions.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        SessionResponse created =
+                service.create(
+                        householdId,
+                        new CreateSessionRequest(
+                                LocalDate.of(2026, 7, 20),
+                                List.of(
+                                        new SessionFoodRequest(foodA, Familiarity.likes, null),
+                                        new SessionFoodRequest(foodB, Familiarity.likes, null))));
+
+        assertThat(created.status()).isEqualTo(SessionStatus.planned);
+    }
+
+    @Test
+    void createAllowsSameFoodWithDistinctVariants() {
+        stubSelectable(foodA, "Bagel", "bagel");
+        stubVisible(foodA, "Bagel", "bagel");
+        when(sessions.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        SessionResponse created =
+                service.create(
+                        householdId,
+                        new CreateSessionRequest(
+                                LocalDate.of(2026, 7, 20),
+                                List.of(
+                                        new SessionFoodRequest(
+                                                foodA, Familiarity.likes, "Bagelsaurus"),
+                                        new SessionFoodRequest(
+                                                foodA, Familiarity.familiar_but_new, "Iggy's"))));
+
+        assertThat(created.foods().get(0).foodId()).isEqualTo(foodA);
+        assertThat(created.foods().get(1).foodId()).isEqualTo(foodA);
+        assertThat(created.foods().get(0).variantNote()).isEqualTo("Bagelsaurus");
+        assertThat(created.foods().get(1).variantNote()).isEqualTo("Iggy's");
+    }
+
+    @Test
+    void createRejectsSameFoodWithoutDistinctVariants() {
+        stubSelectable(foodA, "Bagel", "bagel");
+
+        assertThatThrownBy(
+                        () ->
+                                service.create(
+                                        householdId,
+                                        new CreateSessionRequest(
+                                                LocalDate.of(2026, 7, 20),
+                                                List.of(
+                                                        new SessionFoodRequest(
+                                                                foodA, Familiarity.likes, null),
+                                                        new SessionFoodRequest(
+                                                                foodA, Familiarity.likes, "Iggy's")))))
+                .isInstanceOf(InvalidSessionFoodException.class)
+                .hasMessageContaining("brand/variety");
+
+        assertThatThrownBy(
+                        () ->
+                                service.create(
+                                        householdId,
+                                        new CreateSessionRequest(
+                                                LocalDate.of(2026, 7, 20),
+                                                List.of(
+                                                        new SessionFoodRequest(
+                                                                foodA, Familiarity.likes, "Iggy's"),
+                                                        new SessionFoodRequest(
+                                                                foodA,
+                                                                Familiarity.likes,
+                                                                "  iggy's  ")))))
+                .isInstanceOf(InvalidSessionFoodException.class);
+    }
+
+    @Test
+    void updateRejectsPastScheduledOn() {
+        TastingSession session = TastingSession.planned(householdId, LocalDate.of(2026, 7, 20), now);
+        when(sessions.findByIdAndHouseholdId(session.getId(), householdId))
+                .thenReturn(Optional.of(session));
+
+        assertThatThrownBy(
+                        () ->
+                                service.update(
+                                        householdId,
+                                        session.getId(),
+                                        new UpdateSessionRequest(
+                                                LocalDate.of(2026, 7, 10),
+                                                List.of(
+                                                        new SessionFoodRequest(
+                                                                foodA, Familiarity.likes, null),
+                                                        new SessionFoodRequest(
+                                                                foodB, Familiarity.likes, null)))))
+                .isInstanceOf(InvalidSessionScheduleException.class);
+    }
+
+    @Test
+    void updateRejectsMovingOntoOccupiedDay() {
+        TastingSession session = TastingSession.planned(householdId, LocalDate.of(2026, 7, 20), now);
+        when(sessions.findByIdAndHouseholdId(session.getId(), householdId))
+                .thenReturn(Optional.of(session));
+        when(sessions.existsByHouseholdIdAndScheduledOnAndStatusInAndIdNot(
+                        org.mockito.ArgumentMatchers.eq(householdId),
+                        org.mockito.ArgumentMatchers.eq(LocalDate.of(2026, 7, 21)),
+                        any(),
+                        org.mockito.ArgumentMatchers.eq(session.getId())))
+                .thenReturn(true);
+
+        assertThatThrownBy(
+                        () ->
+                                service.update(
+                                        householdId,
+                                        session.getId(),
+                                        new UpdateSessionRequest(
+                                                LocalDate.of(2026, 7, 21),
+                                                List.of(
+                                                        new SessionFoodRequest(
+                                                                foodA, Familiarity.likes, null),
+                                                        new SessionFoodRequest(
+                                                                foodB, Familiarity.likes, null)))))
+                .isInstanceOf(SessionDateOccupiedException.class);
+    }
+
+    @Test
+    void updateAllowsKeepingSameDay() {
+        TastingSession session = TastingSession.planned(householdId, LocalDate.of(2026, 7, 20), now);
+        session.replaceFoods(
+                List.of(
+                        TastingSessionFood.of(foodA, Familiarity.likes, null, 1),
+                        TastingSessionFood.of(foodB, Familiarity.truly_new, null, 2)),
+                now);
+        when(sessions.findByIdAndHouseholdId(session.getId(), householdId))
+                .thenReturn(Optional.of(session));
+        when(sessions.existsByHouseholdIdAndScheduledOnAndStatusInAndIdNot(
+                        any(), any(), any(), any()))
+                .thenReturn(false);
+        when(sessions.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        stubSelectable(foodA, "Apples", "apple");
+        stubSelectable(foodB, "Bananas", "banana");
+        stubVisible(foodA, "Apples", "apple");
+        stubVisible(foodB, "Bananas", "banana");
+
+        SessionResponse updated =
+                service.update(
+                        householdId,
+                        session.getId(),
+                        new UpdateSessionRequest(
+                                LocalDate.of(2026, 7, 20),
+                                List.of(
+                                        new SessionFoodRequest(foodA, Familiarity.likes, null),
+                                        new SessionFoodRequest(
+                                                foodB, Familiarity.familiar_but_new, null))));
+
+        assertThat(updated.scheduledOn()).isEqualTo(LocalDate.of(2026, 7, 20));
+        assertThat(updated.foods().get(1).familiarity()).isEqualTo(Familiarity.familiar_but_new);
     }
 
     @Test

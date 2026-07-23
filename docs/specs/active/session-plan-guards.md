@@ -103,7 +103,7 @@ Enforce the same rules on **backend create/update** and **web Plan** UI.
 
 ## Tasks
 
-- [ ] Backend: Past-date + one-per-day (planned/completed) + same-food/variant
+- [x] Backend: Past-date + one-per-day (planned/completed) + same-food/variant
       pair checks on create/update; dedicated conflict exception/handler;
       injectable clock; unit tests.
 - [ ] Contract: OpenAPI 400/409 docs for create/update; fix non-editable 409
