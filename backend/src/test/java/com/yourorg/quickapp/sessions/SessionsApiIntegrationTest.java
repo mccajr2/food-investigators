@@ -1,7 +1,9 @@
 package com.yourorg.quickapp.sessions;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -14,6 +16,9 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.text.PDFTextStripper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -458,6 +463,7 @@ class SessionsApiIntegrationTest {
                                         """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("completed"))
+                .andExpect(jsonPath("$.parentNote").value(nullValue()))
                 .andExpect(jsonPath("$.foods[0].liked").value("like"))
                 .andExpect(jsonPath("$.foods[0].texture").value("crunchy"))
                 .andExpect(jsonPath("$.foods[0].whyNote").value("crunchy"))
@@ -741,6 +747,125 @@ class SessionsApiIntegrationTest {
                 .andExpect(status().isBadRequest());
     }
 
+    @Test
+    void parentNotePatchOnCompletedAppearsInHistoryAndPdf() throws Exception {
+        String token = register("sessions-parent-note-" + System.nanoTime() + "@example.com");
+        String day0 = day(0);
+        String day1 = day(1);
+
+        String plannedId =
+                idFrom(
+                        mockMvc.perform(
+                                        post("/api/sessions")
+                                                .header("Authorization", "Bearer " + token)
+                                                .contentType(MediaType.APPLICATION_JSON)
+                                                .content(
+                                                        createBody(
+                                                                day0,
+                                                                APPLES,
+                                                                "likes",
+                                                                null,
+                                                                STRAWBERRIES,
+                                                                "truly_new",
+                                                                null)))
+                                .andExpect(status().isCreated())
+                                .andReturn());
+
+        mockMvc.perform(
+                        patch("/api/sessions/" + plannedId + "/parent-note")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"parentNote\":\"too early\"}"))
+                .andExpect(status().isConflict())
+                .andExpect(
+                        jsonPath("$.message")
+                                .value("Parent notes can only be saved on completed sessions"));
+
+        completeSession(token, plannedId, "like", true);
+
+        mockMvc.perform(
+                        patch("/api/sessions/" + plannedId + "/parent-note")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"parentNote\":\"  tired after school  \"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("completed"))
+                .andExpect(jsonPath("$.parentNote").value("tired after school"))
+                .andExpect(jsonPath("$.foods[0].liked").value("like"));
+
+        mockMvc.perform(get("/api/sessions/" + plannedId).header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.parentNote").value("tired after school"));
+
+        mockMvc.perform(get("/api/sessions/history").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(plannedId))
+                .andExpect(jsonPath("$[0].parentNote").value("tired after school"));
+
+        mockMvc.perform(
+                        patch("/api/sessions/" + plannedId + "/parent-note")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"parentNote\":\"   \"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.parentNote").value(nullValue()));
+
+        mockMvc.perform(
+                        patch("/api/sessions/" + plannedId + "/parent-note")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"parentNote\":\"clinic was loud\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.parentNote").value("clinic was loud"));
+
+        String cancelledId =
+                idFrom(
+                        mockMvc.perform(
+                                        post("/api/sessions")
+                                                .header("Authorization", "Bearer " + token)
+                                                .contentType(MediaType.APPLICATION_JSON)
+                                                .content(
+                                                        createBody(
+                                                                day1,
+                                                                APPLES,
+                                                                "likes",
+                                                                null,
+                                                                BLUEBERRIES,
+                                                                "likes",
+                                                                null)))
+                                .andExpect(status().isCreated())
+                                .andReturn());
+        mockMvc.perform(
+                        post("/api/sessions/" + cancelledId + "/cancel")
+                                .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
+        mockMvc.perform(
+                        patch("/api/sessions/" + cancelledId + "/parent-note")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"parentNote\":\"nope\"}"))
+                .andExpect(status().isConflict());
+
+        String otherToken =
+                register("sessions-parent-note-other-" + System.nanoTime() + "@example.com");
+        mockMvc.perform(
+                        patch("/api/sessions/" + plannedId + "/parent-note")
+                                .header("Authorization", "Bearer " + otherToken)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"parentNote\":\"stolen\"}"))
+                .andExpect(status().isNotFound());
+
+        MvcResult pdfResult =
+                mockMvc.perform(
+                                get("/api/sessions/history.pdf")
+                                        .header("Authorization", "Bearer " + token))
+                        .andExpect(status().isOk())
+                        .andReturn();
+        String pdfText = pdfText(pdfResult.getResponse().getContentAsByteArray());
+        assertThat(pdfText).contains("Parent notes: clinic was loud");
+        assertThat(pdfText.split("Parent notes:", -1)).hasSize(2);
+    }
+
     private static String day(int offsetDays) {
         return LocalDate.now(ZoneOffset.UTC).plusDays(offsetDays).toString();
     }
@@ -809,6 +934,12 @@ class SessionsApiIntegrationTest {
                         .andExpect(status().isCreated())
                         .andReturn();
         return tokenFrom(result);
+    }
+
+    private static String pdfText(byte[] pdf) throws Exception {
+        try (PDDocument document = Loader.loadPDF(pdf)) {
+            return new PDFTextStripper().getText(document);
+        }
     }
 
     private static String tokenFrom(MvcResult result) throws Exception {

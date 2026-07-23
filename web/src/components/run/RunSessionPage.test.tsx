@@ -302,6 +302,46 @@ describe("RunSessionPage", () => {
     expect(onComplete).toHaveBeenCalledWith(completed)
   })
 
+  it("shows parent notes after Match finishes", async () => {
+    const user = userEvent.setup()
+    const completed: SessionResponse = {
+      ...sampleSession,
+      status: "completed",
+      foods: sampleSession.foods.map((food, index) => ({
+        ...food,
+        ateEnough: index === 0,
+      })),
+    }
+    const onComplete = vi.fn()
+
+    render(
+      <RunSessionPage
+        session={sampleSession}
+        sessionsClient={mockSessionsClient({
+          complete: vi.fn().mockResolvedValue(completed),
+        })}
+        onComplete={onComplete}
+        onExit={vi.fn()}
+      />,
+    )
+
+    await skipAllOptionalSteps(user)
+    await user.click(screen.getByRole("option", { name: "Yes" }))
+    await skipAllOptionalSteps(user)
+    await user.click(screen.getByRole("option", { name: "No" }))
+
+    expect(await screen.findByLabelText("Pick game")).toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: "Match" }))
+    expect(
+      await screen.findByLabelText("Match game: Apples"),
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "Done" }))
+    expect(await screen.findByLabelText("Parent notes")).toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: "Skip" }))
+    expect(onComplete).toHaveBeenCalledWith(completed)
+  })
+
   it("shows Surprise reveal then starts the rolled game", async () => {
     const user = userEvent.setup()
     const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0.1)

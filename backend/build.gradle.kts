@@ -24,6 +24,7 @@ dependencies {
     testImplementation(libs.spring.modulith.starter.test)
     testImplementation(libs.spring.boot.testcontainers)
     testImplementation(libs.testcontainers.postgresql)
+    testImplementation(libs.pdfbox)
 }
 
 tasks.test {

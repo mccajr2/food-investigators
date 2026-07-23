@@ -1,6 +1,6 @@
 # Spec: session-parent-notes
 
-Status: in-progress  
+Status: done  
 Created: 2026-07-22  
 Parent: [docs/roadmap.md](../../roadmap.md)  
 Added: 2026-07-22 · enhancement
@@ -56,21 +56,21 @@ it forward (and later `pace-insights`).
 
 ## Acceptance criteria
 
-- [ ] Completed sessions can store an optional `parentNote` (trim, max 2000;
+- [x] Completed sessions can store an optional `parentNote` (trim, max 2000;
       blank → null) via the new PATCH endpoint.
-- [ ] PATCH on planned or cancelled sessions returns **409**; wrong household
+- [x] PATCH on planned or cancelled sessions returns **409**; wrong household
       **404**.
-- [ ] `SessionResponse` (get / history / complete response) includes
+- [x] `SessionResponse` (get / history / complete response) includes
       `parentNote`.
-- [ ] After Catch/Cross/Match finish **and** after encourage, the parent sees an
+- [x] After Catch/Cross/Match finish **and** after encourage, the parent sees an
       optional notes screen before returning to Plan; Skip leaves no note (or
       null).
-- [ ] Saving a note persists it and then returns to Plan; kid reward still ran
+- [x] Saving a note persists it and then returns to Plan; kid reward still ran
       before this screen.
-- [ ] History detail shows the parent note when present; PDF includes it when
+- [x] History detail shows the parent note when present; PDF includes it when
       present; absent note adds no empty clutter.
-- [ ] Per-food why/change notes unchanged.
-- [ ] OpenAPI + web + mobile client types aligned; unit/API/web tests cover
+- [x] Per-food why/change notes unchanged.
+- [x] OpenAPI + web + mobile client types aligned; unit/API/web tests cover
       PATCH rules, notes beat, History/PDF presence.
 
 ## Tasks
@@ -81,7 +81,7 @@ it forward (and later `pace-insights`).
       mobile clients.
 - [x] Web: Post-reward/encourage notes screen (Save/Skip); wire PATCH; History
       display.
-- [ ] Tests: API integration for PATCH + history/PDF; RunSession/RewardFlow +
+- [x] Tests: API integration for PATCH + history/PDF; RunSession/RewardFlow +
       HistoryPage coverage.
 
 ## Decisions (locked)

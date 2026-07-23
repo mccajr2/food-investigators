@@ -28,7 +28,7 @@ export function ParentNotesStep({
     >
       <div className="flex max-w-2xl flex-col gap-2 text-center">
         <h2 className="run-prompt text-3xl leading-tight md:text-4xl">
-          Anything to note for therapy?
+          Anything else to note from this session?
         </h2>
         <p className="text-muted-foreground">
           Optional — mood, setting, or anything else useful. Skip if nothing to
@@ -39,7 +39,7 @@ export function ParentNotesStep({
         aria-label="Optional parent note"
         value={note}
         onChange={(event) => onNoteChange(event.target.value)}
-        placeholder="Optional notes for your therapist…"
+        placeholder="Optional notes from your session…"
         maxLength={PARENT_NOTE_MAX_LENGTH}
         disabled={busy}
         rows={6}
