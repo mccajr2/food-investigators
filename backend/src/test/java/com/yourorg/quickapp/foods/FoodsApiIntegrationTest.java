@@ -1,5 +1,6 @@
 package com.yourorg.quickapp.foods;
 
+import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -251,6 +252,135 @@ class FoodsApiIntegrationTest {
                                         {"name":"Cucumber","iconKey":"custom_cucumber"}
                                         """))
                 .andExpect(status().isCreated());
+    }
+
+    @Test
+    void createAndUpdateSnackPreferencesAndRejectSystemSnack() throws Exception {
+        String token = register("foods-snack-" + System.nanoTime() + "@example.com");
+
+        mockMvc.perform(
+                        post("/api/foods")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                                        {
+                                          "name":"Chips",
+                                          "iconKey":"custom_chips",
+                                          "sessionEligible":false,
+                                          "liked":"like",
+                                          "texture":"crunchy",
+                                          "tasteNote":"salt"
+                                        }
+                                        """))
+                .andExpect(status().isUnauthorized());
+
+        MvcResult createResult =
+                mockMvc.perform(
+                                post("/api/foods")
+                                        .header("Authorization", "Bearer " + token)
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(
+                                                """
+                                                {
+                                                  "name":"Salt chips",
+                                                  "iconKey":"custom_salt_chips",
+                                                  "sessionEligible":false,
+                                                  "liked":"like",
+                                                  "texture":"crunchy",
+                                                  "tasteNote":"  salt & vinegar  "
+                                                }
+                                                """))
+                        .andExpect(status().isCreated())
+                        .andExpect(jsonPath("$.name").value("Salt chips"))
+                        .andExpect(jsonPath("$.sessionEligible").value(false))
+                        .andExpect(jsonPath("$.liked").value("like"))
+                        .andExpect(jsonPath("$.texture").value("crunchy"))
+                        .andExpect(jsonPath("$.tasteNote").value("salt & vinegar"))
+                        .andReturn();
+        String snackId = idFrom(createResult);
+
+        mockMvc.perform(get("/api/foods").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.id == '%s')].sessionEligible".formatted(snackId)).value(false))
+                .andExpect(jsonPath("$[?(@.id == '%s')].tasteNote".formatted(snackId)).value("salt & vinegar"));
+
+        mockMvc.perform(
+                        put("/api/foods/" + snackId)
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                                        {
+                                          "liked":"so_so",
+                                          "texture":"chewy",
+                                          "tasteNote":"   "
+                                        }
+                                        """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.sessionEligible").value(false))
+                .andExpect(jsonPath("$.liked").value("so_so"))
+                .andExpect(jsonPath("$.texture").value("chewy"))
+                .andExpect(jsonPath("$.tasteNote").value(nullValue()));
+
+        String tooLong = "x".repeat(101);
+        mockMvc.perform(
+                        put("/api/foods/" + snackId)
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                                        {"tasteNote":"%s"}
+                                        """
+                                                .formatted(tooLong)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Invalid request"));
+
+        MvcResult tastingResult =
+                mockMvc.perform(
+                                post("/api/foods")
+                                        .header("Authorization", "Bearer " + token)
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(
+                                                """
+                                                {"name":"Cucumber","iconKey":"custom_cucumber"}
+                                                """))
+                        .andExpect(status().isCreated())
+                        .andExpect(jsonPath("$.sessionEligible").value(true))
+                        .andExpect(jsonPath("$.liked").value(nullValue()))
+                        .andExpect(jsonPath("$.texture").value(nullValue()))
+                        .andExpect(jsonPath("$.tasteNote").value(nullValue()))
+                        .andReturn();
+        String tastingId = idFrom(tastingResult);
+
+        mockMvc.perform(
+                        put("/api/foods/" + tastingId)
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                                        {
+                                          "sessionEligible":false,
+                                          "liked":"no",
+                                          "texture":"wet",
+                                          "tasteNote":"sour"
+                                        }
+                                        """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.sessionEligible").value(false))
+                .andExpect(jsonPath("$.liked").value("no"))
+                .andExpect(jsonPath("$.texture").value("wet"))
+                .andExpect(jsonPath("$.tasteNote").value("sour"));
+
+        mockMvc.perform(
+                        put("/api/foods/" + SYSTEM_APPLES_ID)
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                                        {"sessionEligible":false,"liked":"like"}
+                                        """))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").value("System starter foods cannot be changed"));
     }
 
     private String register(String email) throws Exception {

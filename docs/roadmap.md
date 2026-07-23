@@ -1,7 +1,7 @@
 # Product roadmap
 
 Status: active  
-Updated: 2026-07-22
+Updated: 2026-07-23
 
 Living backlog for this product repo. **One roadmap ↔ many specs** (1:1 by
 kebab-case id). `/roadmap` updates and re-ranks; `/spec <id>` fleshes out the
@@ -51,6 +51,7 @@ Unranked ideas. Promote into **Upcoming** with `/roadmap` (re-rank).
 
 | Id | Added | Summary |
 |----|-------|---------|
+| signup-starter-snacks | 2026-07-23 · enhancement | Optional signup picks: child-specific starter tasting foods + snacks |
 | printable-plan-calendar | 2026-07-11 · initial | Print upcoming tasting schedule (doctor packet is history-first) |
 | offline-ipad-session | 2026-07-11 · initial | Run a session on iPad without network; sync later |
 | multi-child-profiles | 2026-07-11 · initial | More than one kid under one household |
@@ -68,12 +69,13 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Branch | Spec |
 |----|--------|------|
-| — | — | — |
+| — | — | _(none)_ |
 
 ## Done
 
 | Id | Completed | Spec |
 |----|-----------|------|
+| snack-taste-log | 2026-07-23 | [archive](specs/archive/snack-taste-log.md) |
 | session-parent-notes | 2026-07-22 | [archive](specs/archive/session-parent-notes.md) |
 | session-plan-guards | 2026-07-22 | [archive](specs/archive/session-plan-guards.md) |
 | custom-food-icons | 2026-07-22 | [archive](specs/archive/custom-food-icons.md) |
@@ -128,3 +130,6 @@ Only notable events (first carve-up, major re-rank, cancelled theme) — not eve
 | 2026-07-22 | UX cleanup ahead of insights: `session-plan-guards` → `session-parent-notes`, then `pace-insights`. |
 | 2026-07-22 | session-plan-guards shipped (past dates blocked, one session/day, same-food needs distinct variants). Next up: `session-parent-notes`. |
 | 2026-07-22 | session-parent-notes shipped (optional notes after reward; History + therapist PDF). Next up: `pace-insights`. |
+| 2026-07-23 | Demoted draft `pace-insights` to planned; added `snack-taste-log` as Next up so Insights v1 can use snack texture/taste signal. |
+| 2026-07-23 | Parking: `signup-starter-snacks` (optional signup picks for child tasting foods + snacks; after snack-taste-log). |
+| 2026-07-23 | snack-taste-log shipped (snack foods + liked/texture/taste note; excluded from Plan). Next up: `pace-insights`. |

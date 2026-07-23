@@ -9,4 +9,8 @@ public record FoodResponse(
         String iconKey,
         UUID householdId,
         boolean system,
+        boolean sessionEligible,
+        FoodLiked liked,
+        FoodTexture texture,
+        String tasteNote,
         Instant archivedAt) {}

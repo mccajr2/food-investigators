@@ -22,6 +22,10 @@ const sampleFood = {
   iconKey: "apple",
   householdId: "22222222-2222-2222-2222-222222222222",
   system: false,
+  sessionEligible: true,
+  liked: null,
+  texture: null,
+  tasteNote: null,
   archivedAt: null,
 }
 
@@ -77,6 +81,40 @@ describe("FoodsClient", () => {
     expect(init.method).toBe("POST")
     expect(init.body).toBe(
       JSON.stringify({ name: "Extra apple mash", iconKey: "apple" }),
+    )
+  })
+
+  it("creates a snack with preferences", async () => {
+    const snack = {
+      ...sampleFood,
+      name: "Salt chips",
+      sessionEligible: false,
+      liked: "like" as const,
+      texture: "crunchy" as const,
+      tasteNote: "salt & vinegar",
+    }
+    const fetchFn = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify(snack), {
+        status: 201,
+        headers: { "Content-Type": "application/json" },
+      }),
+    )
+    const client = new FoodsClient("http://localhost:8080", fetchFn, memoryStore())
+    const request = {
+      name: "Salt chips",
+      iconKey: "custom_chips",
+      sessionEligible: false,
+      liked: "like" as const,
+      texture: "crunchy" as const,
+      tasteNote: "salt & vinegar",
+    }
+
+    const created = await client.create(request)
+
+    expect(created.sessionEligible).toBe(false)
+    expect(created.tasteNote).toBe("salt & vinegar")
+    expect((fetchFn.mock.calls[0]?.[1] as RequestInit).body).toBe(
+      JSON.stringify(request),
     )
   })
 

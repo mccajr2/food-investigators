@@ -1,7 +1,11 @@
 package com.yourorg.quickapp.foods.internal;
 
+import com.yourorg.quickapp.foods.FoodLiked;
+import com.yourorg.quickapp.foods.FoodTexture;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
@@ -23,6 +27,20 @@ class Food {
     @Column(name = "household_id")
     private UUID householdId;
 
+    @Column(name = "session_eligible", nullable = false)
+    private boolean sessionEligible = true;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "liked", length = 16)
+    private FoodLiked liked;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "texture", length = 16)
+    private FoodTexture texture;
+
+    @Column(name = "taste_note", length = 100)
+    private String tasteNote;
+
     @Column(name = "archived_at")
     private Instant archivedAt;
 
@@ -40,6 +58,7 @@ class Food {
         food.name = name;
         food.iconKey = iconKey;
         food.householdId = null;
+        food.sessionEligible = true;
         food.archivedAt = null;
         food.createdAt = now;
         food.updatedAt = now;
@@ -52,6 +71,7 @@ class Food {
         food.name = name;
         food.iconKey = iconKey;
         food.householdId = householdId;
+        food.sessionEligible = true;
         food.archivedAt = null;
         food.createdAt = now;
         food.updatedAt = now;
@@ -74,6 +94,22 @@ class Food {
         return householdId;
     }
 
+    boolean isSessionEligible() {
+        return sessionEligible;
+    }
+
+    FoodLiked getLiked() {
+        return liked;
+    }
+
+    FoodTexture getTexture() {
+        return texture;
+    }
+
+    String getTasteNote() {
+        return tasteNote;
+    }
+
     Instant getArchivedAt() {
         return archivedAt;
     }
@@ -93,6 +129,18 @@ class Food {
 
     void changeIcon(String iconKey, Instant now) {
         this.iconKey = iconKey;
+        this.updatedAt = now;
+    }
+
+    void setSessionEligible(boolean sessionEligible, Instant now) {
+        this.sessionEligible = sessionEligible;
+        this.updatedAt = now;
+    }
+
+    void setPreferences(FoodLiked liked, FoodTexture texture, String tasteNote, Instant now) {
+        this.liked = liked;
+        this.texture = texture;
+        this.tasteNote = tasteNote;
         this.updatedAt = now;
     }
 

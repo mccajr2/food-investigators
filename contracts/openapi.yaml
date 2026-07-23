@@ -5,7 +5,8 @@ info:
   description: >
     Contract-first API for Food Investigators. Documents family-account auth
     (email/password register and login, Bearer session tokens, /api/auth/me),
-    the household food catalog (system starters + custom foods, archive), and
+    the household food catalog (system starters + custom foods, archive, optional
+    snack foods excluded from tasting sessions), and
     tasting sessions (create, list upcoming, history of completed, download
     history PDF, get, update, cancel, complete with run outcomes, optional
     parent notes on completed sessions).
@@ -821,6 +822,7 @@ components:
         - name
         - iconKey
         - system
+        - sessionEligible
       properties:
         id:
           type: string
@@ -838,6 +840,26 @@ components:
         system:
           type: boolean
           description: True when the food is a global starter (householdId is null)
+        sessionEligible:
+          type: boolean
+          description: >
+            When false, the food is a snack — visible in the catalog but not
+            selectable for tasting Plan create/update. System starters are always true.
+        liked:
+          allOf:
+            - $ref: "#/components/schemas/Liked"
+          nullable: true
+          description: Optional preference (often set for snacks)
+        texture:
+          allOf:
+            - $ref: "#/components/schemas/Texture"
+          nullable: true
+          description: Optional preference (often set for snacks)
+        tasteNote:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Optional free-text taste note (e.g. salt & vinegar); blank clears to null
         archivedAt:
           type: string
           format: date-time
@@ -856,6 +878,22 @@ components:
           example: Extra apple mash
         iconKey:
           $ref: "#/components/schemas/FoodIconKey"
+        sessionEligible:
+          type: boolean
+          default: true
+          description: Set false to create a snack (not for tasting sessions)
+        liked:
+          allOf:
+            - $ref: "#/components/schemas/Liked"
+          nullable: true
+        texture:
+          allOf:
+            - $ref: "#/components/schemas/Texture"
+          nullable: true
+        tasteNote:
+          type: string
+          maxLength: 100
+          nullable: true
     UpdateFoodRequest:
       type: object
       properties:
@@ -866,6 +904,24 @@ components:
           example: Updated mash
         iconKey:
           $ref: "#/components/schemas/FoodIconKey"
+        sessionEligible:
+          type: boolean
+          description: Omit to leave unchanged; false marks as snack
+        liked:
+          allOf:
+            - $ref: "#/components/schemas/Liked"
+          nullable: true
+          description: Omit to leave unchanged
+        texture:
+          allOf:
+            - $ref: "#/components/schemas/Texture"
+          nullable: true
+          description: Omit to leave unchanged
+        tasteNote:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Omit to leave unchanged; blank string clears to null
       description: Omit a field to leave it unchanged
     Familiarity:
       type: string

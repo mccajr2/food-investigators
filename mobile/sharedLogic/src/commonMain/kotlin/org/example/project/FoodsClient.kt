@@ -23,6 +23,10 @@ data class FoodResponse(
     val iconKey: String,
     val householdId: String? = null,
     val system: Boolean,
+    val sessionEligible: Boolean = true,
+    val liked: String? = null,
+    val texture: String? = null,
+    val tasteNote: String? = null,
     val archivedAt: String? = null,
 )
 
@@ -30,12 +34,20 @@ data class FoodResponse(
 data class CreateFoodRequest(
     val name: String,
     val iconKey: String,
+    val sessionEligible: Boolean? = null,
+    val liked: String? = null,
+    val texture: String? = null,
+    val tasteNote: String? = null,
 )
 
 @Serializable
 data class UpdateFoodRequest(
     val name: String? = null,
     val iconKey: String? = null,
+    val sessionEligible: Boolean? = null,
+    val liked: String? = null,
+    val texture: String? = null,
+    val tasteNote: String? = null,
 )
 
 class FoodsException(message: String) : Exception(message)
@@ -55,12 +67,28 @@ class FoodsClient(
         return response.body()
     }
 
-    suspend fun create(name: String, iconKey: String): FoodResponse {
+    suspend fun create(
+        name: String,
+        iconKey: String,
+        sessionEligible: Boolean? = null,
+        liked: String? = null,
+        texture: String? = null,
+        tasteNote: String? = null,
+    ): FoodResponse {
         val response =
             httpClient.post("$baseUrl/api/foods") {
                 header(HttpHeaders.Authorization, bearerOrThrow())
                 contentType(ContentType.Application.Json)
-                setBody(CreateFoodRequest(name, iconKey))
+                setBody(
+                    CreateFoodRequest(
+                        name = name,
+                        iconKey = iconKey,
+                        sessionEligible = sessionEligible,
+                        liked = liked,
+                        texture = texture,
+                        tasteNote = tasteNote,
+                    ),
+                )
             }
         clearTokenIfUnauthorized(response)
         if (!response.status.isSuccess()) {
@@ -73,12 +101,25 @@ class FoodsClient(
         foodId: String,
         name: String? = null,
         iconKey: String? = null,
+        sessionEligible: Boolean? = null,
+        liked: String? = null,
+        texture: String? = null,
+        tasteNote: String? = null,
     ): FoodResponse {
         val response =
             httpClient.put("$baseUrl/api/foods/$foodId") {
                 header(HttpHeaders.Authorization, bearerOrThrow())
                 contentType(ContentType.Application.Json)
-                setBody(UpdateFoodRequest(name, iconKey))
+                setBody(
+                    UpdateFoodRequest(
+                        name = name,
+                        iconKey = iconKey,
+                        sessionEligible = sessionEligible,
+                        liked = liked,
+                        texture = texture,
+                        tasteNote = tasteNote,
+                    ),
+                )
             }
         clearTokenIfUnauthorized(response)
         if (!response.status.isSuccess()) {

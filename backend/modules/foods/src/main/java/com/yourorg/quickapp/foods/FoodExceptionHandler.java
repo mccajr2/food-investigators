@@ -15,6 +15,11 @@ public class FoodExceptionHandler {
         return ResponseEntity.badRequest().body(Map.of("message", "Invalid icon key"));
     }
 
+    @ExceptionHandler(InvalidFoodPreferenceException.class)
+    ResponseEntity<Map<String, String>> invalidPreference(InvalidFoodPreferenceException ex) {
+        return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
+    }
+
     @ExceptionHandler(DuplicateFoodNameException.class)
     ResponseEntity<Map<String, String>> duplicateName(DuplicateFoodNameException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
