@@ -20,11 +20,13 @@ import com.yourorg.quickapp.sessions.Liked;
 import com.yourorg.quickapp.sessions.SessionFoodRequest;
 import com.yourorg.quickapp.sessions.SessionNotEditableException;
 import com.yourorg.quickapp.sessions.SessionNotFoundException;
+import com.yourorg.quickapp.sessions.SessionParentNoteNotAllowedException;
 import com.yourorg.quickapp.sessions.SessionResponse;
 import com.yourorg.quickapp.sessions.SessionStatus;
 import com.yourorg.quickapp.sessions.Smell;
 import com.yourorg.quickapp.sessions.Temperature;
 import com.yourorg.quickapp.sessions.Texture;
+import com.yourorg.quickapp.sessions.UpdateParentNoteRequest;
 import com.yourorg.quickapp.sessions.UpdateSessionRequest;
 import java.time.Clock;
 import java.time.Instant;
@@ -455,6 +457,7 @@ class SessionServiceTest {
                                                 false))));
 
         assertThat(completed.status()).isEqualTo(SessionStatus.completed);
+        assertThat(completed.parentNote()).isNull();
         assertThat(completed.foods().get(0).liked()).isEqualTo(Liked.like);
         assertThat(completed.foods().get(0).texture()).isEqualTo(Texture.crunchy);
         assertThat(completed.foods().get(0).whyNote()).isEqualTo("crunchy");
@@ -462,6 +465,87 @@ class SessionServiceTest {
         assertThat(completed.foods().get(0).ateEnough()).isTrue();
         assertThat(completed.foods().get(1).liked()).isEqualTo(Liked.so_so);
         assertThat(completed.foods().get(1).ateEnough()).isFalse();
+    }
+
+    @Test
+    void updateParentNoteStoresTrimmedNoteOnCompletedSession() {
+        TastingSession session = completedSession();
+        when(sessions.findByIdAndHouseholdId(session.getId(), householdId))
+                .thenReturn(Optional.of(session));
+        when(sessions.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        stubVisible(foodA, "Apples", "apple");
+        stubVisible(foodB, "Bananas", "banana");
+
+        SessionResponse updated =
+                service.updateParentNote(
+                        householdId,
+                        session.getId(),
+                        new UpdateParentNoteRequest("  tired after school  "));
+
+        assertThat(updated.parentNote()).isEqualTo("tired after school");
+        assertThat(updated.status()).isEqualTo(SessionStatus.completed);
+        assertThat(session.getParentNote()).isEqualTo("tired after school");
+        assertThat(session.getUpdatedAt()).isEqualTo(now);
+    }
+
+    @Test
+    void updateParentNoteBlankBecomesNull() {
+        TastingSession session = completedSession();
+        session.setParentNote("kept earlier", Instant.parse("2026-07-14T12:00:00Z"));
+        when(sessions.findByIdAndHouseholdId(session.getId(), householdId))
+                .thenReturn(Optional.of(session));
+        when(sessions.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        stubVisible(foodA, "Apples", "apple");
+        stubVisible(foodB, "Bananas", "banana");
+
+        SessionResponse updated =
+                service.updateParentNote(
+                        householdId, session.getId(), new UpdateParentNoteRequest("   "));
+
+        assertThat(updated.parentNote()).isNull();
+        assertThat(session.getParentNote()).isNull();
+    }
+
+    @Test
+    void updateParentNoteRejectsPlannedAndCancelled() {
+        TastingSession planned =
+                TastingSession.planned(householdId, LocalDate.of(2026, 7, 20), now);
+        when(sessions.findByIdAndHouseholdId(planned.getId(), householdId))
+                .thenReturn(Optional.of(planned));
+
+        assertThatThrownBy(
+                        () ->
+                                service.updateParentNote(
+                                        householdId,
+                                        planned.getId(),
+                                        new UpdateParentNoteRequest("nope")))
+                .isInstanceOf(SessionParentNoteNotAllowedException.class);
+
+        TastingSession cancelled =
+                TastingSession.planned(householdId, LocalDate.of(2026, 7, 21), now);
+        cancelled.cancel(now);
+        when(sessions.findByIdAndHouseholdId(cancelled.getId(), householdId))
+                .thenReturn(Optional.of(cancelled));
+
+        assertThatThrownBy(
+                        () ->
+                                service.updateParentNote(
+                                        householdId,
+                                        cancelled.getId(),
+                                        new UpdateParentNoteRequest("nope")))
+                .isInstanceOf(SessionParentNoteNotAllowedException.class);
+    }
+
+    @Test
+    void updateParentNoteRejectsUnknownSession() {
+        UUID missing = UUID.fromString("cccccccc-cccc-cccc-cccc-cccccccccccc");
+        when(sessions.findByIdAndHouseholdId(missing, householdId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(
+                        () ->
+                                service.updateParentNote(
+                                        householdId, missing, new UpdateParentNoteRequest("x")))
+                .isInstanceOf(SessionNotFoundException.class);
     }
 
     @Test
@@ -519,6 +603,7 @@ class SessionServiceTest {
         older.getFoods().get(0).recordOutcome(Liked.like, Texture.crunchy, null, null, "yay", null, true);
         older.getFoods().get(1).recordOutcome(Liked.no, null, null, null, null, null, false);
         older.complete(earlier);
+        older.setParentNote("clinic was loud", earlier);
 
         TastingSession newer = TastingSession.planned(householdId, LocalDate.of(2026, 7, 20), later);
         newer.replaceFoods(
@@ -543,9 +628,12 @@ class SessionServiceTest {
         assertThat(fullText).contains("Range: All completed sessions");
         assertThat(fullText).contains("Session: 2026-07-20");
         assertThat(fullText).contains("Session: 2026-07-10");
+        assertThat(fullText).contains("Parent notes: clinic was loud");
         assertThat(fullText).contains("Honeycrisp");
         assertThat(fullText).contains("yay");
         assertThat(fullText).doesNotContain("bbbbbbbb");
+        // No empty Parent notes line for the session without a note (only one occurrence).
+        assertThat(fullText.split("Parent notes:", -1)).hasSize(2);
 
         byte[] filteredPdf =
                 service.exportHistoryPdf(
@@ -600,6 +688,18 @@ class SessionServiceTest {
     private void stubSelectable(UUID foodId, String name, String iconKey) {
         when(foodCatalog.findSelectable(householdId, foodId))
                 .thenReturn(Optional.of(new CatalogFood(foodId, name, iconKey)));
+    }
+
+    private TastingSession completedSession() {
+        TastingSession session =
+                TastingSession.planned(householdId, LocalDate.of(2026, 7, 20), now);
+        session.replaceFoods(
+                List.of(
+                        TastingSessionFood.of(foodA, Familiarity.likes, null, 1),
+                        TastingSessionFood.of(foodB, Familiarity.truly_new, null, 2)),
+                now);
+        session.complete(now);
+        return session;
     }
 
     private void stubVisible(UUID foodId, String name, String iconKey) {

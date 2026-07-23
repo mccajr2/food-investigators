@@ -14,8 +14,10 @@ import com.yourorg.quickapp.sessions.SessionFoodRequest;
 import com.yourorg.quickapp.sessions.SessionFoodResponse;
 import com.yourorg.quickapp.sessions.SessionNotEditableException;
 import com.yourorg.quickapp.sessions.SessionNotFoundException;
+import com.yourorg.quickapp.sessions.SessionParentNoteNotAllowedException;
 import com.yourorg.quickapp.sessions.SessionResponse;
 import com.yourorg.quickapp.sessions.SessionStatus;
+import com.yourorg.quickapp.sessions.UpdateParentNoteRequest;
 import com.yourorg.quickapp.sessions.UpdateSessionRequest;
 import java.time.Clock;
 import java.time.Instant;
@@ -138,6 +140,33 @@ public class SessionService {
         applyOutcomes(session, request.foods());
         session.complete(clock.instant());
         return toResponse(sessions.save(session));
+    }
+
+    @Transactional
+    public SessionResponse updateParentNote(
+            UUID householdId, UUID sessionId, UpdateParentNoteRequest request) {
+        TastingSession session = requireSession(householdId, sessionId);
+        if (!session.isCompleted()) {
+            throw new SessionParentNoteNotAllowedException();
+        }
+        Instant now = clock.instant();
+        session.setParentNote(normalizeParentNote(request.parentNote()), now);
+        return toResponse(sessions.save(session));
+    }
+
+    private static String normalizeParentNote(String note) {
+        if (note == null) {
+            return null;
+        }
+        String trimmed = note.trim();
+        if (trimmed.isEmpty()) {
+            return null;
+        }
+        if (trimmed.length() > 2000) {
+            throw new InvalidSessionOutcomeException(
+                    "Parent note must be at most 2000 characters");
+        }
+        return trimmed;
     }
 
     private void applyOutcomes(TastingSession session, List<FoodOutcomeRequest> outcomes) {
@@ -308,6 +337,7 @@ public class SessionService {
                 session.getScheduledOn(),
                 session.getStatus(),
                 foods,
+                session.getParentNote(),
                 session.getCreatedAt(),
                 session.getUpdatedAt());
     }

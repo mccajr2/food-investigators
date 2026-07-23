@@ -10,5 +10,6 @@ public record SessionResponse(
         LocalDate scheduledOn,
         SessionStatus status,
         List<SessionFoodResponse> foods,
+        String parentNote,
         Instant createdAt,
         Instant updatedAt) {}

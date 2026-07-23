@@ -75,7 +75,7 @@ it forward (and later `pace-insights`).
 
 ## Tasks
 
-- [ ] Backend: Flyway `parent_note`; entity/DTO; PATCH endpoint + validation;
+- [x] Backend: Flyway `parent_note`; entity/DTO; PATCH endpoint + validation;
       PDF line; unit tests.
 - [ ] Contract: OpenAPI path + `parentNote` on `SessionResponse`; align web +
       mobile clients.
