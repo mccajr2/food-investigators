@@ -1,16 +1,16 @@
-import { render, screen, waitFor, within } from "@testing-library/react"
-import userEvent from "@testing-library/user-event"
-import { describe, expect, it, vi } from "vitest"
+import { render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
 
-import type { FoodsClient, SessionsClient } from "@/api"
-import type { FoodResponse, SessionResponse } from "@/api/types"
+import type { FoodsClient, SessionsClient } from "@/api";
+import type { FoodResponse, SessionResponse } from "@/api/types";
 import {
   localTodayIsoDate,
   PlanPage,
   sameFoodVariantError,
-} from "@/components/plan/PlanPage"
+} from "@/components/plan/PlanPage";
 
-const TODAY = "2026-07-15"
+const TODAY = "2026-07-15";
 
 const foods: FoodResponse[] = [
   {
@@ -19,6 +19,7 @@ const foods: FoodResponse[] = [
     iconKey: "apple",
     householdId: null,
     system: true,
+    sessionEligible: true,
   },
   {
     id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa05",
@@ -26,6 +27,7 @@ const foods: FoodResponse[] = [
     iconKey: "strawberry",
     householdId: null,
     system: true,
+    sessionEligible: true,
   },
   {
     id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa13",
@@ -33,8 +35,9 @@ const foods: FoodResponse[] = [
     iconKey: "blueberry",
     householdId: null,
     system: true,
+    sessionEligible: true,
   },
-]
+];
 
 const sampleSession: SessionResponse = {
   id: "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
@@ -60,7 +63,7 @@ const sampleSession: SessionResponse = {
   ],
   createdAt: "2026-07-15T00:00:00Z",
   updatedAt: "2026-07-15T00:00:00Z",
-}
+};
 
 function mockSessionsClient(
   overrides: Partial<SessionsClient> = {},
@@ -73,7 +76,7 @@ function mockSessionsClient(
     cancel: vi.fn(),
     complete: vi.fn(),
     ...overrides,
-  } as SessionsClient
+  } as SessionsClient;
 }
 
 function mockFoodsClient(overrides: Partial<FoodsClient> = {}): FoodsClient {
@@ -83,7 +86,7 @@ function mockFoodsClient(overrides: Partial<FoodsClient> = {}): FoodsClient {
     update: vi.fn(),
     archive: vi.fn(),
     ...overrides,
-  } as FoodsClient
+  } as FoodsClient;
 }
 
 function renderPlan(
@@ -96,13 +99,15 @@ function renderPlan(
       foodsClient={foodsClient}
       todayIso={TODAY}
     />,
-  )
+  );
 }
 
 describe("PlanPage helpers", () => {
   it("formats local today for date min", () => {
-    expect(localTodayIsoDate(new Date("2026-07-22T15:00:00"))).toBe("2026-07-22")
-  })
+    expect(localTodayIsoDate(new Date("2026-07-22T15:00:00"))).toBe(
+      "2026-07-22",
+    );
+  });
 
   it("requires distinct variants when both slots share a food", () => {
     expect(
@@ -110,60 +115,73 @@ describe("PlanPage helpers", () => {
         { foodId: foods[0].id, familiarity: "likes", variantNote: "A" },
         { foodId: foods[0].id, familiarity: "likes", variantNote: "B" },
       ),
-    ).toBeNull()
+    ).toBeNull();
     expect(
       sameFoodVariantError(
         { foodId: foods[0].id, familiarity: "likes", variantNote: "" },
         { foodId: foods[0].id, familiarity: "likes", variantNote: "B" },
       ),
-    ).toMatch(/brand\/variety/)
+    ).toMatch(/brand\/variety/);
     expect(
       sameFoodVariantError(
         { foodId: foods[0].id, familiarity: "likes", variantNote: "Iggy's" },
         { foodId: foods[0].id, familiarity: "likes", variantNote: "iggy's" },
       ),
-    ).toMatch(/brand\/variety/)
-  })
-})
+    ).toMatch(/brand\/variety/);
+  });
+});
 
 describe("PlanPage", () => {
   it("lists upcoming sessions and empty state", async () => {
-    renderPlan(mockSessionsClient())
+    renderPlan(mockSessionsClient());
 
-    expect(await screen.findByRole("heading", { name: "Plan" })).toBeInTheDocument()
-    expect(screen.getByText(/No planned nights yet/)).toBeInTheDocument()
-  })
+    expect(
+      await screen.findByRole("heading", { name: "Plan" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/No planned nights yet/)).toBeInTheDocument();
+  });
 
   it("sets the date picker min to today", async () => {
-    renderPlan(mockSessionsClient())
-    await screen.findByRole("heading", { name: "Plan" })
-    await userEvent.setup().click(screen.getByRole("button", { name: "Plan a night" }))
+    renderPlan(mockSessionsClient());
+    await screen.findByRole("heading", { name: "Plan" });
+    await userEvent
+      .setup()
+      .click(screen.getByRole("button", { name: "Plan a night" }));
 
-    expect(screen.getByLabelText("Date")).toHaveAttribute("min", TODAY)
-  })
+    expect(screen.getByLabelText("Date")).toHaveAttribute("min", TODAY);
+  });
 
   it("creates a planned night with two foods", async () => {
-    const user = userEvent.setup()
-    const create = vi.fn().mockResolvedValue(sampleSession)
-    renderPlan(mockSessionsClient({ create }))
+    const user = userEvent.setup();
+    const create = vi.fn().mockResolvedValue(sampleSession);
+    renderPlan(mockSessionsClient({ create }));
 
-    await screen.findByRole("heading", { name: "Plan" })
-    await user.click(screen.getByRole("button", { name: "Plan a night" }))
+    await screen.findByRole("heading", { name: "Plan" });
+    await user.click(screen.getByRole("button", { name: "Plan a night" }));
 
-    const form = screen.getByRole("form", { name: "Plan a night" })
-    await user.type(within(form).getByLabelText("Date"), "2026-07-20")
-    await user.selectOptions(within(form).getByLabelText("Food 1 picker"), foods[0].id)
+    const form = screen.getByRole("form", { name: "Plan a night" });
+    await user.type(within(form).getByLabelText("Date"), "2026-07-20");
+    await user.selectOptions(
+      within(form).getByLabelText("Food 1 picker"),
+      foods[0].id,
+    );
     await user.selectOptions(
       within(form).getByLabelText("Food 1 familiarity"),
       "likes",
-    )
-    await user.type(within(form).getByLabelText("Food 1 variant note"), "Honeycrisp")
-    await user.selectOptions(within(form).getByLabelText("Food 2 picker"), foods[1].id)
+    );
+    await user.type(
+      within(form).getByLabelText("Food 1 variant note"),
+      "Honeycrisp",
+    );
+    await user.selectOptions(
+      within(form).getByLabelText("Food 2 picker"),
+      foods[1].id,
+    );
     await user.selectOptions(
       within(form).getByLabelText("Food 2 familiarity"),
       "truly_new",
-    )
-    await user.click(within(form).getByRole("button", { name: "Save night" }))
+    );
+    await user.click(within(form).getByRole("button", { name: "Save night" }));
 
     expect(create).toHaveBeenCalledWith({
       scheduledOn: "2026-07-20",
@@ -179,84 +197,108 @@ describe("PlanPage", () => {
           variantNote: null,
         },
       ],
-    })
-    expect(await screen.findByText(/Honeycrisp/)).toBeInTheDocument()
-  })
+    });
+    expect(await screen.findByText(/Honeycrisp/)).toBeInTheDocument();
+  });
 
   it("blocks same food without distinct variants before calling the API", async () => {
-    const user = userEvent.setup()
-    const create = vi.fn()
-    renderPlan(mockSessionsClient({ create }))
+    const user = userEvent.setup();
+    const create = vi.fn();
+    renderPlan(mockSessionsClient({ create }));
 
-    await screen.findByRole("heading", { name: "Plan" })
-    await user.click(screen.getByRole("button", { name: "Plan a night" }))
+    await screen.findByRole("heading", { name: "Plan" });
+    await user.click(screen.getByRole("button", { name: "Plan a night" }));
 
-    const form = screen.getByRole("form", { name: "Plan a night" })
-    await user.type(within(form).getByLabelText("Date"), "2026-07-20")
-    await user.selectOptions(within(form).getByLabelText("Food 1 picker"), foods[0].id)
-    await user.selectOptions(within(form).getByLabelText("Food 2 picker"), foods[0].id)
+    const form = screen.getByRole("form", { name: "Plan a night" });
+    await user.type(within(form).getByLabelText("Date"), "2026-07-20");
+    await user.selectOptions(
+      within(form).getByLabelText("Food 1 picker"),
+      foods[0].id,
+    );
+    await user.selectOptions(
+      within(form).getByLabelText("Food 2 picker"),
+      foods[0].id,
+    );
 
-    expect(within(form).getByLabelText("Food 1 variant note")).toBeRequired()
-    expect(within(form).getByLabelText("Food 2 variant note")).toBeRequired()
+    expect(within(form).getByLabelText("Food 1 variant note")).toBeRequired();
+    expect(within(form).getByLabelText("Food 2 variant note")).toBeRequired();
 
-    await user.type(within(form).getByLabelText("Food 1 variant note"), "Iggy's")
-    await user.type(within(form).getByLabelText("Food 2 variant note"), "iggy's")
-    await user.click(within(form).getByRole("button", { name: "Save night" }))
+    await user.type(
+      within(form).getByLabelText("Food 1 variant note"),
+      "Iggy's",
+    );
+    await user.type(
+      within(form).getByLabelText("Food 2 variant note"),
+      "iggy's",
+    );
+    await user.click(within(form).getByRole("button", { name: "Save night" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "Same food needs two different brand/variety notes",
-    )
-    expect(create).not.toHaveBeenCalled()
-  })
+    );
+    expect(create).not.toHaveBeenCalled();
+  });
 
   it("blocks creating on a date that already has a planned night", async () => {
-    const user = userEvent.setup()
-    const create = vi.fn()
+    const user = userEvent.setup();
+    const create = vi.fn();
     renderPlan(
       mockSessionsClient({
         listUpcoming: vi.fn().mockResolvedValue([sampleSession]),
         create,
       }),
-    )
+    );
 
-    expect(await screen.findByText(/Honeycrisp/)).toBeInTheDocument()
-    await user.click(screen.getByRole("button", { name: "Plan a night" }))
+    expect(await screen.findByText(/Honeycrisp/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Plan a night" }));
 
-    const form = screen.getByRole("form", { name: "Plan a night" })
-    await user.type(within(form).getByLabelText("Date"), "2026-07-20")
-    await user.selectOptions(within(form).getByLabelText("Food 1 picker"), foods[0].id)
-    await user.selectOptions(within(form).getByLabelText("Food 2 picker"), foods[1].id)
-    await user.click(within(form).getByRole("button", { name: "Save night" }))
+    const form = screen.getByRole("form", { name: "Plan a night" });
+    await user.type(within(form).getByLabelText("Date"), "2026-07-20");
+    await user.selectOptions(
+      within(form).getByLabelText("Food 1 picker"),
+      foods[0].id,
+    );
+    await user.selectOptions(
+      within(form).getByLabelText("Food 2 picker"),
+      foods[1].id,
+    );
+    await user.click(within(form).getByRole("button", { name: "Save night" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "A session already exists on that date",
-    )
-    expect(create).not.toHaveBeenCalled()
-  })
+    );
+    expect(create).not.toHaveBeenCalled();
+  });
 
   it("surfaces API save errors", async () => {
-    const user = userEvent.setup()
+    const user = userEvent.setup();
     const create = vi
       .fn()
-      .mockRejectedValue(new Error("Scheduled date can't be in the past"))
-    renderPlan(mockSessionsClient({ create }))
+      .mockRejectedValue(new Error("Scheduled date can't be in the past"));
+    renderPlan(mockSessionsClient({ create }));
 
-    await screen.findByRole("heading", { name: "Plan" })
-    await user.click(screen.getByRole("button", { name: "Plan a night" }))
+    await screen.findByRole("heading", { name: "Plan" });
+    await user.click(screen.getByRole("button", { name: "Plan a night" }));
 
-    const form = screen.getByRole("form", { name: "Plan a night" })
-    await user.type(within(form).getByLabelText("Date"), "2026-07-20")
-    await user.selectOptions(within(form).getByLabelText("Food 1 picker"), foods[0].id)
-    await user.selectOptions(within(form).getByLabelText("Food 2 picker"), foods[1].id)
-    await user.click(within(form).getByRole("button", { name: "Save night" }))
+    const form = screen.getByRole("form", { name: "Plan a night" });
+    await user.type(within(form).getByLabelText("Date"), "2026-07-20");
+    await user.selectOptions(
+      within(form).getByLabelText("Food 1 picker"),
+      foods[0].id,
+    );
+    await user.selectOptions(
+      within(form).getByLabelText("Food 2 picker"),
+      foods[1].id,
+    );
+    await user.click(within(form).getByRole("button", { name: "Save night" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "Scheduled date can't be in the past",
-    )
-  })
+    );
+  });
 
   it("edits and cancels an upcoming night", async () => {
-    const user = userEvent.setup()
+    const user = userEvent.setup();
     const updated: SessionResponse = {
       ...sampleSession,
       scheduledOn: "2026-07-22",
@@ -278,12 +320,12 @@ describe("PlanPage", () => {
           position: 2,
         },
       ],
-    }
-    const update = vi.fn().mockResolvedValue(updated)
+    };
+    const update = vi.fn().mockResolvedValue(updated);
     const cancel = vi.fn().mockResolvedValue({
       ...updated,
       status: "cancelled",
-    })
+    });
 
     renderPlan(
       mockSessionsClient({
@@ -291,29 +333,37 @@ describe("PlanPage", () => {
         update,
         cancel,
       }),
-    )
+    );
 
-    expect(await screen.findByText(/Honeycrisp/)).toBeInTheDocument()
-    await user.click(screen.getByRole("button", { name: "Edit" }))
+    expect(await screen.findByText(/Honeycrisp/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Edit" }));
 
-    const form = screen.getByRole("form", { name: "Edit night" })
-    const date = within(form).getByLabelText("Date")
-    await user.clear(date)
-    await user.type(date, "2026-07-22")
-    await user.selectOptions(within(form).getByLabelText("Food 1 picker"), foods[1].id)
+    const form = screen.getByRole("form", { name: "Edit night" });
+    const date = within(form).getByLabelText("Date");
+    await user.clear(date);
+    await user.type(date, "2026-07-22");
+    await user.selectOptions(
+      within(form).getByLabelText("Food 1 picker"),
+      foods[1].id,
+    );
     await user.selectOptions(
       within(form).getByLabelText("Food 1 familiarity"),
       "familiar_but_new",
-    )
-    const note = within(form).getByLabelText("Food 1 variant note")
-    await user.clear(note)
-    await user.type(note, "TJ's")
-    await user.selectOptions(within(form).getByLabelText("Food 2 picker"), foods[2].id)
+    );
+    const note = within(form).getByLabelText("Food 1 variant note");
+    await user.clear(note);
+    await user.type(note, "TJ's");
+    await user.selectOptions(
+      within(form).getByLabelText("Food 2 picker"),
+      foods[2].id,
+    );
     await user.selectOptions(
       within(form).getByLabelText("Food 2 familiarity"),
       "likes",
-    )
-    await user.click(within(form).getByRole("button", { name: "Save changes" }))
+    );
+    await user.click(
+      within(form).getByRole("button", { name: "Save changes" }),
+    );
 
     expect(update).toHaveBeenCalledWith(sampleSession.id, {
       scheduledOn: "2026-07-22",
@@ -329,39 +379,39 @@ describe("PlanPage", () => {
           variantNote: null,
         },
       ],
-    })
-    expect(await screen.findByText(/TJ's/)).toBeInTheDocument()
+    });
+    expect(await screen.findByText(/TJ's/)).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Cancel night" }))
-    expect(cancel).toHaveBeenCalledWith(sampleSession.id)
+    await user.click(screen.getByRole("button", { name: "Cancel night" }));
+    expect(cancel).toHaveBeenCalledWith(sampleSession.id);
     await waitFor(() => {
-      expect(screen.queryByText(/TJ's/)).not.toBeInTheDocument()
-    })
-  })
+      expect(screen.queryByText(/TJ's/)).not.toBeInTheDocument();
+    });
+  });
 
   it("opens the runner from upcoming", async () => {
-    const user = userEvent.setup()
+    const user = userEvent.setup();
 
     renderPlan(
       mockSessionsClient({
         listUpcoming: vi.fn().mockResolvedValue([sampleSession]),
       }),
-    )
+    );
 
-    expect(await screen.findByText(/Honeycrisp/)).toBeInTheDocument()
-    await user.click(screen.getByRole("button", { name: "Run" }))
+    expect(await screen.findByText(/Honeycrisp/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Run" }));
     expect(
       screen.getByRole("dialog", { name: "Run tasting session" }),
-    ).toBeInTheDocument()
-  })
+    ).toBeInTheDocument();
+  });
 
   it("surfaces load errors", async () => {
     renderPlan(
       mockSessionsClient({
         listUpcoming: vi.fn().mockRejectedValue(new Error("Not signed in")),
       }),
-    )
+    );
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("Not signed in")
-  })
-})
+    expect(await screen.findByRole("alert")).toHaveTextContent("Not signed in");
+  });
+});

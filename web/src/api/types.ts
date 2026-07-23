@@ -64,17 +64,29 @@ export type FoodResponse = {
   iconKey: FoodIconKey | string
   householdId: string | null
   system: boolean
+  sessionEligible: boolean
+  liked?: Liked | null
+  texture?: Texture | null
+  tasteNote?: string | null
   archivedAt?: string | null
 }
 
 export type CreateFoodRequest = {
   name: string
   iconKey: FoodIconKey | string
+  sessionEligible?: boolean
+  liked?: Liked | null
+  texture?: Texture | null
+  tasteNote?: string | null
 }
 
 export type UpdateFoodRequest = {
   name?: string
   iconKey?: FoodIconKey | string
+  sessionEligible?: boolean
+  liked?: Liked | null
+  texture?: Texture | null
+  tasteNote?: string | null
 }
 
 export type Familiarity = "likes" | "familiar_but_new" | "truly_new"

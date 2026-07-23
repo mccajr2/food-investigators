@@ -43,6 +43,8 @@ class OpenApiContractTest {
         assertThat(yaml).contains("CreateFoodRequest");
         assertThat(yaml).contains("UpdateFoodRequest");
         assertThat(yaml).contains("FoodIconKey");
+        assertThat(yaml).contains("sessionEligible");
+        assertThat(yaml).contains("tasteNote");
         assertThat(yaml).contains("includeArchived");
         assertThat(yaml).contains("custom_");
         assertThat(yaml).contains("custom_cucumber");

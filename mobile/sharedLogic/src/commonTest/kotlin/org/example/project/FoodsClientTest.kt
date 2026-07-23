@@ -37,6 +37,7 @@ class FoodsClientTest {
                               "iconKey":"apple",
                               "householdId":"22222222-2222-2222-2222-222222222222",
                               "system":false,
+                              "sessionEligible":true,
                               "archivedAt":null}]
                             """.trimIndent(),
                         status = HttpStatusCode.OK,
@@ -50,7 +51,53 @@ class FoodsClientTest {
             assertEquals(1, foods.size)
             assertEquals("Extra apple mash", foods[0].name)
             assertFalse(foods[0].system)
+            assertEquals(true, foods[0].sessionEligible)
             assertEquals("Bearer tok", sawAuth)
+        }
+
+    @Test
+    fun createSnackSendsPreferences() =
+        runTest {
+            val store = InMemoryTokenStore()
+            store.saveToken("tok", rememberMe = true)
+            val engine =
+                MockEngine { request ->
+                    assertEquals(HttpMethod.Post, request.method)
+                    assertEquals("/api/foods", request.url.encodedPath)
+                    respond(
+                        content =
+                            """
+                            {"id":"cccccccc-cccc-cccc-cccc-cccccccccccc",
+                             "name":"Salt chips",
+                             "iconKey":"custom_chips",
+                             "householdId":"22222222-2222-2222-2222-222222222222",
+                             "system":false,
+                             "sessionEligible":false,
+                             "liked":"like",
+                             "texture":"crunchy",
+                             "tasteNote":"salt & vinegar",
+                             "archivedAt":null}
+                            """.trimIndent(),
+                        status = HttpStatusCode.Created,
+                        headers = headersOf(HttpHeaders.ContentType, "application/json"),
+                    )
+                }
+
+            val client = FoodsClient("http://localhost:8080", httpClient(engine), store)
+            val created =
+                client.create(
+                    name = "Salt chips",
+                    iconKey = "custom_chips",
+                    sessionEligible = false,
+                    liked = "like",
+                    texture = "crunchy",
+                    tasteNote = "salt & vinegar",
+                )
+
+            assertEquals(false, created.sessionEligible)
+            assertEquals("like", created.liked)
+            assertEquals("crunchy", created.texture)
+            assertEquals("salt & vinegar", created.tasteNote)
         }
 
     @Test
@@ -69,6 +116,7 @@ class FoodsClientTest {
                          "iconKey":"apple",
                          "householdId":"22222222-2222-2222-2222-222222222222",
                          "system":false,
+                         "sessionEligible":true,
                          "archivedAt":null}
                         """.trimIndent()
                     val status =
