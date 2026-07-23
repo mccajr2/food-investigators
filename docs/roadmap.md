@@ -37,10 +37,9 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | pace-insights | planned | 2026-07-11 · initial | Parent dashboard: trends on what’s working; gentle suggestions you can ignore |
-| 2 | suggested-next-session | planned | 2026-07-11 · initial | App proposes next two foods + levels; parent approves or swaps |
-| 3 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
-| 4 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
+| 1 | suggested-next-session | planned | 2026-07-11 · initial | App proposes next two foods + levels; parent approves or swaps |
+| 2 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
+| 3 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
 
 Status values: `parking` · `planned` · `active` · `done` · `cancelled`  
 Added: `YYYY-MM-DD · initial` | `enhancement` | `re-rank split`
@@ -75,6 +74,7 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Completed | Spec |
 |----|-----------|------|
+| pace-insights | 2026-07-23 | [archive](specs/archive/pace-insights.md) |
 | snack-taste-log | 2026-07-23 | [archive](specs/archive/snack-taste-log.md) |
 | session-parent-notes | 2026-07-22 | [archive](specs/archive/session-parent-notes.md) |
 | session-plan-guards | 2026-07-22 | [archive](specs/archive/session-plan-guards.md) |
@@ -133,3 +133,4 @@ Only notable events (first carve-up, major re-rank, cancelled theme) — not eve
 | 2026-07-23 | Demoted draft `pace-insights` to planned; added `snack-taste-log` as Next up so Insights v1 can use snack texture/taste signal. |
 | 2026-07-23 | Parking: `signup-starter-snacks` (optional signup picks for child tasting foods + snacks; after snack-taste-log). |
 | 2026-07-23 | snack-taste-log shipped (snack foods + liked/texture/taste note; excluded from Plan). Next up: `pace-insights`. |
+| 2026-07-23 | pace-insights shipped (aggregates + dismissible tips; snacks merged into liked/texture). Next up: `suggested-next-session`. |

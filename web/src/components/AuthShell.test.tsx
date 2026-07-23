@@ -2,7 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { AuthClient, FoodsClient, SessionsClient } from "@/api"
+import { AuthClient, FoodsClient, InsightsClient, SessionsClient } from "@/api"
 import { AuthShell } from "@/components/AuthShell"
 import { BRAND_LOGO_SRC, BRAND_NAME } from "@/components/BrandLogo"
 
@@ -37,6 +37,32 @@ function mockSessionsClient(
   } as SessionsClient
 }
 
+function mockInsightsClient(
+  overrides: Partial<InsightsClient> = {},
+): InsightsClient {
+  return {
+    get: vi.fn().mockResolvedValue({
+      completedSessionCount: 0,
+      ready: false,
+      ateEnoughYes: 0,
+      ateEnoughNo: 0,
+      likedLike: 0,
+      likedSoSo: 0,
+      likedNo: 0,
+      likedSkipped: 0,
+      topLikedTextures: [],
+      familiarityLikes: 0,
+      familiarityFamiliarButNew: 0,
+      familiarityTrulyNew: 0,
+      snackCount: 0,
+      hasParentNotes: false,
+      tips: [],
+    }),
+    dismissTip: vi.fn(),
+    ...overrides,
+  } as InsightsClient
+}
+
 function mockClient(
   overrides: Partial<AuthClient> = {},
 ): AuthClient {
@@ -54,12 +80,14 @@ function renderShell(
   authOverrides: Partial<AuthClient> = {},
   foodsOverrides: Partial<FoodsClient> = {},
   sessionsOverrides: Partial<SessionsClient> = {},
+  insightsOverrides: Partial<InsightsClient> = {},
 ) {
   return render(
     <AuthShell
       client={mockClient(authOverrides)}
       foodsClient={mockFoodsClient(foodsOverrides)}
       sessionsClient={mockSessionsClient(sessionsOverrides)}
+      insightsClient={mockInsightsClient(insightsOverrides)}
     />,
   )
 }
@@ -119,6 +147,10 @@ describe("AuthShell", () => {
 
     await user.click(screen.getByRole("tab", { name: "History" }))
     expect(await screen.findByRole("heading", { name: "History" })).toBeInTheDocument()
+
+    await user.click(screen.getByRole("tab", { name: "Insights" }))
+    expect(await screen.findByRole("heading", { name: "Insights" })).toBeInTheDocument()
+    expect(await screen.findByText(/Not enough tasting nights yet/)).toBeInTheDocument()
   })
 
   it("registers with keep-me-logged-in unchecked", async () => {

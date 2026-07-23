@@ -4,7 +4,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 import com.yourorg.quickapp.foods.CatalogFood;
+import com.yourorg.quickapp.foods.FoodLiked;
+import com.yourorg.quickapp.foods.FoodTexture;
+import com.yourorg.quickapp.foods.SnackPreferenceSnapshot;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -66,5 +70,20 @@ class JpaFoodCatalogTest {
         assertThat(catalog.findSelectable(householdId, snack.getId())).isEmpty();
         assertThat(catalog.findVisible(householdId, snack.getId()))
                 .contains(new CatalogFood(snack.getId(), "Chips", "apple"));
+    }
+
+    @Test
+    void listActiveSnackPreferencesReturnsNonArchivedSnacksOnly() {
+        Food snack = Food.household(householdId, "Chips", "apple", now);
+        snack.setSessionEligible(false, now);
+        snack.setPreferences(FoodLiked.like, FoodTexture.crunchy, "salt", now);
+        Food tasting = Food.household(householdId, "Mash", "sweet_potato", now);
+        when(foods.findByHouseholdIdAndSessionEligibleFalseAndArchivedAtIsNullOrderByNameAsc(
+                        householdId))
+                .thenReturn(List.of(snack));
+
+        assertThat(catalog.listActiveSnackPreferences(householdId))
+                .containsExactly(new SnackPreferenceSnapshot(FoodLiked.like, FoodTexture.crunchy));
+        assertThat(tasting.isSessionEligible()).isTrue();
     }
 }

@@ -2,6 +2,8 @@ package com.yourorg.quickapp.foods.internal;
 
 import com.yourorg.quickapp.foods.CatalogFood;
 import com.yourorg.quickapp.foods.FoodCatalog;
+import com.yourorg.quickapp.foods.SnackPreferenceSnapshot;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -32,6 +34,17 @@ class JpaFoodCatalog implements FoodCatalog {
                 .filter(Food::isSessionEligible)
                 .filter(food -> food.isSystem() || householdId.equals(food.getHouseholdId()))
                 .map(this::toCatalog);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<SnackPreferenceSnapshot> listActiveSnackPreferences(UUID householdId) {
+        return foods
+                .findByHouseholdIdAndSessionEligibleFalseAndArchivedAtIsNullOrderByNameAsc(
+                        householdId)
+                .stream()
+                .map(food -> new SnackPreferenceSnapshot(food.getLiked(), food.getTexture()))
+                .toList();
     }
 
     private CatalogFood toCatalog(Food food) {
