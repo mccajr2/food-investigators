@@ -1,7 +1,7 @@
 # Product roadmap
 
 Status: active  
-Updated: 2026-07-22
+Updated: 2026-07-23
 
 Living backlog for this product repo. **One roadmap ↔ many specs** (1:1 by
 kebab-case id). `/roadmap` updates and re-ranks; `/spec <id>` fleshes out the
@@ -37,10 +37,11 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | pace-insights | planned | 2026-07-11 · initial | Parent dashboard: trends on what’s working; gentle suggestions you can ignore |
-| 2 | suggested-next-session | planned | 2026-07-11 · initial | App proposes next two foods + levels; parent approves or swaps |
-| 3 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
-| 4 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
+| 1 | snack-taste-log | active | 2026-07-23 · enhancement | Capture snack textures/tastes outside tasting sessions (excluded from Plan/run) |
+| 2 | pace-insights | planned | 2026-07-11 · initial | Parent dashboard: trends on what’s working; gentle suggestions you can ignore |
+| 3 | suggested-next-session | planned | 2026-07-11 · initial | App proposes next two foods + levels; parent approves or swaps |
+| 4 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
+| 5 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
 
 Status values: `parking` · `planned` · `active` · `done` · `cancelled`  
 Added: `YYYY-MM-DD · initial` | `enhancement` | `re-rank split`
@@ -51,6 +52,7 @@ Unranked ideas. Promote into **Upcoming** with `/roadmap` (re-rank).
 
 | Id | Added | Summary |
 |----|-------|---------|
+| signup-starter-snacks | 2026-07-23 · enhancement | Optional signup picks: child-specific starter tasting foods + snacks |
 | printable-plan-calendar | 2026-07-11 · initial | Print upcoming tasting schedule (doctor packet is history-first) |
 | offline-ipad-session | 2026-07-11 · initial | Run a session on iPad without network; sync later |
 | multi-child-profiles | 2026-07-11 · initial | More than one kid under one household |
@@ -68,7 +70,7 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Branch | Spec |
 |----|--------|------|
-| — | — | — |
+| snack-taste-log | `snack-taste-log` | [active](specs/active/snack-taste-log.md) |
 
 ## Done
 
@@ -128,3 +130,5 @@ Only notable events (first carve-up, major re-rank, cancelled theme) — not eve
 | 2026-07-22 | UX cleanup ahead of insights: `session-plan-guards` → `session-parent-notes`, then `pace-insights`. |
 | 2026-07-22 | session-plan-guards shipped (past dates blocked, one session/day, same-food needs distinct variants). Next up: `session-parent-notes`. |
 | 2026-07-22 | session-parent-notes shipped (optional notes after reward; History + therapist PDF). Next up: `pace-insights`. |
+| 2026-07-23 | Demoted draft `pace-insights` to planned; added `snack-taste-log` as Next up so Insights v1 can use snack texture/taste signal. |
+| 2026-07-23 | Parking: `signup-starter-snacks` (optional signup picks for child tasting foods + snacks; after snack-taste-log). |
