@@ -1,15 +1,15 @@
 openapi: 3.0.3
 info:
   title: Quickapp API
-  version: 0.8.0
+  version: 0.9.0
   description: >
     Contract-first API for Food Investigators. Documents family-account auth
     (email/password register and login, Bearer session tokens, /api/auth/me),
     the household food catalog (system starters + custom foods, archive, optional
-    snack foods excluded from tasting sessions), and
-    tasting sessions (create, list upcoming, history of completed, download
-    history PDF, get, update, cancel, complete with run outcomes, optional
-    parent notes on completed sessions).
+    snack foods excluded from tasting sessions), tasting sessions (create, list
+    upcoming, history of completed, download history PDF, get, update, cancel,
+    complete with run outcomes, optional parent notes on completed sessions),
+    and household Insights (aggregates + dismissible tips).
 servers:
   - url: http://localhost:8080
     description: Local development
@@ -704,6 +704,67 @@ paths:
                 $ref: "#/components/schemas/ErrorMessage"
               example:
                 message: Parent notes can only be saved on completed sessions
+  /api/insights:
+    get:
+      operationId: getInsights
+      summary: Household tasting insights and tips
+      description: >
+        Aggregates completed session outcomes with snack liked/texture preferences.
+        Ready when completedSessionCount >= 3; tips are empty until ready. Tips
+        exclude ids this household has dismissed (up to 3 tips from a fixed catalog).
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Insights for this household
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InsightsResponse"
+        "401":
+          description: Missing or invalid session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+  /api/insights/tips/{tipId}/dismiss:
+    post:
+      operationId: dismissInsightTip
+      summary: Remember dismissing an Insights tip for this household
+      description: >
+        Persists dismissal of a known tip id. Idempotent (repeat dismiss returns 200).
+        Unknown tip id returns 400.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/TipId"
+      responses:
+        "200":
+          description: Tip dismissed (or already dismissed)
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                properties:
+                  status:
+                    type: string
+                    example: ok
+        "400":
+          description: Unknown tip id
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+              example:
+                message: "Unknown tip id: not_a_real_tip"
+        "401":
+          description: Missing or invalid session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
 components:
   parameters:
     FoodId:
@@ -720,6 +781,17 @@ components:
       schema:
         type: string
         format: uuid
+    TipId:
+      name: tipId
+      in: path
+      required: true
+      schema:
+        type: string
+        maxLength: 64
+        example: keep_going
+      description: >
+        Fixed tip catalog id (e.g. slow_down_truly_new, lean_into_texture,
+        celebrate_ate_enough, mix_familiarity, keep_going).
   securitySchemes:
     bearerAuth:
       type: http
@@ -1166,3 +1238,93 @@ components:
         updatedAt:
           type: string
           format: date-time
+    InsightTip:
+      type: object
+      required:
+        - id
+        - message
+      properties:
+        id:
+          type: string
+          maxLength: 64
+          example: keep_going
+        message:
+          type: string
+          example: You're building a tasting rhythm — keep going at a calm pace.
+    InsightsResponse:
+      type: object
+      required:
+        - completedSessionCount
+        - ready
+        - ateEnoughYes
+        - ateEnoughNo
+        - likedLike
+        - likedSoSo
+        - likedNo
+        - likedSkipped
+        - topLikedTextures
+        - familiarityLikes
+        - familiarityFamiliarButNew
+        - familiarityTrulyNew
+        - snackCount
+        - hasParentNotes
+        - tips
+      properties:
+        completedSessionCount:
+          type: integer
+          minimum: 0
+        ready:
+          type: boolean
+          description: True when completedSessionCount >= 3
+        ateEnoughYes:
+          type: integer
+          minimum: 0
+        ateEnoughNo:
+          type: integer
+          minimum: 0
+        likedLike:
+          type: integer
+          minimum: 0
+          description: Merged session outcomes + snack liked=like
+        likedSoSo:
+          type: integer
+          minimum: 0
+        likedNo:
+          type: integer
+          minimum: 0
+        likedSkipped:
+          type: integer
+          minimum: 0
+          description: Session outcomes with null liked only (snacks never skipped)
+        topLikedTextures:
+          type: array
+          maxItems: 3
+          items:
+            type: string
+            enum:
+              - soft
+              - crunchy
+              - chewy
+              - wet
+          description: Texture names ranked by count among merged liked=like rows
+        familiarityLikes:
+          type: integer
+          minimum: 0
+        familiarityFamiliarButNew:
+          type: integer
+          minimum: 0
+        familiarityTrulyNew:
+          type: integer
+          minimum: 0
+        snackCount:
+          type: integer
+          minimum: 0
+          description: Active (non-archived) snack foods for the household
+        hasParentNotes:
+          type: boolean
+        tips:
+          type: array
+          maxItems: 3
+          items:
+            $ref: "#/components/schemas/InsightTip"
+          description: Empty when not ready; otherwise 0–3 non-dismissed tips

@@ -163,3 +163,26 @@ export type SessionResponse = {
   createdAt: string
   updatedAt: string
 }
+
+export type InsightTip = {
+  id: string
+  message: string
+}
+
+export type InsightsResponse = {
+  completedSessionCount: number
+  ready: boolean
+  ateEnoughYes: number
+  ateEnoughNo: number
+  likedLike: number
+  likedSoSo: number
+  likedNo: number
+  likedSkipped: number
+  topLikedTextures: Texture[]
+  familiarityLikes: number
+  familiarityFamiliarButNew: number
+  familiarityTrulyNew: number
+  snackCount: number
+  hasParentNotes: boolean
+  tips: InsightTip[]
+}

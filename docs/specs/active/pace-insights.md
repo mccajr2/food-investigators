@@ -131,7 +131,7 @@ product.
 
 - [x] Backend: Flyway dismissals; tip catalog + aggregate service (sessions +
       foods preference port); GET insights + POST dismiss; unit tests.
-- [ ] Contract: OpenAPI schemas/paths; align web + mobile clients.
+- [x] Contract: OpenAPI schemas/paths; align web + mobile clients.
 - [ ] Web: AuthShell Insights tab + page (summaries, tips, dismiss, empty
       state).
 - [ ] Tests: API integration (ready/not-ready, dismiss, scoping, snack merge);

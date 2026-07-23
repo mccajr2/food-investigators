@@ -1,5 +1,6 @@
 export { AuthClient } from "@/api/authClient"
 export { FoodsClient } from "@/api/foodsClient"
+export { InsightsClient } from "@/api/insightsClient"
 export { SessionsClient } from "@/api/sessionsClient"
 export type {
   AuthResponse,
@@ -10,6 +11,8 @@ export type {
   FoodIconKey,
   FoodOutcomeRequest,
   FoodResponse,
+  InsightTip,
+  InsightsResponse,
   Liked,
   LoginRequest,
   RegisterRequest,
