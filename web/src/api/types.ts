@@ -54,6 +54,9 @@ export const FOOD_ICON_KEYS = [
   "cheese_pizza",
   "soft_pretzel",
   "raspberry",
+  "broccoli",
+  "dark_chocolate",
+  "spinach",
 ] as const
 
 export type FoodIconKey = (typeof FOOD_ICON_KEYS)[number]
@@ -101,6 +104,8 @@ export type Temperature = "cold" | "warm" | "hot"
 
 export type Smell = "like" | "so_so" | "no"
 
+export type TasteBasic = "sweet" | "salty" | "bitter" | "sour"
+
 export type SessionFoodRequest = {
   foodId: string
   familiarity: Familiarity
@@ -125,6 +130,7 @@ export type FoodOutcomeRequest = {
   texture?: Texture | null
   temperature?: Temperature | null
   smell?: Smell | null
+  tastes?: TasteBasic[] | null
   whyNote?: string | null
   changeNote?: string | null
   ateEnough: boolean
@@ -149,6 +155,7 @@ export type SessionFoodResponse = {
   texture?: Texture | null
   temperature?: Temperature | null
   smell?: Smell | null
+  tastes?: TasteBasic[] | null
   whyNote?: string | null
   changeNote?: string | null
   ateEnough?: boolean | null

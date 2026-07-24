@@ -1,5 +1,8 @@
+import { FoodIcon } from "@/components/food/FoodIcon"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import type { FoodIconKey } from "@/api/types"
+import { cn } from "@/lib/utils"
 
 type IconChoiceOption<T extends string> = {
   value: T
@@ -56,6 +59,83 @@ export function IconChoiceStep<T extends string>({
           Skip
         </Button>
       ) : null}
+    </div>
+  )
+}
+
+type TasteMultiOption<T extends string> = {
+  value: T
+  label: string
+  exampleIconKeys: FoodIconKey[]
+}
+
+type TasteMultiChoiceStepProps<T extends string> = {
+  prompt: string
+  options: TasteMultiOption<T>[]
+  selected: T[]
+  onToggle: (value: T) => void
+  onConfirm: () => void
+  onSkip: () => void
+}
+
+export function TasteMultiChoiceStep<T extends string>({
+  prompt,
+  options,
+  selected,
+  onToggle,
+  onConfirm,
+  onSkip,
+}: TasteMultiChoiceStepProps<T>) {
+  return (
+    <div
+      key={prompt}
+      className="run-enter flex min-h-[60vh] flex-col items-center justify-center gap-8 px-4 py-8"
+    >
+      <h2 className="run-prompt text-center text-3xl leading-tight md:text-4xl lg:text-5xl">
+        {prompt}
+      </h2>
+      <p className="max-w-xl text-center text-base text-muted-foreground md:text-lg">
+        Tap all that fit — examples show foods that often taste this way.
+      </p>
+      <div
+        className="grid w-full max-w-2xl grid-cols-2 gap-4"
+        role="group"
+        aria-label={prompt}
+      >
+        {options.map((option) => {
+          const isSelected = selected.includes(option.value)
+          return (
+            <button
+              key={option.value}
+              type="button"
+              aria-pressed={isSelected}
+              aria-label={option.label}
+              className={cn(
+                "run-placemat flex min-h-40 flex-col items-center justify-center gap-3 p-4 text-center transition hover:brightness-[1.03]",
+                isSelected && "run-placemat--selected",
+              )}
+              onClick={() => onToggle(option.value)}
+            >
+              <span className="run-prompt text-xl md:text-2xl">{option.label}</span>
+              <span className="flex items-center justify-center gap-1.5" aria-hidden>
+                {option.exampleIconKeys.map((iconKey) => (
+                  <span key={iconKey} className="size-12 overflow-hidden rounded-xl md:size-14">
+                    <FoodIcon iconKey={iconKey} />
+                  </span>
+                ))}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+      <div className="flex flex-wrap justify-center gap-3">
+        <Button type="button" size="lg" onClick={onConfirm}>
+          Done
+        </Button>
+        <Button type="button" size="lg" variant="ghost" onClick={onSkip}>
+          Skip
+        </Button>
+      </div>
     </div>
   )
 }

@@ -610,6 +610,7 @@ paths:
                   texture: crunchy
                   temperature: cold
                   smell: like
+                  tastes: [sweet, salty]
                   whyNote: crunchy
                   changeNote: less peel
                   ateEnough: true
@@ -1036,6 +1037,14 @@ components:
         - so_so
         - no
       description: Whether the child liked how the food smelled (same scale as Liked)
+    TasteBasic:
+      type: string
+      enum:
+        - sweet
+        - salty
+        - bitter
+        - sour
+      description: Basic taste words captured on the run (multi-select, optional)
     FoodOutcomeRequest:
       type: object
       required:
@@ -1058,6 +1067,14 @@ components:
         smell:
           $ref: "#/components/schemas/Smell"
           nullable: true
+        tastes:
+          type: array
+          nullable: true
+          maxItems: 4
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/TasteBasic"
+          description: Optional multi-select taste basics; omit/empty/null means skipped
         whyNote:
           type: string
           maxLength: 500
@@ -1181,6 +1198,14 @@ components:
         smell:
           $ref: "#/components/schemas/Smell"
           nullable: true
+        tastes:
+          type: array
+          nullable: true
+          maxItems: 4
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/TasteBasic"
+          description: Selected taste basics from the run; empty/omit when skipped
         whyNote:
           type: string
           maxLength: 500

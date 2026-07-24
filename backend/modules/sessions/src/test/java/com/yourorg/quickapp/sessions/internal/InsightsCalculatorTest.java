@@ -147,8 +147,8 @@ class InsightsCalculatorTest {
                         TastingSessionFood.of(foodA, Familiarity.safe, null, 1),
                         TastingSessionFood.of(foodB, Familiarity.safe, null, 2)),
                 now);
-        session.getFoods().get(0).recordOutcome(null, null, null, null, null, null, true);
-        session.getFoods().get(1).recordOutcome(Liked.like, null, null, null, null, null, false);
+        session.getFoods().get(0).recordOutcome(null, null, null, null, null, null, null, true);
+        session.getFoods().get(1).recordOutcome(Liked.like, null, null, null, null, null, null, false);
         session.complete(now);
         session.setParentNote("clinic was loud", now);
 
@@ -214,10 +214,10 @@ class InsightsCalculatorTest {
                 now);
         session.getFoods()
                 .get(0)
-                .recordOutcome(liked, texture, null, null, null, null, ateEnough);
+                .recordOutcome(liked, texture, null, null, null, null, null, ateEnough);
         session.getFoods()
                 .get(1)
-                .recordOutcome(Liked.so_so, null, null, null, null, null, ateEnough);
+                .recordOutcome(Liked.so_so, null, null, null, null, null, null, ateEnough);
         session.complete(now);
         return session;
     }

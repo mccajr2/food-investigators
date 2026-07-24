@@ -61,6 +61,9 @@ export const FOOD_ICON_LABELS: Record<FoodIconKey, string> = {
   cheese_pizza: "Cheese pizza",
   soft_pretzel: "Soft pretzels",
   raspberry: "Raspberries",
+  broccoli: "Broccoli",
+  dark_chocolate: "Dark chocolate",
+  spinach: "Spinach",
 }
 
 type SvgProps = { className?: string }
@@ -426,6 +429,36 @@ const icons: Record<FoodIconKey, (props: SvgProps) => ReactElement> = {
       <ellipse cx="30" cy="14" rx="4" ry="2.5" fill={B.lime} />
       <circle cx="26" cy="28" r="1.2" fill={B.cream} opacity="0.7" />
       <circle cx="34" cy="34" r="1.2" fill={B.cream} opacity="0.7" />
+    </Frame>
+  ),
+  broccoli: (p) => (
+    <Frame {...p} bg="#E4F0DC">
+      <path d="M30 44v-12" stroke="#5A8A3E" strokeWidth="5" strokeLinecap="round" />
+      <circle cx="24" cy="26" r="8" fill={B.lime} />
+      <circle cx="34" cy="22" r="9" fill="#6AA84F" />
+      <circle cx="40" cy="30" r="7" fill={B.lime} />
+      <circle cx="28" cy="32" r="7" fill="#5F9E45" />
+    </Frame>
+  ),
+  dark_chocolate: (p) => (
+    <Frame {...p} bg="#EDE4D8">
+      <rect x="14" y="22" width="36" height="24" rx="4" fill={B.chip} />
+      <path d="M14 34h36" stroke={B.cream} strokeWidth="2" opacity="0.35" />
+      <path d="M26 22v24M38 22v24" stroke={B.cream} strokeWidth="2" opacity="0.35" />
+      <rect x="18" y="26" width="8" height="6" rx="1" fill="#5A4030" opacity="0.5" />
+    </Frame>
+  ),
+  spinach: (p) => (
+    <Frame {...p} bg="#E8F2E0">
+      <ellipse cx="28" cy="30" rx="12" ry="16" fill={B.lime} transform="rotate(-25 28 30)" />
+      <ellipse cx="38" cy="34" rx="11" ry="15" fill="#5F9E45" transform="rotate(20 38 34)" />
+      <path
+        d="M28 44c2-10 4-18 4-28"
+        stroke="#3F7A3C"
+        strokeWidth="2.5"
+        fill="none"
+        strokeLinecap="round"
+      />
     </Frame>
   ),
 }

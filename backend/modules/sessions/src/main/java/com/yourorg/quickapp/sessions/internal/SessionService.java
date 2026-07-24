@@ -17,6 +17,7 @@ import com.yourorg.quickapp.sessions.SessionNotFoundException;
 import com.yourorg.quickapp.sessions.SessionParentNoteNotAllowedException;
 import com.yourorg.quickapp.sessions.SessionResponse;
 import com.yourorg.quickapp.sessions.SessionStatus;
+import com.yourorg.quickapp.sessions.TasteBasic;
 import com.yourorg.quickapp.sessions.UpdateParentNoteRequest;
 import com.yourorg.quickapp.sessions.UpdateSessionRequest;
 import java.time.Clock;
@@ -25,6 +26,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -197,6 +199,7 @@ public class SessionService {
                     outcome.texture(),
                     outcome.temperature(),
                     outcome.smell(),
+                    normalizeTastes(outcome.tastes()),
                     normalizeNote(outcome.whyNote(), 500),
                     normalizeNote(outcome.changeNote(), 500),
                     outcome.ateEnough());
@@ -204,6 +207,13 @@ public class SessionService {
         if (!positions.contains(1) || !positions.contains(2)) {
             throw new InvalidSessionOutcomeException("Outcomes for positions 1 and 2 are required");
         }
+    }
+
+    private static List<TasteBasic> normalizeTastes(List<TasteBasic> tastes) {
+        if (tastes == null || tastes.isEmpty()) {
+            return List.of();
+        }
+        return List.copyOf(new LinkedHashSet<>(tastes));
     }
 
     private void requireNotPast(LocalDate scheduledOn) {
@@ -327,6 +337,7 @@ public class SessionService {
                                             row.getTexture(),
                                             row.getTemperature(),
                                             row.getSmell(),
+                                            row.getTastes(),
                                             row.getWhyNote(),
                                             row.getChangeNote(),
                                             row.getAteEnough());

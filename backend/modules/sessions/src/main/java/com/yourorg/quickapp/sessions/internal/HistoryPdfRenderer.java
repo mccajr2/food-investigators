@@ -5,6 +5,7 @@ import com.yourorg.quickapp.sessions.Liked;
 import com.yourorg.quickapp.sessions.SessionFoodResponse;
 import com.yourorg.quickapp.sessions.SessionResponse;
 import com.yourorg.quickapp.sessions.Smell;
+import com.yourorg.quickapp.sessions.TasteBasic;
 import com.yourorg.quickapp.sessions.Temperature;
 import com.yourorg.quickapp.sessions.Texture;
 import java.io.ByteArrayOutputStream;
@@ -14,6 +15,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
@@ -87,6 +89,10 @@ final class HistoryPdfRenderer {
                                         + temperatureLabel(food.temperature())
                                         + "  Smell: "
                                         + smellLabel(food.smell()));
+                        writer.line(
+                                regular,
+                                BODY_SIZE,
+                                "    Tastes: " + tastesLabel(food.tastes()));
                         writer.line(
                                 regular,
                                 BODY_SIZE,
@@ -176,6 +182,22 @@ final class HistoryPdfRenderer {
             case like -> "Like";
             case so_so -> "So-so";
             case no -> "No";
+        };
+    }
+
+    private static String tastesLabel(List<TasteBasic> tastes) {
+        if (tastes == null || tastes.isEmpty()) {
+            return "-";
+        }
+        return tastes.stream().map(HistoryPdfRenderer::tasteLabel).collect(Collectors.joining(", "));
+    }
+
+    private static String tasteLabel(TasteBasic value) {
+        return switch (value) {
+            case sweet -> "Sweet";
+            case salty -> "Salty";
+            case bitter -> "Bitter";
+            case sour -> "Sour";
         };
     }
 

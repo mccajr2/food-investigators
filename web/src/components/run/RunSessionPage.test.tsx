@@ -57,13 +57,13 @@ function mockSessionsClient(
 async function skipOptionalStepsAfterLiked(
   user: ReturnType<typeof userEvent.setup>,
 ) {
-  for (let step = 0; step < 5; step += 1) {
+  for (let step = 0; step < 6; step += 1) {
     await user.click(screen.getByRole("button", { name: "Skip" }))
   }
 }
 
 async function skipAllOptionalSteps(user: ReturnType<typeof userEvent.setup>) {
-  for (let step = 0; step < 6; step += 1) {
+  for (let step = 0; step < 7; step += 1) {
     await user.click(screen.getByRole("button", { name: "Skip" }))
   }
 }
@@ -92,6 +92,7 @@ describe("buildCompleteRequest", () => {
       texture: null,
       temperature: null,
       smell: null,
+      tastes: null,
       whyNote: null,
       changeNote: null,
       ateEnough: true,
@@ -100,8 +101,25 @@ describe("buildCompleteRequest", () => {
     expect(request.foods[1].changeNote).toBe("less sugar")
     expect(request.foods[1].ateEnough).toBe(false)
   })
-})
 
+  it("includes selected tastes and collapses duplicates", () => {
+    const request = buildCompleteRequest([
+      {
+        position: 1,
+        tastes: ["sweet", "salty", "sweet"],
+        ateEnough: true,
+      },
+      {
+        position: 2,
+        tastes: [],
+        ateEnough: true,
+      },
+    ])
+
+    expect(request.foods[0].tastes).toEqual(["sweet", "salty"])
+    expect(request.foods[1].tastes).toBeNull()
+  })
+})
 describe("RunSessionPage", () => {
   it("exposes the scoped kitchen-run theme on the run root", () => {
     render(
@@ -120,6 +138,83 @@ describe("RunSessionPage", () => {
       "data-brand-logo",
       "compact",
     )
+  })
+
+  it("captures multi-select tastes with example icons then continues", async () => {
+    const user = userEvent.setup()
+    const complete = vi.fn().mockResolvedValue({
+      ...sampleSession,
+      status: "completed",
+      foods: sampleSession.foods.map((food) => ({
+        ...food,
+        liked: "like",
+        ateEnough: true,
+      })),
+    })
+
+    render(
+      <RunSessionPage
+        session={sampleSession}
+        sessionsClient={mockSessionsClient({ complete })}
+        onComplete={vi.fn()}
+        onExit={vi.fn()}
+      />,
+    )
+
+    await user.click(screen.getByRole("option", { name: "Like" }))
+    await user.click(screen.getByRole("option", { name: "Soft" }))
+
+    expect(screen.getByText("How did it taste?")).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Sweet" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Bitter" })).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: "Bitter" }).querySelectorAll("svg")
+        .length,
+    ).toBe(3)
+
+    await user.click(screen.getByRole("button", { name: "Sweet" }))
+    await user.click(screen.getByRole("button", { name: "Salty" }))
+    expect(screen.getByRole("button", { name: "Sweet" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    )
+    expect(screen.getByRole("button", { name: "Sweet" }).className).toContain(
+      "run-placemat--selected",
+    )
+    expect(screen.getByRole("button", { name: "Bitter" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    )
+    expect(screen.getByRole("button", { name: "Bitter" }).className).not.toContain(
+      "run-placemat--selected",
+    )
+    await user.click(screen.getByRole("button", { name: "Done" }))
+
+    for (let step = 0; step < 4; step += 1) {
+      await user.click(screen.getByRole("button", { name: "Skip" }))
+    }
+    await user.click(screen.getByRole("option", { name: "Yes" }))
+
+    await skipAllOptionalSteps(user)
+    await user.click(screen.getByRole("option", { name: "No" }))
+
+    await waitFor(() => {
+      expect(complete).toHaveBeenCalledWith(
+        sampleSession.id,
+        expect.objectContaining({
+          foods: [
+            expect.objectContaining({
+              position: 1,
+              tastes: ["sweet", "salty"],
+            }),
+            expect.objectContaining({
+              position: 2,
+              tastes: null,
+            }),
+          ],
+        }),
+      )
+    })
   })
 
   it("walks both foods and completes the session", async () => {
@@ -506,6 +601,8 @@ describe("RunSessionPage", () => {
     )
 
     await user.click(screen.getByRole("option", { name: "Like" }))
+    // Skip texture, tastes, temperature, smell → why note
+    await user.click(screen.getByRole("button", { name: "Skip" }))
     await user.click(screen.getByRole("button", { name: "Skip" }))
     await user.click(screen.getByRole("button", { name: "Skip" }))
     await user.click(screen.getByRole("button", { name: "Skip" }))

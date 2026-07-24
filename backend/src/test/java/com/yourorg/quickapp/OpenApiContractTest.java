@@ -86,6 +86,13 @@ class OpenApiContractTest {
         assertThat(yaml).contains("Texture");
         assertThat(yaml).contains("Temperature");
         assertThat(yaml).contains("Smell");
+        assertThat(yaml).contains("TasteBasic");
+        assertThat(yaml).contains("tastes");
+        assertThat(yaml).contains("sweet");
+        assertThat(yaml).contains("salty");
+        assertThat(yaml).contains("bitter");
+        assertThat(yaml).contains("sour");
+        assertThat(yaml).doesNotContain("- umami");
         assertThat(yaml).contains("Whether the child liked how the food smelled");
         assertThat(yaml).doesNotContain("- mild");
         assertThat(yaml).doesNotContain("- strong");

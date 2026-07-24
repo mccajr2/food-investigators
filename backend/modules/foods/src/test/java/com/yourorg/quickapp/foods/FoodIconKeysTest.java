@@ -32,7 +32,10 @@ class FoodIconKeysTest {
                     "sweet_potato",
                     "cheese_pizza",
                     "soft_pretzel",
-                    "raspberry");
+                    "raspberry",
+                    "broccoli",
+                    "dark_chocolate",
+                    "spinach");
 
     @Test
     void allowlistMatchesSeededStarterIcons() {
@@ -44,6 +47,9 @@ class FoodIconKeysTest {
         FoodIconKeys.requireAllowed("cheese_pizza");
         FoodIconKeys.requireAllowed("soft_pretzel");
         FoodIconKeys.requireAllowed("raspberry");
+        FoodIconKeys.requireAllowed("broccoli");
+        FoodIconKeys.requireAllowed("dark_chocolate");
+        FoodIconKeys.requireAllowed("spinach");
     }
 
     @Test

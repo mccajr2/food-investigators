@@ -4,6 +4,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import java.util.List;
 
 public record FoodOutcomeRequest(
         @NotNull @Min(1) @Max(2) Integer position,
@@ -11,6 +12,7 @@ public record FoodOutcomeRequest(
         Texture texture,
         Temperature temperature,
         Smell smell,
+        List<TasteBasic> tastes,
         @Size(max = 500) String whyNote,
         @Size(max = 500) String changeNote,
         @NotNull Boolean ateEnough) {}

@@ -3,6 +3,7 @@ package com.yourorg.quickapp.sessions.internal;
 import com.yourorg.quickapp.sessions.Familiarity;
 import com.yourorg.quickapp.sessions.Liked;
 import com.yourorg.quickapp.sessions.Smell;
+import com.yourorg.quickapp.sessions.TasteBasic;
 import com.yourorg.quickapp.sessions.Temperature;
 import com.yourorg.quickapp.sessions.Texture;
 import jakarta.persistence.Column;
@@ -14,7 +15,10 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import java.util.List;
 import java.util.UUID;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "tasting_session_foods")
@@ -56,6 +60,10 @@ class TastingSessionFood {
     @Column(length = 16)
     private Smell smell;
 
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private List<TasteBasic> tastes;
+
     @Column(name = "why_note", length = 500)
     private String whyNote;
 
@@ -87,6 +95,7 @@ class TastingSessionFood {
             Texture texture,
             Temperature temperature,
             Smell smell,
+            List<TasteBasic> tastes,
             String whyNote,
             String changeNote,
             boolean ateEnough) {
@@ -94,6 +103,7 @@ class TastingSessionFood {
         this.texture = texture;
         this.temperature = temperature;
         this.smell = smell;
+        this.tastes = tastes == null || tastes.isEmpty() ? null : List.copyOf(tastes);
         this.whyNote = whyNote;
         this.changeNote = changeNote;
         this.ateEnough = ateEnough;
@@ -129,6 +139,10 @@ class TastingSessionFood {
 
     Smell getSmell() {
         return smell;
+    }
+
+    List<TasteBasic> getTastes() {
+        return tastes == null ? List.of() : List.copyOf(tastes);
     }
 
     String getWhyNote() {
