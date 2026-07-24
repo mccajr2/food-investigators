@@ -26,7 +26,7 @@ class InsightsCalculatorTest {
 
     @Test
     void notReadyWhenFewerThanThreeCompletedSessionsEvenWithSnacks() {
-        TastingSession one = completedNight(LocalDate.of(2026, 7, 10), Familiarity.likes, Liked.like, Texture.crunchy, true);
+        TastingSession one = completedNight(LocalDate.of(2026, 7, 10), Familiarity.safe, Liked.like, Texture.crunchy, true);
         List<SnackPreferenceSnapshot> snacks =
                 List.of(
                         new SnackPreferenceSnapshot(FoodLiked.like, FoodTexture.crunchy),
@@ -48,8 +48,8 @@ class InsightsCalculatorTest {
     void mergesSnackLikedIntoCountersAndReadyAfterThreeSessions() {
         List<TastingSession> nights =
                 List.of(
-                        completedNight(LocalDate.of(2026, 7, 10), Familiarity.likes, Liked.like, Texture.soft, true),
-                        completedNight(LocalDate.of(2026, 7, 11), Familiarity.likes, Liked.so_so, null, true),
+                        completedNight(LocalDate.of(2026, 7, 10), Familiarity.safe, Liked.like, Texture.soft, true),
+                        completedNight(LocalDate.of(2026, 7, 11), Familiarity.safe, Liked.so_so, null, true),
                         completedNight(LocalDate.of(2026, 7, 12), Familiarity.familiar_but_new, Liked.like, Texture.crunchy, true));
         List<SnackPreferenceSnapshot> snacks =
                 List.of(new SnackPreferenceSnapshot(FoodLiked.like, FoodTexture.crunchy));
@@ -88,7 +88,7 @@ class InsightsCalculatorTest {
                 List.of(
                         completedWithFamiliarity(LocalDate.of(2026, 7, 10), Familiarity.truly_new, Liked.no, true),
                         completedWithFamiliarity(LocalDate.of(2026, 7, 11), Familiarity.truly_new, Liked.no, true),
-                        completedWithFamiliarity(LocalDate.of(2026, 7, 12), Familiarity.likes, Liked.like, true));
+                        completedWithFamiliarity(LocalDate.of(2026, 7, 12), Familiarity.safe, Liked.like, true));
 
         InsightsResponse response = InsightsCalculator.compute(nights, List.of(), Set.of());
 
@@ -100,9 +100,9 @@ class InsightsCalculatorTest {
     void leanIntoTextureWhenMergedLikedTextureCountAtLeastTwo() {
         List<TastingSession> nights =
                 List.of(
-                        completedNight(LocalDate.of(2026, 7, 10), Familiarity.likes, Liked.like, Texture.crunchy, true),
-                        completedNight(LocalDate.of(2026, 7, 11), Familiarity.likes, Liked.like, Texture.soft, true),
-                        completedNight(LocalDate.of(2026, 7, 12), Familiarity.likes, Liked.so_so, null, true));
+                        completedNight(LocalDate.of(2026, 7, 10), Familiarity.safe, Liked.like, Texture.crunchy, true),
+                        completedNight(LocalDate.of(2026, 7, 11), Familiarity.safe, Liked.like, Texture.soft, true),
+                        completedNight(LocalDate.of(2026, 7, 12), Familiarity.safe, Liked.so_so, null, true));
         List<SnackPreferenceSnapshot> snacks =
                 List.of(new SnackPreferenceSnapshot(FoodLiked.like, FoodTexture.crunchy));
 
@@ -123,9 +123,9 @@ class InsightsCalculatorTest {
     void omitsDismissedTipsAndFillsKeepGoing() {
         List<TastingSession> nights =
                 List.of(
-                        completedNight(LocalDate.of(2026, 7, 10), Familiarity.likes, Liked.like, Texture.crunchy, true),
-                        completedNight(LocalDate.of(2026, 7, 11), Familiarity.likes, Liked.like, Texture.crunchy, true),
-                        completedNight(LocalDate.of(2026, 7, 12), Familiarity.likes, Liked.like, Texture.crunchy, true));
+                        completedNight(LocalDate.of(2026, 7, 10), Familiarity.safe, Liked.like, Texture.crunchy, true),
+                        completedNight(LocalDate.of(2026, 7, 11), Familiarity.safe, Liked.like, Texture.crunchy, true),
+                        completedNight(LocalDate.of(2026, 7, 12), Familiarity.safe, Liked.like, Texture.crunchy, true));
 
         InsightsResponse response =
                 InsightsCalculator.compute(
@@ -144,8 +144,8 @@ class InsightsCalculatorTest {
         TastingSession session = TastingSession.planned(householdId, LocalDate.of(2026, 7, 10), now);
         session.replaceFoods(
                 List.of(
-                        TastingSessionFood.of(foodA, Familiarity.likes, null, 1),
-                        TastingSessionFood.of(foodB, Familiarity.likes, null, 2)),
+                        TastingSessionFood.of(foodA, Familiarity.safe, null, 1),
+                        TastingSessionFood.of(foodB, Familiarity.safe, null, 2)),
                 now);
         session.getFoods().get(0).recordOutcome(null, null, null, null, null, null, true);
         session.getFoods().get(1).recordOutcome(Liked.like, null, null, null, null, null, false);
@@ -160,6 +160,30 @@ class InsightsCalculatorTest {
         assertThat(response.hasParentNotes()).isTrue();
         assertThat(response.ateEnoughYes()).isEqualTo(1);
         assertThat(response.ateEnoughNo()).isEqualTo(1);
+    }
+
+    @Test
+    void countsFamiliaritySafeAndMixTipUsesSafeFoodsCopy() {
+        List<TastingSession> nights =
+                List.of(
+                        completedNight(LocalDate.of(2026, 7, 10), Familiarity.safe, Liked.like, Texture.crunchy, true),
+                        completedNight(LocalDate.of(2026, 7, 11), Familiarity.safe, Liked.like, Texture.soft, true),
+                        completedNight(LocalDate.of(2026, 7, 12), Familiarity.retrying, Liked.so_so, null, true));
+
+        InsightsResponse response = InsightsCalculator.compute(nights, List.of(), Set.of());
+
+        // food0 of nights 0–1 are safe; food1 of each night is always safe filler → 5 safe
+        assertThat(response.familiaritySafe()).isEqualTo(5);
+        assertThat(response.familiarityTrulyNew()).isEqualTo(0);
+        assertThat(response.tips().stream().map(InsightTip::id))
+                .contains(InsightsCalculator.TIP_MIX_FAMILIARITY);
+        assertThat(
+                        response.tips().stream()
+                                .filter(tip -> tip.id().equals(InsightsCalculator.TIP_MIX_FAMILIARITY))
+                                .findFirst()
+                                .orElseThrow()
+                                .message())
+                .contains("safe foods");
     }
 
     private TastingSession completedNight(
@@ -186,7 +210,7 @@ class InsightsCalculatorTest {
         session.replaceFoods(
                 List.of(
                         TastingSessionFood.of(foodA, familiarity, null, 1),
-                        TastingSessionFood.of(foodB, Familiarity.likes, null, 2)),
+                        TastingSessionFood.of(foodB, Familiarity.safe, null, 2)),
                 now);
         session.getFoods()
                 .get(0)

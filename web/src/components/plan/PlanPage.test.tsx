@@ -48,7 +48,7 @@ const sampleSession: SessionResponse = {
       foodId: foods[0].id,
       name: "Apples",
       iconKey: "apple",
-      familiarity: "likes",
+      familiarity: "safe",
       variantNote: "Honeycrisp",
       position: 1,
     },
@@ -112,20 +112,20 @@ describe("PlanPage helpers", () => {
   it("requires distinct variants when both slots share a food", () => {
     expect(
       sameFoodVariantError(
-        { foodId: foods[0].id, familiarity: "likes", variantNote: "A" },
-        { foodId: foods[0].id, familiarity: "likes", variantNote: "B" },
+        { foodId: foods[0].id, familiarity: "safe", variantNote: "A" },
+        { foodId: foods[0].id, familiarity: "safe", variantNote: "B" },
       ),
     ).toBeNull();
     expect(
       sameFoodVariantError(
-        { foodId: foods[0].id, familiarity: "likes", variantNote: "" },
-        { foodId: foods[0].id, familiarity: "likes", variantNote: "B" },
+        { foodId: foods[0].id, familiarity: "safe", variantNote: "" },
+        { foodId: foods[0].id, familiarity: "safe", variantNote: "B" },
       ),
     ).toMatch(/brand\/variety/);
     expect(
       sameFoodVariantError(
-        { foodId: foods[0].id, familiarity: "likes", variantNote: "Iggy's" },
-        { foodId: foods[0].id, familiarity: "likes", variantNote: "iggy's" },
+        { foodId: foods[0].id, familiarity: "safe", variantNote: "Iggy's" },
+        { foodId: foods[0].id, familiarity: "safe", variantNote: "iggy's" },
       ),
     ).toMatch(/brand\/variety/);
   });
@@ -189,6 +189,21 @@ describe("PlanPage", () => {
     await user.click(screen.getByRole("button", { name: "Plan a night" }));
 
     const form = screen.getByRole("form", { name: "Plan a night" });
+    const familiarity = within(form).getByLabelText("Food 1 familiarity");
+    expect(within(familiarity).getByRole("option", { name: "Safe" })).toHaveValue(
+      "safe",
+    );
+    expect(
+      within(familiarity).getByRole("option", { name: "Familiar but new" }),
+    ).toHaveValue("familiar_but_new");
+    expect(
+      within(familiarity).getByRole("option", { name: "Truly new" }),
+    ).toHaveValue("truly_new");
+    expect(
+      within(familiarity).getByRole("option", { name: "Retrying" }),
+    ).toHaveValue("retrying");
+    expect(within(familiarity).queryByRole("option", { name: "Likes" })).toBeNull();
+
     await user.type(within(form).getByLabelText("Date"), "2026-07-20");
     await user.selectOptions(
       within(form).getByLabelText("Food 1 picker"),
@@ -196,7 +211,7 @@ describe("PlanPage", () => {
     );
     await user.selectOptions(
       within(form).getByLabelText("Food 1 familiarity"),
-      "likes",
+      "safe",
     );
     await user.type(
       within(form).getByLabelText("Food 1 variant note"),
@@ -217,7 +232,7 @@ describe("PlanPage", () => {
       foods: [
         {
           foodId: foods[0].id,
-          familiarity: "likes",
+          familiarity: "safe",
           variantNote: "Honeycrisp",
         },
         {
@@ -228,6 +243,95 @@ describe("PlanPage", () => {
       ],
     });
     expect(await screen.findByText(/Honeycrisp/)).toBeInTheDocument();
+  });
+
+  it("nudges optional brand/prep when Retrying is selected", async () => {
+    const user = userEvent.setup();
+    renderPlan(mockSessionsClient());
+
+    await screen.findByRole("heading", { name: "Plan" });
+    await user.click(screen.getByRole("button", { name: "Plan a night" }));
+
+    const form = screen.getByRole("form", { name: "Plan a night" });
+    expect(screen.queryByTestId("Food 1 retrying hint")).not.toBeInTheDocument();
+
+    await user.selectOptions(
+      within(form).getByLabelText("Food 1 familiarity"),
+      "retrying",
+    );
+
+    expect(screen.getByTestId("Food 1 retrying hint")).toHaveTextContent(
+      /brand or prep/i,
+    );
+    expect(within(form).getByLabelText("Food 1 variant note")).not.toBeRequired();
+    expect(within(form).getByLabelText("Food 1 variant note")).toHaveAttribute(
+      "placeholder",
+      expect.stringMatching(/retrying/i),
+    );
+  });
+
+  it("creates a planned night with safe and retrying familiarity", async () => {
+    const user = userEvent.setup();
+    const create = vi.fn().mockResolvedValue({
+      ...sampleSession,
+      foods: [
+        {
+          ...sampleSession.foods[0],
+          familiarity: "safe" as const,
+          variantNote: null,
+        },
+        {
+          ...sampleSession.foods[1],
+          familiarity: "retrying" as const,
+          variantNote: "new brand",
+        },
+      ],
+    });
+    renderPlan(mockSessionsClient({ create }));
+
+    await screen.findByRole("heading", { name: "Plan" });
+    await user.click(screen.getByRole("button", { name: "Plan a night" }));
+
+    const form = screen.getByRole("form", { name: "Plan a night" });
+    await user.type(within(form).getByLabelText("Date"), "2026-07-20");
+    await user.selectOptions(
+      within(form).getByLabelText("Food 1 picker"),
+      foods[0].id,
+    );
+    await user.selectOptions(
+      within(form).getByLabelText("Food 1 familiarity"),
+      "safe",
+    );
+    await user.selectOptions(
+      within(form).getByLabelText("Food 2 picker"),
+      foods[1].id,
+    );
+    await user.selectOptions(
+      within(form).getByLabelText("Food 2 familiarity"),
+      "retrying",
+    );
+    await user.type(
+      within(form).getByLabelText("Food 2 variant note"),
+      "new brand",
+    );
+    await user.click(within(form).getByRole("button", { name: "Save night" }));
+
+    expect(create).toHaveBeenCalledWith({
+      scheduledOn: "2026-07-20",
+      foods: [
+        {
+          foodId: foods[0].id,
+          familiarity: "safe",
+          variantNote: null,
+        },
+        {
+          foodId: foods[1].id,
+          familiarity: "retrying",
+          variantNote: "new brand",
+        },
+      ],
+    });
+    expect(await screen.findByText(/Retrying/)).toBeInTheDocument();
   });
 
   it("blocks same food without distinct variants before calling the API", async () => {
@@ -344,7 +448,7 @@ describe("PlanPage", () => {
           foodId: foods[2].id,
           name: "Blueberries",
           iconKey: "blueberry",
-          familiarity: "likes",
+          familiarity: "safe",
           variantNote: null,
           position: 2,
         },
@@ -388,7 +492,7 @@ describe("PlanPage", () => {
     );
     await user.selectOptions(
       within(form).getByLabelText("Food 2 familiarity"),
-      "likes",
+      "safe",
     );
     await user.click(
       within(form).getByRole("button", { name: "Save changes" }),
@@ -404,7 +508,7 @@ describe("PlanPage", () => {
         },
         {
           foodId: foods[2].id,
-          familiarity: "likes",
+          familiarity: "safe",
           variantNote: null,
         },
       ],

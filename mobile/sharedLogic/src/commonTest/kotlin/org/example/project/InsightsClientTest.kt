@@ -41,6 +41,7 @@ class InsightsClientTest {
 
             assertEquals(3, insights.completedSessionCount)
             assertTrue(insights.ready)
+            assertEquals(4, insights.familiaritySafe)
             assertEquals(2, insights.tips.size)
             assertEquals("keep_going", insights.tips[1].id)
             assertEquals("Bearer tok", sawAuth)
@@ -112,7 +113,7 @@ class InsightsClientTest {
           "likedNo": 0,
           "likedSkipped": 0,
           "topLikedTextures": ["crunchy", "soft"],
-          "familiarityLikes": 4,
+          "familiaritySafe": 4,
           "familiarityFamiliarButNew": 2,
           "familiarityTrulyNew": 0,
           "snackCount": 1,

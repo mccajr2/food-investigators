@@ -127,9 +127,10 @@ final class HistoryPdfRenderer {
             return "-";
         }
         return switch (value) {
-            case likes -> "Likes";
+            case safe -> "Safe";
             case familiar_but_new -> "Familiar but new";
             case truly_new -> "Truly new";
+            case retrying -> "Retrying";
         };
     }
 

@@ -152,7 +152,7 @@ export function InsightsPage({
             />
             <Stat
               label="Familiarity"
-              value={`${insights.familiarityLikes} likes · ${insights.familiarityFamiliarButNew} familiar-new · ${insights.familiarityTrulyNew} truly new`}
+              value={`${insights.familiaritySafe} Safe · ${insights.familiarityFamiliarButNew} Familiar but new · ${insights.familiarityTrulyNew} Truly new`}
             />
             <Stat label="Snacks tracked" value={String(insights.snackCount)} />
             <Stat

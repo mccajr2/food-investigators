@@ -30,7 +30,7 @@ const sampleSession: SessionResponse = {
       foodId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa04",
       name: "Apples",
       iconKey: "apple",
-      familiarity: "likes",
+      familiarity: "safe",
       variantNote: "Honeycrisp",
       position: 1,
     },
@@ -145,7 +145,7 @@ describe("SessionsClient", () => {
       foods: [
         {
           foodId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa04",
-          familiarity: "likes" as const,
+          familiarity: "safe" as const,
           variantNote: "Honeycrisp",
         },
         {
@@ -156,7 +156,7 @@ describe("SessionsClient", () => {
       ] as [
         {
           foodId: string
-          familiarity: "likes"
+          familiarity: "safe"
           variantNote: string
         },
         {
@@ -208,12 +208,12 @@ describe("SessionsClient", () => {
       foods: [
         {
           foodId: sampleSession.foods[0].foodId,
-          familiarity: "likes",
+          familiarity: "safe",
           variantNote: null,
         },
         {
           foodId: sampleSession.foods[1].foodId,
-          familiarity: "likes",
+          familiarity: "safe",
           variantNote: null,
         },
       ],
@@ -357,11 +357,11 @@ describe("SessionsClient", () => {
       foods: [
         {
           foodId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa04",
-          familiarity: "likes",
+          familiarity: "safe",
         },
         {
           foodId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa05",
-          familiarity: "likes",
+          familiarity: "safe",
         },
       ],
     }

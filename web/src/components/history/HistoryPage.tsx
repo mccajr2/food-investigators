@@ -29,9 +29,10 @@ type HistoryPageProps = {
 }
 
 const FAMILIARITY_LABELS: Record<Familiarity, string> = {
-  likes: "Likes",
+  safe: "Safe",
   familiar_but_new: "Familiar but new",
   truly_new: "Truly new",
+  retrying: "Retrying",
 }
 
 const LIKED_LABELS: Record<Liked, string> = {

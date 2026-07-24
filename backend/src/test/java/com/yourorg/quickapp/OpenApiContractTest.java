@@ -93,9 +93,11 @@ class OpenApiContractTest {
         assertThat(yaml).contains("changeNote");
         assertThat(yaml).contains("ateEnough");
         assertThat(yaml).contains("parentNote");
-        assertThat(yaml).contains("likes");
+        assertThat(yaml).contains("safe");
         assertThat(yaml).contains("familiar_but_new");
         assertThat(yaml).contains("truly_new");
+        assertThat(yaml).contains("retrying");
+        assertThat(yaml).doesNotContain("- likes");
         assertThat(yaml).contains("variantNote");
         assertThat(yaml).contains("scheduledOn");
         assertThat(yaml).contains("application/pdf");
@@ -116,6 +118,8 @@ class OpenApiContractTest {
         assertThat(yaml).contains("ready");
         assertThat(yaml).contains("snackCount");
         assertThat(yaml).contains("topLikedTextures");
+        assertThat(yaml).contains("familiaritySafe");
+        assertThat(yaml).doesNotContain("familiarityLikes");
         assertThat(yaml).contains("hasParentNotes");
         assertThat(yaml).contains("slow_down_truly_new");
         assertThat(yaml).contains("keep_going");

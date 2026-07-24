@@ -57,7 +57,7 @@ class SessionsApiIntegrationTest {
                                 post("/api/sessions")
                                         .header("Authorization", "Bearer " + token)
                                         .contentType(MediaType.APPLICATION_JSON)
-                                        .content(createBody(day0, APPLES, "likes", "Honeycrisp", STRAWBERRIES, "truly_new", null)))
+                                        .content(createBody(day0, APPLES, "safe", "Honeycrisp", STRAWBERRIES, "truly_new", null)))
                         .andExpect(status().isCreated())
                         .andExpect(jsonPath("$.status").value("planned"))
                         .andExpect(jsonPath("$.scheduledOn").value(day0))
@@ -89,7 +89,7 @@ class SessionsApiIntegrationTest {
                                                 "familiar_but_new",
                                                 "TJ's",
                                                 BLUEBERRIES,
-                                                "likes",
+                                                "safe",
                                                 null)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.scheduledOn").value(day2))
@@ -113,7 +113,7 @@ class SessionsApiIntegrationTest {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(
                                         createBody(
-                                                day3, APPLES, "likes", null, STRAWBERRIES, "likes", null)))
+                                                day3, APPLES, "safe", null, STRAWBERRIES, "safe", null)))
                 .andExpect(status().isConflict());
 
         String tokenB = register("sessions-b-" + System.nanoTime() + "@example.com");
@@ -135,7 +135,7 @@ class SessionsApiIntegrationTest {
                                         {
                                           "scheduledOn":"%s",
                                           "foods":[
-                                            {"foodId":"%s","familiarity":"likes"}
+                                            {"foodId":"%s","familiarity":"safe"}
                                           ]
                                         }
                                         """
@@ -150,10 +150,10 @@ class SessionsApiIntegrationTest {
                                         createBody(
                                                 day0,
                                                 APPLES,
-                                                "likes",
+                                                "safe",
                                                 null,
                                                 "ffffffff-ffff-ffff-ffff-ffffffffffff",
-                                                "likes",
+                                                "safe",
                                                 null)))
                 .andExpect(status().isBadRequest());
 
@@ -167,12 +167,65 @@ class SessionsApiIntegrationTest {
                                           "scheduledOn":"%s",
                                           "foods":[
                                             {"foodId":"%s","familiarity":"nope"},
-                                            {"foodId":"%s","familiarity":"likes"}
+                                            {"foodId":"%s","familiarity":"safe"}
                                           ]
                                         }
                                         """
                                                 .formatted(day0, APPLES, STRAWBERRIES)))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void createAcceptsSafeAndRetryingAndRejectsLegacyLikes() throws Exception {
+        String token = register("sessions-familiarity-" + System.nanoTime() + "@example.com");
+        String day0 = day(0);
+
+        mockMvc.perform(
+                        post("/api/sessions")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        createBody(
+                                                day0,
+                                                APPLES,
+                                                "safe",
+                                                null,
+                                                STRAWBERRIES,
+                                                "retrying",
+                                                "new brand")))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.foods[0].familiarity").value("safe"))
+                .andExpect(jsonPath("$.foods[1].familiarity").value("retrying"))
+                .andExpect(jsonPath("$.foods[1].variantNote").value("new brand"));
+
+        mockMvc.perform(
+                        post("/api/sessions")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        createBody(
+                                                day(1),
+                                                APPLES,
+                                                "likes",
+                                                null,
+                                                STRAWBERRIES,
+                                                "truly_new",
+                                                null)))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(
+                        post("/api/sessions")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        createBody(
+                                                day(1),
+                                                APPLES,
+                                                "safe",
+                                                null,
+                                                STRAWBERRIES,
+                                                "retrying",
+                                                null)))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -207,10 +260,10 @@ class SessionsApiIntegrationTest {
                                         createBody(
                                                 day0,
                                                 snackId,
-                                                "likes",
+                                                "safe",
                                                 null,
                                                 STRAWBERRIES,
-                                                "likes",
+                                                "safe",
                                                 null)))
                 .andExpect(status().isBadRequest());
 
@@ -223,10 +276,10 @@ class SessionsApiIntegrationTest {
                                                 createBody(
                                                         day0,
                                                         APPLES,
-                                                        "likes",
+                                                        "safe",
                                                         null,
                                                         STRAWBERRIES,
-                                                        "likes",
+                                                        "safe",
                                                         null)))
                         .andExpect(status().isCreated())
                         .andReturn();
@@ -240,10 +293,10 @@ class SessionsApiIntegrationTest {
                                         createBody(
                                                 day(1),
                                                 snackId,
-                                                "likes",
+                                                "safe",
                                                 null,
                                                 BLUEBERRIES,
-                                                "likes",
+                                                "safe",
                                                 null)))
                 .andExpect(status().isBadRequest());
     }
@@ -264,10 +317,10 @@ class SessionsApiIntegrationTest {
                                         createBody(
                                                 yesterday,
                                                 APPLES,
-                                                "likes",
+                                                "safe",
                                                 null,
                                                 STRAWBERRIES,
-                                                "likes",
+                                                "safe",
                                                 null)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Scheduled date can't be in the past"));
@@ -281,10 +334,10 @@ class SessionsApiIntegrationTest {
                                                 createBody(
                                                         today,
                                                         APPLES,
-                                                        "likes",
+                                                        "safe",
                                                         null,
                                                         STRAWBERRIES,
-                                                        "likes",
+                                                        "safe",
                                                         null)))
                         .andExpect(status().isCreated())
                         .andExpect(jsonPath("$.scheduledOn").value(today))
@@ -299,10 +352,10 @@ class SessionsApiIntegrationTest {
                                         createBody(
                                                 today,
                                                 APPLES,
-                                                "likes",
+                                                "safe",
                                                 null,
                                                 BLUEBERRIES,
-                                                "likes",
+                                                "safe",
                                                 null)))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message").value("A session already exists on that date"));
@@ -315,10 +368,10 @@ class SessionsApiIntegrationTest {
                                         createBody(
                                                 yesterday,
                                                 APPLES,
-                                                "likes",
+                                                "safe",
                                                 null,
                                                 STRAWBERRIES,
-                                                "likes",
+                                                "safe",
                                                 null)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Scheduled date can't be in the past"));
@@ -333,10 +386,10 @@ class SessionsApiIntegrationTest {
                                                         createBody(
                                                                 tomorrow,
                                                                 APPLES,
-                                                                "likes",
+                                                                "safe",
                                                                 null,
                                                                 STRAWBERRIES,
-                                                                "likes",
+                                                                "safe",
                                                                 null)))
                                 .andExpect(status().isCreated())
                                 .andReturn());
@@ -349,10 +402,10 @@ class SessionsApiIntegrationTest {
                                         createBody(
                                                 today,
                                                 APPLES,
-                                                "likes",
+                                                "safe",
                                                 null,
                                                 STRAWBERRIES,
-                                                "likes",
+                                                "safe",
                                                 null)))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message").value("A session already exists on that date"));
@@ -365,10 +418,10 @@ class SessionsApiIntegrationTest {
                                         createBody(
                                                 tomorrow,
                                                 STRAWBERRIES,
-                                                "likes",
+                                                "safe",
                                                 null,
                                                 BLUEBERRIES,
-                                                "likes",
+                                                "safe",
                                                 null)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.scheduledOn").value(tomorrow));
@@ -386,10 +439,10 @@ class SessionsApiIntegrationTest {
                                         createBody(
                                                 tomorrow,
                                                 APPLES,
-                                                "likes",
+                                                "safe",
                                                 null,
                                                 STRAWBERRIES,
-                                                "likes",
+                                                "safe",
                                                 null)))
                 .andExpect(status().isCreated());
 
@@ -403,10 +456,10 @@ class SessionsApiIntegrationTest {
                                         createBody(
                                                 dayAfter,
                                                 APPLES,
-                                                "likes",
+                                                "safe",
                                                 null,
                                                 STRAWBERRIES,
-                                                "likes",
+                                                "safe",
                                                 null)))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message").value("Session cannot be edited"));
@@ -419,10 +472,10 @@ class SessionsApiIntegrationTest {
                                         createBody(
                                                 today,
                                                 APPLES,
-                                                "likes",
+                                                "safe",
                                                 null,
                                                 STRAWBERRIES,
-                                                "likes",
+                                                "safe",
                                                 null)))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message").value("A session already exists on that date"));
@@ -435,7 +488,7 @@ class SessionsApiIntegrationTest {
                                         createBody(
                                                 dayAfter,
                                                 BAGEL,
-                                                "likes",
+                                                "safe",
                                                 "Bagelsaurus",
                                                 BAGEL,
                                                 "familiar_but_new",
@@ -454,10 +507,10 @@ class SessionsApiIntegrationTest {
                                         createBody(
                                                 day(3),
                                                 BAGEL,
-                                                "likes",
+                                                "safe",
                                                 "Iggy's",
                                                 BAGEL,
-                                                "likes",
+                                                "safe",
                                                 "iggy's")))
                 .andExpect(status().isBadRequest())
                 .andExpect(
@@ -472,10 +525,10 @@ class SessionsApiIntegrationTest {
                                         createBody(
                                                 day(4),
                                                 BAGEL,
-                                                "likes",
+                                                "safe",
                                                 null,
                                                 BAGEL,
-                                                "likes",
+                                                "safe",
                                                 "Iggy's")))
                 .andExpect(status().isBadRequest())
                 .andExpect(
@@ -497,7 +550,7 @@ class SessionsApiIntegrationTest {
                                                 createBody(
                                                         day0,
                                                         APPLES,
-                                                        "likes",
+                                                        "safe",
                                                         null,
                                                         STRAWBERRIES,
                                                         "truly_new",
@@ -578,7 +631,7 @@ class SessionsApiIntegrationTest {
                                                         createBody(
                                                                 day(0),
                                                                 APPLES,
-                                                                "likes",
+                                                                "safe",
                                                                 null,
                                                                 STRAWBERRIES,
                                                                 "truly_new",
@@ -626,7 +679,7 @@ class SessionsApiIntegrationTest {
                                                         createBody(
                                                                 olderDay,
                                                                 APPLES,
-                                                                "likes",
+                                                                "safe",
                                                                 null,
                                                                 STRAWBERRIES,
                                                                 "truly_new",
@@ -643,7 +696,7 @@ class SessionsApiIntegrationTest {
                                                         createBody(
                                                                 newerDay,
                                                                 APPLES,
-                                                                "likes",
+                                                                "safe",
                                                                 "Honeycrisp",
                                                                 BLUEBERRIES,
                                                                 "familiar_but_new",
@@ -660,10 +713,10 @@ class SessionsApiIntegrationTest {
                                                         createBody(
                                                                 cancelledDay,
                                                                 STRAWBERRIES,
-                                                                "likes",
+                                                                "safe",
                                                                 null,
                                                                 BLUEBERRIES,
-                                                                "likes",
+                                                                "safe",
                                                                 null)))
                                 .andExpect(status().isCreated())
                                 .andReturn());
@@ -677,7 +730,7 @@ class SessionsApiIntegrationTest {
                                                         createBody(
                                                                 plannedDay,
                                                                 APPLES,
-                                                                "likes",
+                                                                "safe",
                                                                 null,
                                                                 STRAWBERRIES,
                                                                 "truly_new",
@@ -742,7 +795,7 @@ class SessionsApiIntegrationTest {
                                                         createBody(
                                                                 olderDay,
                                                                 APPLES,
-                                                                "likes",
+                                                                "safe",
                                                                 null,
                                                                 STRAWBERRIES,
                                                                 "truly_new",
@@ -759,7 +812,7 @@ class SessionsApiIntegrationTest {
                                                         createBody(
                                                                 newerDay,
                                                                 APPLES,
-                                                                "likes",
+                                                                "safe",
                                                                 "Honeycrisp",
                                                                 BLUEBERRIES,
                                                                 "familiar_but_new",
@@ -783,6 +836,11 @@ class SessionsApiIntegrationTest {
                         .andReturn();
         byte[] fullPdf = fullResult.getResponse().getContentAsByteArray();
         assertThat(fullPdf).startsWith("%PDF".getBytes(StandardCharsets.US_ASCII));
+        String fullPdfText = pdfText(fullPdf);
+        assertThat(fullPdfText).contains("Safe");
+        assertThat(fullPdfText).contains("Truly new");
+        assertThat(fullPdfText).contains("Familiar but new");
+        assertThat(fullPdfText).doesNotContain("Likes");
 
         MvcResult filteredResult =
                 mockMvc.perform(
@@ -836,7 +894,7 @@ class SessionsApiIntegrationTest {
                                                         createBody(
                                                                 day0,
                                                                 APPLES,
-                                                                "likes",
+                                                                "safe",
                                                                 null,
                                                                 STRAWBERRIES,
                                                                 "truly_new",
@@ -901,10 +959,10 @@ class SessionsApiIntegrationTest {
                                                         createBody(
                                                                 day1,
                                                                 APPLES,
-                                                                "likes",
+                                                                "safe",
                                                                 null,
                                                                 BLUEBERRIES,
-                                                                "likes",
+                                                                "safe",
                                                                 null)))
                                 .andExpect(status().isCreated())
                                 .andReturn());

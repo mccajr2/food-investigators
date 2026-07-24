@@ -39,13 +39,12 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | familiarity-retry | active | 2026-07-23 · enhancement | Plan ladder: Safe / Familiar-but-new / Truly new / Retrying (`likes`→`safe`) |
-| 2 | run-taste-basics | planned | 2026-07-23 · enhancement | Capture sweet/salty/bitter/sour(/umami) on the tasting run survey |
-| 3 | insights-taste-basics | planned | 2026-07-23 · enhancement | Insights aggregates + tips from taste basics |
-| 4 | taste-profile-matches | planned | 2026-07-23 · enhancement | Show a small set of food icons matching a taste profile |
-| 5 | suggested-next-session | planned | 2026-07-11 · initial | App proposes next two foods + levels; parent approves or swaps |
-| 6 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
-| 7 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
+| 1 | run-taste-basics | planned | 2026-07-23 · enhancement | Capture sweet/salty/bitter/sour(/umami) on the tasting run survey |
+| 2 | insights-taste-basics | planned | 2026-07-23 · enhancement | Insights aggregates + tips from taste basics |
+| 3 | taste-profile-matches | planned | 2026-07-23 · enhancement | Show a small set of food icons matching a taste profile |
+| 4 | suggested-next-session | planned | 2026-07-11 · initial | App proposes next two foods + levels; parent approves or swaps |
+| 5 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
+| 6 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
 
 Status values: `parking` · `planned` · `active` · `done` · `cancelled`  
 Added: `YYYY-MM-DD · initial` | `enhancement` | `re-rank split`
@@ -74,12 +73,12 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Branch | Spec |
 |----|--------|------|
-| familiarity-retry | `familiarity-retry` | [active](specs/active/familiarity-retry.md) |
 
 ## Done
 
 | Id | Completed | Spec |
 |----|-----------|------|
+| familiarity-retry | 2026-07-23 | [archive](specs/archive/familiarity-retry.md) |
 | pace-insights | 2026-07-23 | [archive](specs/archive/pace-insights.md) |
 | snack-taste-log | 2026-07-23 | [archive](specs/archive/snack-taste-log.md) |
 | session-parent-notes | 2026-07-22 | [archive](specs/archive/session-parent-notes.md) |
@@ -141,3 +140,4 @@ Only notable events (first carve-up, major re-rank, cancelled theme) — not eve
 | 2026-07-23 | snack-taste-log shipped (snack foods + liked/texture/taste note; excluded from Plan). Next up: `pace-insights`. |
 | 2026-07-23 | pace-insights shipped (aggregates + dismissible tips; snacks merged into liked/texture). Next up: `suggested-next-session`. |
 | 2026-07-23 | Added taste-basics + familiarity-retry slices; re-rank: `familiarity-retry` Next up, then taste capture → insights → icon matches; `suggested-next-session` deferred. |
+| 2026-07-23 | familiarity-retry shipped (Safe/Retrying ladder; `likes`→`safe`). Next up: `run-taste-basics`. |

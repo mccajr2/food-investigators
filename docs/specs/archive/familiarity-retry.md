@@ -1,6 +1,6 @@
 # Spec: familiarity-retry
 
-Status: draft  
+Status: done  
 Created: 2026-07-23  
 Parent: [docs/roadmap.md](../../roadmap.md)  
 Added: 2026-07-23 · enhancement  
@@ -58,28 +58,28 @@ consistently eats.
 
 ## Acceptance criteria
 
-- [ ] `Familiarity` supports exactly `safe`, `familiar_but_new`, `truly_new`,
+- [x] `Familiarity` supports exactly `safe`, `familiar_but_new`, `truly_new`,
       `retrying`; OpenAPI + web + mobile clients aligned.
-- [ ] Existing DB rows with `likes` are migrated to `safe`; CHECK forbids
+- [x] Existing DB rows with `likes` are migrated to `safe`; CHECK forbids
       `likes`.
-- [ ] Plan create/update accept the four values; writing `likes` → **400**.
-- [ ] Web Plan pickers show Safe / Familiar but new / Truly new / Retrying;
+- [x] Plan create/update accept the four values; writing `likes` → **400**.
+- [x] Web Plan pickers show Safe / Familiar but new / Truly new / Retrying;
       History + PDF use the same labels.
-- [ ] Insights returns `familiaritySafe` (not `familiarityLikes`) and UI shows
+- [x] Insights returns `familiaritySafe` (not `familiarityLikes`) and UI shows
       Safe in the familiarity summary; counts include `safe` rows.
-- [ ] Unauthenticated session writes still **401**; household scoping unchanged.
-- [ ] Unit + API + web tests cover enum values, reject legacy `likes`, Plan
+- [x] Unauthenticated session writes still **401**; household scoping unchanged.
+- [x] Unit + API + web tests cover enum values, reject legacy `likes`, Plan
       picker options, and Insights field rename.
-- [ ] `ModularityTests` still pass.
+- [x] `ModularityTests` still pass.
 
 ## Tasks
 
-- [ ] Backend: Familiarity enum + Flyway migrate `likes`→`safe` + add
+- [x] Backend: Familiarity enum + Flyway migrate `likes`→`safe` + add
       `retrying`; Insights `familiaritySafe`; unit tests.
-- [ ] Contract: OpenAPI Familiarity + InsightsResponse; align web + mobile
+- [x] Contract: OpenAPI Familiarity + InsightsResponse; align web + mobile
       clients.
-- [ ] Web: Plan / History / PDF / Insights labels and Plan picker options.
-- [ ] Tests: API integration (create with `safe`/`retrying`, reject `likes`);
+- [x] Web: Plan / History / PDF / Insights labels and Plan picker options.
+- [x] Tests: API integration (create with `safe`/`retrying`, reject `likes`);
       PlanPage + InsightsPage coverage.
 
 ## Decisions (locked)

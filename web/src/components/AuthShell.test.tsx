@@ -51,7 +51,7 @@ function mockInsightsClient(
       likedNo: 0,
       likedSkipped: 0,
       topLikedTextures: [],
-      familiarityLikes: 0,
+      familiaritySafe: 0,
       familiarityFamiliarButNew: 0,
       familiarityTrulyNew: 0,
       snackCount: 0,

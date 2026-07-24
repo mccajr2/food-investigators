@@ -16,7 +16,7 @@ const notReady: InsightsResponse = {
   likedNo: 0,
   likedSkipped: 0,
   topLikedTextures: [],
-  familiarityLikes: 2,
+  familiaritySafe: 2,
   familiarityFamiliarButNew: 0,
   familiarityTrulyNew: 0,
   snackCount: 2,
@@ -34,7 +34,7 @@ const ready: InsightsResponse = {
   likedNo: 0,
   likedSkipped: 0,
   topLikedTextures: ["crunchy", "soft"],
-  familiarityLikes: 4,
+  familiaritySafe: 4,
   familiarityFamiliarButNew: 2,
   familiarityTrulyNew: 0,
   snackCount: 1,
@@ -80,6 +80,9 @@ describe("InsightsPage", () => {
 
     expect(await screen.findByText("Nights completed")).toBeInTheDocument()
     expect(screen.getByText("3")).toBeInTheDocument()
+    expect(
+      screen.getByText("4 Safe · 2 Familiar but new · 0 Truly new"),
+    ).toBeInTheDocument()
     expect(screen.getByText("Crunchy, Soft")).toBeInTheDocument()
     expect(screen.getByText("Some nights have notes")).toBeInTheDocument()
 

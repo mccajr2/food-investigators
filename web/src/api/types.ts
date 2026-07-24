@@ -89,7 +89,7 @@ export type UpdateFoodRequest = {
   tasteNote?: string | null
 }
 
-export type Familiarity = "likes" | "familiar_but_new" | "truly_new"
+export type Familiarity = "safe" | "familiar_but_new" | "truly_new" | "retrying"
 
 export type SessionStatus = "planned" | "cancelled" | "completed"
 
@@ -179,7 +179,7 @@ export type InsightsResponse = {
   likedNo: number
   likedSkipped: number
   topLikedTextures: Texture[]
-  familiarityLikes: number
+  familiaritySafe: number
   familiarityFamiliarButNew: number
   familiarityTrulyNew: number
   snackCount: number
