@@ -39,7 +39,7 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | run-taste-basics | planned | 2026-07-23 · enhancement | Capture sweet/salty/bitter/sour(/umami) on the tasting run survey |
+| 1 | run-taste-basics | active | 2026-07-23 · enhancement | Capture sweet/salty/bitter/sour on the tasting run survey |
 | 2 | insights-taste-basics | planned | 2026-07-23 · enhancement | Insights aggregates + tips from taste basics |
 | 3 | taste-profile-matches | planned | 2026-07-23 · enhancement | Show a small set of food icons matching a taste profile |
 | 4 | suggested-next-session | planned | 2026-07-11 · initial | App proposes next two foods + levels; parent approves or swaps |
@@ -73,6 +73,7 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Branch | Spec |
 |----|--------|------|
+| run-taste-basics | `run-taste-basics` | [active](specs/active/run-taste-basics.md) |
 
 ## Done
 
