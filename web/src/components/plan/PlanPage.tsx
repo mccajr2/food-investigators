@@ -12,9 +12,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
 const FAMILIARITY_OPTIONS: { value: Familiarity; label: string }[] = [
-  { value: "likes", label: "Likes" },
+  { value: "safe", label: "Safe" },
   { value: "familiar_but_new", label: "Familiar but new" },
   { value: "truly_new", label: "Truly new" },
+  { value: "retrying", label: "Retrying" },
 ]
 
 type FoodSlot = {
@@ -44,7 +45,7 @@ type PlanPageProps = {
 
 const emptySlot = (): FoodSlot => ({
   foodId: "",
-  familiarity: "likes",
+  familiarity: "safe",
   variantNote: "",
 })
 
@@ -145,12 +146,12 @@ export function PlanPage({
     setScheduledOn(session.scheduledOn)
     setSlot1({
       foodId: first?.foodId ?? "",
-      familiarity: first?.familiarity ?? "likes",
+      familiarity: first?.familiarity ?? "safe",
       variantNote: first?.variantNote ?? "",
     })
     setSlot2({
       foodId: second?.foodId ?? "",
-      familiarity: second?.familiarity ?? "likes",
+      familiarity: second?.familiarity ?? "safe",
       variantNote: second?.variantNote ?? "",
     })
     setEditor({ mode: "edit", session })
@@ -450,6 +451,13 @@ function FoodSlotFields({
   variantRequired,
   onChange,
 }: FoodSlotFieldsProps) {
+  const retrying = slot.familiarity === "retrying"
+  const variantPlaceholder = variantRequired
+    ? "Brand or variety (required)"
+    : retrying
+      ? "Optional — brand or prep helps when retrying"
+      : "Optional brand, variety, or prep"
+
   return (
     <fieldset disabled={disabled} className="flex flex-col gap-2">
       <legend className="text-sm font-medium">{label}</legend>
@@ -491,14 +499,19 @@ function FoodSlotFields({
         onChange={(event) =>
           onChange({ ...slot, variantNote: event.target.value })
         }
-        placeholder={
-          variantRequired
-            ? "Brand or variety (required)"
-            : "Optional brand, variety, or prep"
-        }
+        placeholder={variantPlaceholder}
         required={variantRequired}
         maxLength={200}
       />
+      {retrying && !variantRequired ? (
+        <p
+          className="text-xs text-muted-foreground"
+          data-testid={`${label} retrying hint`}
+        >
+          Optional brand or prep note can help track what you&apos;re trying
+          differently.
+        </p>
+      ) : null}
     </fieldset>
   )
 }

@@ -15,7 +15,7 @@ const completedSession: SessionResponse = {
       foodId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa04",
       name: "Apples",
       iconKey: "apple",
-      familiarity: "likes",
+      familiarity: "safe",
       variantNote: "Honeycrisp",
       position: 1,
       liked: "like",
@@ -102,6 +102,7 @@ describe("HistoryPage", () => {
     await user.click(screen.getByRole("button", { name: /Honeycrisp/ }))
 
     const detail = screen.getByLabelText("Food 1: Apples")
+    expect(within(detail).getByText("Safe")).toBeInTheDocument()
     expect(within(detail).getAllByText("Like").length).toBe(2)
     expect(within(detail).getByText("Crunchy")).toBeInTheDocument()
     expect(within(detail).getByText("crunchy")).toBeInTheDocument()
@@ -109,6 +110,7 @@ describe("HistoryPage", () => {
     expect(within(detail).getByText("Yes")).toBeInTheDocument()
 
     const food2 = screen.getByLabelText("Food 2: Strawberries")
+    expect(within(food2).getByText("Truly new")).toBeInTheDocument()
     expect(within(food2).getAllByText("No").length).toBeGreaterThanOrEqual(1)
     expect(within(food2).getAllByText("Skipped").length).toBeGreaterThan(0)
     expect(within(food2).getByText("Warm")).toBeInTheDocument()

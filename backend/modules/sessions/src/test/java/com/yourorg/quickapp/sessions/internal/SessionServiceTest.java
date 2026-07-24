@@ -80,7 +80,7 @@ class SessionServiceTest {
                                 LocalDate.of(2026, 7, 20),
                                 List.of(
                                         new SessionFoodRequest(
-                                                foodA, Familiarity.likes, "  Honeycrisp  "),
+                                                foodA, Familiarity.safe, "  Honeycrisp  "),
                                         new SessionFoodRequest(
                                                 foodB, Familiarity.truly_new, null))));
 
@@ -98,6 +98,29 @@ class SessionServiceTest {
     }
 
     @Test
+    void createAcceptsSafeAndRetryingFamiliarity() {
+        stubSelectable(foodA, "Apples", "apple");
+        stubSelectable(foodB, "Bananas", "banana");
+        stubVisible(foodA, "Apples", "apple");
+        stubVisible(foodB, "Bananas", "banana");
+        when(sessions.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        SessionResponse created =
+                service.create(
+                        householdId,
+                        new CreateSessionRequest(
+                                LocalDate.of(2026, 7, 20),
+                                List.of(
+                                        new SessionFoodRequest(foodA, Familiarity.safe, null),
+                                        new SessionFoodRequest(
+                                                foodB, Familiarity.retrying, "new brand"))));
+
+        assertThat(created.foods().get(0).familiarity()).isEqualTo(Familiarity.safe);
+        assertThat(created.foods().get(1).familiarity()).isEqualTo(Familiarity.retrying);
+        assertThat(created.foods().get(1).variantNote()).isEqualTo("new brand");
+    }
+
+    @Test
     void createRejectsUnknownOrArchivedFood() {
         when(foodCatalog.findSelectable(householdId, foodA)).thenReturn(Optional.empty());
 
@@ -109,7 +132,7 @@ class SessionServiceTest {
                                                 LocalDate.of(2026, 7, 20),
                                                 List.of(
                                                         new SessionFoodRequest(
-                                                                foodA, Familiarity.likes, null),
+                                                                foodA, Familiarity.safe, null),
                                                         new SessionFoodRequest(
                                                                 foodB,
                                                                 Familiarity.familiar_but_new,
@@ -127,9 +150,9 @@ class SessionServiceTest {
                                                 LocalDate.of(2026, 7, 14),
                                                 List.of(
                                                         new SessionFoodRequest(
-                                                                foodA, Familiarity.likes, null),
+                                                                foodA, Familiarity.safe, null),
                                                         new SessionFoodRequest(
-                                                                foodB, Familiarity.likes, null)))))
+                                                                foodB, Familiarity.safe, null)))))
                 .isInstanceOf(InvalidSessionScheduleException.class)
                 .hasMessageContaining("past");
     }
@@ -148,8 +171,8 @@ class SessionServiceTest {
                         new CreateSessionRequest(
                                 LocalDate.of(2026, 7, 15),
                                 List.of(
-                                        new SessionFoodRequest(foodA, Familiarity.likes, null),
-                                        new SessionFoodRequest(foodB, Familiarity.likes, null))));
+                                        new SessionFoodRequest(foodA, Familiarity.safe, null),
+                                        new SessionFoodRequest(foodB, Familiarity.safe, null))));
 
         assertThat(created.scheduledOn()).isEqualTo(LocalDate.of(2026, 7, 15));
     }
@@ -170,9 +193,9 @@ class SessionServiceTest {
                                                 LocalDate.of(2026, 7, 20),
                                                 List.of(
                                                         new SessionFoodRequest(
-                                                                foodA, Familiarity.likes, null),
+                                                                foodA, Familiarity.safe, null),
                                                         new SessionFoodRequest(
-                                                                foodB, Familiarity.likes, null)))))
+                                                                foodB, Familiarity.safe, null)))))
                 .isInstanceOf(SessionDateOccupiedException.class);
     }
 
@@ -192,8 +215,8 @@ class SessionServiceTest {
                         new CreateSessionRequest(
                                 LocalDate.of(2026, 7, 20),
                                 List.of(
-                                        new SessionFoodRequest(foodA, Familiarity.likes, null),
-                                        new SessionFoodRequest(foodB, Familiarity.likes, null))));
+                                        new SessionFoodRequest(foodA, Familiarity.safe, null),
+                                        new SessionFoodRequest(foodB, Familiarity.safe, null))));
 
         assertThat(created.status()).isEqualTo(SessionStatus.planned);
     }
@@ -211,7 +234,7 @@ class SessionServiceTest {
                                 LocalDate.of(2026, 7, 20),
                                 List.of(
                                         new SessionFoodRequest(
-                                                foodA, Familiarity.likes, "Bagelsaurus"),
+                                                foodA, Familiarity.safe, "Bagelsaurus"),
                                         new SessionFoodRequest(
                                                 foodA, Familiarity.familiar_but_new, "Iggy's"))));
 
@@ -233,9 +256,9 @@ class SessionServiceTest {
                                                 LocalDate.of(2026, 7, 20),
                                                 List.of(
                                                         new SessionFoodRequest(
-                                                                foodA, Familiarity.likes, null),
+                                                                foodA, Familiarity.safe, null),
                                                         new SessionFoodRequest(
-                                                                foodA, Familiarity.likes, "Iggy's")))))
+                                                                foodA, Familiarity.safe, "Iggy's")))))
                 .isInstanceOf(InvalidSessionFoodException.class)
                 .hasMessageContaining("brand/variety");
 
@@ -247,10 +270,10 @@ class SessionServiceTest {
                                                 LocalDate.of(2026, 7, 20),
                                                 List.of(
                                                         new SessionFoodRequest(
-                                                                foodA, Familiarity.likes, "Iggy's"),
+                                                                foodA, Familiarity.safe, "Iggy's"),
                                                         new SessionFoodRequest(
                                                                 foodA,
-                                                                Familiarity.likes,
+                                                                Familiarity.safe,
                                                                 "  iggy's  ")))))
                 .isInstanceOf(InvalidSessionFoodException.class);
     }
@@ -270,9 +293,9 @@ class SessionServiceTest {
                                                 LocalDate.of(2026, 7, 10),
                                                 List.of(
                                                         new SessionFoodRequest(
-                                                                foodA, Familiarity.likes, null),
+                                                                foodA, Familiarity.safe, null),
                                                         new SessionFoodRequest(
-                                                                foodB, Familiarity.likes, null)))))
+                                                                foodB, Familiarity.safe, null)))))
                 .isInstanceOf(InvalidSessionScheduleException.class);
     }
 
@@ -297,9 +320,9 @@ class SessionServiceTest {
                                                 LocalDate.of(2026, 7, 21),
                                                 List.of(
                                                         new SessionFoodRequest(
-                                                                foodA, Familiarity.likes, null),
+                                                                foodA, Familiarity.safe, null),
                                                         new SessionFoodRequest(
-                                                                foodB, Familiarity.likes, null)))))
+                                                                foodB, Familiarity.safe, null)))))
                 .isInstanceOf(SessionDateOccupiedException.class);
     }
 
@@ -308,7 +331,7 @@ class SessionServiceTest {
         TastingSession session = TastingSession.planned(householdId, LocalDate.of(2026, 7, 20), now);
         session.replaceFoods(
                 List.of(
-                        TastingSessionFood.of(foodA, Familiarity.likes, null, 1),
+                        TastingSessionFood.of(foodA, Familiarity.safe, null, 1),
                         TastingSessionFood.of(foodB, Familiarity.truly_new, null, 2)),
                 now);
         when(sessions.findByIdAndHouseholdId(session.getId(), householdId))
@@ -329,7 +352,7 @@ class SessionServiceTest {
                         new UpdateSessionRequest(
                                 LocalDate.of(2026, 7, 20),
                                 List.of(
-                                        new SessionFoodRequest(foodA, Familiarity.likes, null),
+                                        new SessionFoodRequest(foodA, Familiarity.safe, null),
                                         new SessionFoodRequest(
                                                 foodB, Familiarity.familiar_but_new, null))));
 
@@ -347,7 +370,7 @@ class SessionServiceTest {
                                                 LocalDate.of(2026, 7, 20),
                                                 List.of(
                                                         new SessionFoodRequest(
-                                                                foodA, Familiarity.likes, null)))))
+                                                                foodA, Familiarity.safe, null)))))
                 .isInstanceOf(InvalidSessionFoodException.class);
     }
 
@@ -382,9 +405,9 @@ class SessionServiceTest {
                                                 LocalDate.of(2026, 7, 21),
                                                 List.of(
                                                         new SessionFoodRequest(
-                                                                foodA, Familiarity.likes, null),
+                                                                foodA, Familiarity.safe, null),
                                                         new SessionFoodRequest(
-                                                                foodB, Familiarity.likes, null)))))
+                                                                foodB, Familiarity.safe, null)))))
                 .isInstanceOf(SessionNotEditableException.class);
         assertThatThrownBy(() -> service.cancel(householdId, session.getId()))
                 .isInstanceOf(SessionNotEditableException.class);
@@ -403,7 +426,7 @@ class SessionServiceTest {
         TastingSession session = TastingSession.planned(householdId, LocalDate.of(2026, 7, 20), now);
         session.replaceFoods(
                 List.of(
-                        TastingSessionFood.of(foodA, Familiarity.likes, null, 1),
+                        TastingSessionFood.of(foodA, Familiarity.safe, null, 1),
                         TastingSessionFood.of(foodB, Familiarity.truly_new, null, 2)),
                 now);
         when(sessions.findByIdAndHouseholdId(session.getId(), householdId))
@@ -422,7 +445,7 @@ class SessionServiceTest {
         TastingSession session = TastingSession.planned(householdId, LocalDate.of(2026, 7, 20), now);
         session.replaceFoods(
                 List.of(
-                        TastingSessionFood.of(foodA, Familiarity.likes, null, 1),
+                        TastingSessionFood.of(foodA, Familiarity.safe, null, 1),
                         TastingSessionFood.of(foodB, Familiarity.truly_new, null, 2)),
                 now);
         when(sessions.findByIdAndHouseholdId(session.getId(), householdId))
@@ -555,7 +578,7 @@ class SessionServiceTest {
         TastingSession older = TastingSession.planned(householdId, LocalDate.of(2026, 7, 10), earlier);
         older.replaceFoods(
                 List.of(
-                        TastingSessionFood.of(foodA, Familiarity.likes, null, 1),
+                        TastingSessionFood.of(foodA, Familiarity.safe, null, 1),
                         TastingSessionFood.of(foodB, Familiarity.truly_new, null, 2)),
                 earlier);
         older.getFoods().get(0).recordOutcome(Liked.like, null, null, null, "yay", null, true);
@@ -565,7 +588,7 @@ class SessionServiceTest {
         TastingSession newer = TastingSession.planned(householdId, LocalDate.of(2026, 7, 20), later);
         newer.replaceFoods(
                 List.of(
-                        TastingSessionFood.of(foodA, Familiarity.likes, "Honeycrisp", 1),
+                        TastingSessionFood.of(foodA, Familiarity.safe, "Honeycrisp", 1),
                         TastingSessionFood.of(foodB, Familiarity.familiar_but_new, null, 2)),
                 later);
         newer.getFoods().get(0).recordOutcome(Liked.so_so, Texture.soft, null, null, null, null, true);
@@ -597,7 +620,7 @@ class SessionServiceTest {
         TastingSession older = TastingSession.planned(householdId, LocalDate.of(2026, 7, 10), earlier);
         older.replaceFoods(
                 List.of(
-                        TastingSessionFood.of(foodA, Familiarity.likes, null, 1),
+                        TastingSessionFood.of(foodA, Familiarity.safe, null, 1),
                         TastingSessionFood.of(foodB, Familiarity.truly_new, null, 2)),
                 earlier);
         older.getFoods().get(0).recordOutcome(Liked.like, Texture.crunchy, null, null, "yay", null, true);
@@ -608,7 +631,7 @@ class SessionServiceTest {
         TastingSession newer = TastingSession.planned(householdId, LocalDate.of(2026, 7, 20), later);
         newer.replaceFoods(
                 List.of(
-                        TastingSessionFood.of(foodA, Familiarity.likes, "Honeycrisp", 1),
+                        TastingSessionFood.of(foodA, Familiarity.safe, "Honeycrisp", 1),
                         TastingSessionFood.of(foodB, Familiarity.familiar_but_new, null, 2)),
                 later);
         newer.getFoods().get(0).recordOutcome(Liked.so_so, null, null, null, null, null, true);
@@ -631,6 +654,10 @@ class SessionServiceTest {
         assertThat(fullText).contains("Parent notes: clinic was loud");
         assertThat(fullText).contains("Honeycrisp");
         assertThat(fullText).contains("yay");
+        assertThat(fullText).contains("Safe");
+        assertThat(fullText).contains("Truly new");
+        assertThat(fullText).contains("Familiar but new");
+        assertThat(fullText).doesNotContain("Likes");
         assertThat(fullText).doesNotContain("bbbbbbbb");
         // No empty Parent notes line for the session without a note (only one occurrence).
         assertThat(fullText.split("Parent notes:", -1)).hasSize(2);
@@ -695,7 +722,7 @@ class SessionServiceTest {
                 TastingSession.planned(householdId, LocalDate.of(2026, 7, 20), now);
         session.replaceFoods(
                 List.of(
-                        TastingSessionFood.of(foodA, Familiarity.likes, null, 1),
+                        TastingSessionFood.of(foodA, Familiarity.safe, null, 1),
                         TastingSessionFood.of(foodB, Familiarity.truly_new, null, 2)),
                 now);
         session.complete(now);
@@ -717,7 +744,7 @@ class SessionServiceTest {
         for (TastingSession session : sessionList) {
             session.replaceFoods(
                     List.of(
-                            TastingSessionFood.of(foodA, Familiarity.likes, null, 1),
+                            TastingSessionFood.of(foodA, Familiarity.safe, null, 1),
                             TastingSessionFood.of(foodB, Familiarity.truly_new, null, 2)),
                     now);
         }

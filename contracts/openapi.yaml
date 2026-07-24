@@ -322,7 +322,7 @@ paths:
               scheduledOn: "2026-07-20"
               foods:
                 - foodId: aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa04
-                  familiarity: likes
+                  familiarity: safe
                   variantNote: Honeycrisp
                 - foodId: aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa05
                   familiarity: truly_new
@@ -496,7 +496,7 @@ paths:
                   familiarity: familiar_but_new
                   variantNote: "TJ's"
                 - foodId: aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa13
-                  familiarity: likes
+                  familiarity: safe
       responses:
         "200":
           description: Session updated
@@ -998,9 +998,10 @@ components:
     Familiarity:
       type: string
       enum:
-        - likes
+        - safe
         - familiar_but_new
         - truly_new
+        - retrying
       description: How familiar the child is with this planned food
     SessionStatus:
       type: string
@@ -1263,7 +1264,7 @@ components:
         - likedNo
         - likedSkipped
         - topLikedTextures
-        - familiarityLikes
+        - familiaritySafe
         - familiarityFamiliarButNew
         - familiarityTrulyNew
         - snackCount
@@ -1307,7 +1308,7 @@ components:
               - chewy
               - wet
           description: Texture names ranked by count among merged liked=like rows
-        familiarityLikes:
+        familiaritySafe:
           type: integer
           minimum: 0
         familiarityFamiliarButNew:

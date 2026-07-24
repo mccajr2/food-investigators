@@ -128,8 +128,8 @@ class InsightsServiceTest {
         TastingSession session = TastingSession.planned(householdId, day, now);
         session.replaceFoods(
                 List.of(
-                        TastingSessionFood.of(foodA, Familiarity.likes, null, 1),
-                        TastingSessionFood.of(foodB, Familiarity.likes, null, 2)),
+                        TastingSessionFood.of(foodA, Familiarity.safe, null, 1),
+                        TastingSessionFood.of(foodB, Familiarity.safe, null, 2)),
                 now);
         session.getFoods()
                 .get(0)

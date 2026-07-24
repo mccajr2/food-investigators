@@ -29,7 +29,7 @@ data class InsightsResponse(
     val likedNo: Int,
     val likedSkipped: Int,
     val topLikedTextures: List<String> = emptyList(),
-    val familiarityLikes: Int,
+    val familiaritySafe: Int,
     val familiarityFamiliarButNew: Int,
     val familiarityTrulyNew: Int,
     val snackCount: Int,

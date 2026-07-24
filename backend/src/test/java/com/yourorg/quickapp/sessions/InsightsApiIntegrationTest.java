@@ -109,6 +109,10 @@ class InsightsApiIntegrationTest {
                         .andExpect(jsonPath("$.ready").value(true))
                         .andExpect(jsonPath("$.snackCount").value(1))
                         .andExpect(jsonPath("$.likedLike").value(7))
+                        .andExpect(jsonPath("$.familiaritySafe").value(6))
+                        .andExpect(jsonPath("$.familiarityFamiliarButNew").value(0))
+                        .andExpect(jsonPath("$.familiarityTrulyNew").value(0))
+                        .andExpect(jsonPath("$.familiarityLikes").doesNotExist())
                         .andExpect(jsonPath("$.topLikedTextures", hasItem("crunchy")))
                         .andExpect(jsonPath("$.topLikedTextures", hasItem("soft")))
                         .andExpect(jsonPath("$.tips.length()").value(3))
@@ -173,10 +177,10 @@ class InsightsApiIntegrationTest {
                                                 createBody(
                                                         scheduledOn,
                                                         food1,
-                                                        "likes",
+                                                        "safe",
                                                         null,
                                                         food2,
-                                                        "likes",
+                                                        "safe",
                                                         null)))
                         .andExpect(status().isCreated())
                         .andReturn();

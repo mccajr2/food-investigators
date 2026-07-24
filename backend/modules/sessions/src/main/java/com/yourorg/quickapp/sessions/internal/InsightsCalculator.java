@@ -55,7 +55,7 @@ final class InsightsCalculator {
                 agg.likedNo,
                 agg.likedSkipped,
                 List.copyOf(agg.topLikedTextures),
-                agg.familiarityLikes,
+                agg.familiaritySafe,
                 agg.familiarityFamiliarButNew,
                 agg.familiarityTrulyNew,
                 agg.snackCount,
@@ -132,7 +132,7 @@ final class InsightsCalculator {
         }
         return new InsightTip(
                 TIP_MIX_FAMILIARITY,
-                "You've stuck to known foods — when you're ready, try one gentle familiar-but-new.");
+                "You've stuck to safe foods — when you're ready, try one gentle familiar-but-new.");
     }
 
     private static InsightTip keepGoing() {
@@ -158,7 +158,7 @@ final class InsightsCalculator {
         final int likedNo;
         final int likedSkipped;
         final List<String> topLikedTextures;
-        final int familiarityLikes;
+        final int familiaritySafe;
         final int familiarityFamiliarButNew;
         final int familiarityTrulyNew;
         final int snackCount;
@@ -176,7 +176,7 @@ final class InsightsCalculator {
                 int likedNo,
                 int likedSkipped,
                 List<String> topLikedTextures,
-                int familiarityLikes,
+                int familiaritySafe,
                 int familiarityFamiliarButNew,
                 int familiarityTrulyNew,
                 int snackCount,
@@ -192,7 +192,7 @@ final class InsightsCalculator {
             this.likedNo = likedNo;
             this.likedSkipped = likedSkipped;
             this.topLikedTextures = topLikedTextures;
-            this.familiarityLikes = familiarityLikes;
+            this.familiaritySafe = familiaritySafe;
             this.familiarityFamiliarButNew = familiarityFamiliarButNew;
             this.familiarityTrulyNew = familiarityTrulyNew;
             this.snackCount = snackCount;
@@ -210,7 +210,7 @@ final class InsightsCalculator {
             int likedSoSo = 0;
             int likedNo = 0;
             int likedSkipped = 0;
-            int familiarityLikes = 0;
+            int familiaritySafe = 0;
             int familiarityFamiliarButNew = 0;
             int familiarityTrulyNew = 0;
             int trulyNewOutcomes = 0;
@@ -230,8 +230,8 @@ final class InsightsCalculator {
                     }
 
                     Familiarity familiarity = food.getFamiliarity();
-                    if (familiarity == Familiarity.likes) {
-                        familiarityLikes++;
+                    if (familiarity == Familiarity.safe) {
+                        familiaritySafe++;
                     } else if (familiarity == Familiarity.familiar_but_new) {
                         familiarityFamiliarButNew++;
                     } else if (familiarity == Familiarity.truly_new) {
@@ -299,7 +299,7 @@ final class InsightsCalculator {
                     likedNo,
                     likedSkipped,
                     topLikedTextures,
-                    familiarityLikes,
+                    familiaritySafe,
                     familiarityFamiliarButNew,
                     familiarityTrulyNew,
                     snacks.size(),

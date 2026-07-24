@@ -37,7 +37,7 @@ const food: SessionFoodResponse = {
   foodId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa04",
   name: "Apples",
   iconKey: "apple",
-  familiarity: "likes",
+  familiarity: "safe",
   variantNote: "Honeycrisp",
   position: 1,
   ateEnough: true,

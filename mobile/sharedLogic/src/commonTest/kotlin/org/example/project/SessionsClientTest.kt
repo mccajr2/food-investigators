@@ -155,7 +155,7 @@ class SessionsClientTest {
                         listOf(
                             SessionFoodRequest(
                                 foodId = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa04",
-                                familiarity = "likes",
+                                familiarity = "safe",
                                 variantNote = "Honeycrisp",
                             ),
                             SessionFoodRequest(
@@ -211,11 +211,11 @@ class SessionsClientTest {
                                 listOf(
                                     SessionFoodRequest(
                                         foodId = "ffffffff-ffff-ffff-ffff-ffffffffffff",
-                                        familiarity = "likes",
+                                        familiarity = "safe",
                                     ),
                                     SessionFoodRequest(
                                         foodId = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa04",
-                                        familiarity = "likes",
+                                        familiarity = "safe",
                                     ),
                                 ),
                         ),
@@ -340,7 +340,7 @@ class SessionsClientTest {
            {"foodId":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa04",
             "name":"Apples",
             "iconKey":"apple",
-            "familiarity":"likes",
+            "familiarity":"safe",
             "variantNote":"Honeycrisp",
             "position":1,
             "liked":"like",
@@ -379,7 +379,7 @@ class SessionsClientTest {
            {"foodId":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa04",
             "name":"Apples",
             "iconKey":"apple",
-            "familiarity":"likes",
+            "familiarity":"safe",
             "variantNote":"Honeycrisp",
             "position":1},
            {"foodId":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa05",
