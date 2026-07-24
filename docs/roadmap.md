@@ -39,7 +39,7 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | insights-taste-basics | planned | 2026-07-23 · enhancement | Insights aggregates + tips from taste basics |
+| 1 | insights-taste-basics | active | 2026-07-23 · enhancement | Insights aggregates + tips from taste basics |
 | 2 | taste-profile-matches | planned | 2026-07-23 · enhancement | Show a small set of food icons matching a taste profile |
 | 3 | suggested-next-session | planned | 2026-07-11 · initial | App proposes next two foods + levels; parent approves or swaps |
 | 4 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
@@ -54,6 +54,7 @@ Unranked ideas. Promote into **Upcoming** with `/roadmap` (re-rank).
 
 | Id | Added | Summary |
 |----|-------|---------|
+| snack-taste-ai | 2026-07-24 · enhancement | Infer snack tastes via AI for Insights (no manual snack taste entry) |
 | signup-starter-snacks | 2026-07-23 · enhancement | Optional signup picks: child-specific starter tasting foods + snacks |
 | printable-plan-calendar | 2026-07-11 · initial | Print upcoming tasting schedule (doctor packet is history-first) |
 | offline-ipad-session | 2026-07-11 · initial | Run a session on iPad without network; sync later |
@@ -72,6 +73,7 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Branch | Spec |
 |----|--------|------|
+| insights-taste-basics | `insights-taste-basics` | [active](specs/active/insights-taste-basics.md) |
 
 ## Done
 
