@@ -711,8 +711,10 @@ paths:
       summary: Household tasting insights and tips
       description: >
         Aggregates completed session outcomes with snack liked/texture preferences.
-        Ready when completedSessionCount >= 3; tips are empty until ready. Tips
-        exclude ids this household has dismissed (up to 3 tips from a fixed catalog).
+        Taste basics (`topLikedTastes`) come from session outcomes only (liked=like
+        with non-empty tastes); snacks do not contribute tastes. Ready when
+        completedSessionCount >= 3; tips are empty until ready. Tips exclude ids
+        this household has dismissed (up to 3 tips from a fixed catalog).
       security:
         - bearerAuth: []
       responses:
@@ -792,7 +794,7 @@ components:
         example: keep_going
       description: >
         Fixed tip catalog id (e.g. slow_down_truly_new, lean_into_texture,
-        celebrate_ate_enough, mix_familiarity, keep_going).
+        lean_into_taste, celebrate_ate_enough, mix_familiarity, keep_going).
   securitySchemes:
     bearerAuth:
       type: http
@@ -1289,6 +1291,7 @@ components:
         - likedNo
         - likedSkipped
         - topLikedTextures
+        - topLikedTastes
         - familiaritySafe
         - familiarityFamiliarButNew
         - familiarityTrulyNew
@@ -1333,6 +1336,14 @@ components:
               - chewy
               - wet
           description: Texture names ranked by count among merged liked=like rows
+        topLikedTastes:
+          type: array
+          maxItems: 3
+          items:
+            $ref: "#/components/schemas/TasteBasic"
+          description: >
+            Taste basics ranked by count among completed session foods with
+            liked=like and non-empty tastes (session outcomes only; snacks excluded)
         familiaritySafe:
           type: integer
           minimum: 0

@@ -12,6 +12,7 @@ public record InsightsResponse(
         int likedNo,
         int likedSkipped,
         List<String> topLikedTextures,
+        List<String> topLikedTastes,
         int familiaritySafe,
         int familiarityFamiliarButNew,
         int familiarityTrulyNew,

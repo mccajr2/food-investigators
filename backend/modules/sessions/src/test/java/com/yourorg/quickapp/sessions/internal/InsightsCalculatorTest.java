@@ -9,6 +9,7 @@ import com.yourorg.quickapp.sessions.Familiarity;
 import com.yourorg.quickapp.sessions.InsightTip;
 import com.yourorg.quickapp.sessions.InsightsResponse;
 import com.yourorg.quickapp.sessions.Liked;
+import com.yourorg.quickapp.sessions.TasteBasic;
 import com.yourorg.quickapp.sessions.Texture;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -61,6 +62,7 @@ class InsightsCalculatorTest {
         assertThat(response.likedLike()).isEqualTo(3); // 2 session likes + 1 snack
         assertThat(response.likedSoSo()).isEqualTo(4); // night2 food0 + three food1 fillers
         assertThat(response.topLikedTextures()).containsExactly("crunchy", "soft");
+        assertThat(response.topLikedTastes()).isEmpty();
         assertThat(response.snackCount()).isEqualTo(1);
         assertThat(response.tips()).isNotEmpty();
         assertThat(response.tips().size()).isLessThanOrEqualTo(3);
@@ -117,6 +119,81 @@ class InsightsCalculatorTest {
                                 .orElseThrow()
                                 .message())
                 .contains("Crunchy");
+    }
+
+    @Test
+    void countsSessionLikedTastesMultiSelectAndIgnoresSnacksForTastes() {
+        List<TastingSession> nights =
+                List.of(
+                        completedNightWithTastes(
+                                LocalDate.of(2026, 7, 10),
+                                Liked.like,
+                                List.of(TasteBasic.salty, TasteBasic.sweet)),
+                        completedNightWithTastes(
+                                LocalDate.of(2026, 7, 11), Liked.like, List.of(TasteBasic.salty)),
+                        completedNightWithTastes(
+                                LocalDate.of(2026, 7, 12), Liked.so_so, List.of(TasteBasic.bitter)));
+        List<SnackPreferenceSnapshot> snacks =
+                List.of(new SnackPreferenceSnapshot(FoodLiked.like, FoodTexture.crunchy));
+
+        InsightsResponse response = InsightsCalculator.compute(nights, snacks, Set.of());
+
+        // salty x2 (night1 + night2), sweet x1; bitter skipped (liked so_so); snacks ignored
+        assertThat(response.topLikedTastes()).containsExactly("salty", "sweet");
+        assertThat(response.tips().stream().map(InsightTip::id))
+                .contains(InsightsCalculator.TIP_LEAN_INTO_TASTE);
+        assertThat(
+                        response.tips().stream()
+                                .filter(tip -> tip.id().equals(InsightsCalculator.TIP_LEAN_INTO_TASTE))
+                                .findFirst()
+                                .orElseThrow()
+                                .message())
+                .contains("Salty");
+    }
+
+    @Test
+    void leanIntoTasteComesAfterTextureInTipOrderWhenBothEligible() {
+        List<TastingSession> nights =
+                List.of(
+                        completedNightWithTextureAndTastes(
+                                LocalDate.of(2026, 7, 10),
+                                Texture.crunchy,
+                                List.of(TasteBasic.salty)),
+                        completedNightWithTextureAndTastes(
+                                LocalDate.of(2026, 7, 11),
+                                Texture.crunchy,
+                                List.of(TasteBasic.salty)),
+                        completedNightWithTextureAndTastes(
+                                LocalDate.of(2026, 7, 12), Texture.soft, List.of()));
+
+        InsightsResponse response = InsightsCalculator.compute(nights, List.of(), Set.of());
+
+        List<String> tipIds = response.tips().stream().map(InsightTip::id).toList();
+        assertThat(tipIds).contains(InsightsCalculator.TIP_LEAN_INTO_TEXTURE);
+        assertThat(tipIds).contains(InsightsCalculator.TIP_LEAN_INTO_TASTE);
+        assertThat(tipIds.indexOf(InsightsCalculator.TIP_LEAN_INTO_TEXTURE))
+                .isLessThan(tipIds.indexOf(InsightsCalculator.TIP_LEAN_INTO_TASTE));
+    }
+
+    @Test
+    void omitsDismissedLeanIntoTaste() {
+        List<TastingSession> nights =
+                List.of(
+                        completedNightWithTastes(
+                                LocalDate.of(2026, 7, 10), Liked.like, List.of(TasteBasic.sour)),
+                        completedNightWithTastes(
+                                LocalDate.of(2026, 7, 11), Liked.like, List.of(TasteBasic.sour)),
+                        completedNightWithTastes(
+                                LocalDate.of(2026, 7, 12), Liked.like, List.of(TasteBasic.sour)));
+
+        InsightsResponse response =
+                InsightsCalculator.compute(
+                        nights,
+                        List.of(),
+                        Set.of(InsightsCalculator.TIP_LEAN_INTO_TASTE));
+
+        assertThat(response.tips().stream().map(InsightTip::id))
+                .doesNotContain(InsightsCalculator.TIP_LEAN_INTO_TASTE);
     }
 
     @Test
@@ -218,6 +295,34 @@ class InsightsCalculatorTest {
         session.getFoods()
                 .get(1)
                 .recordOutcome(Liked.so_so, null, null, null, null, null, null, ateEnough);
+        session.complete(now);
+        return session;
+    }
+
+    private TastingSession completedNightWithTastes(
+            LocalDate day, Liked liked, List<TasteBasic> tastes) {
+        return completedNightWithTextureAndTastes(day, null, liked, tastes);
+    }
+
+    private TastingSession completedNightWithTextureAndTastes(
+            LocalDate day, Texture texture, List<TasteBasic> tastes) {
+        return completedNightWithTextureAndTastes(day, texture, Liked.like, tastes);
+    }
+
+    private TastingSession completedNightWithTextureAndTastes(
+            LocalDate day, Texture texture, Liked liked, List<TasteBasic> tastes) {
+        TastingSession session = TastingSession.planned(householdId, day, now);
+        session.replaceFoods(
+                List.of(
+                        TastingSessionFood.of(foodA, Familiarity.safe, null, 1),
+                        TastingSessionFood.of(foodB, Familiarity.safe, null, 2)),
+                now);
+        session.getFoods()
+                .get(0)
+                .recordOutcome(liked, texture, null, null, tastes, null, null, true);
+        session.getFoods()
+                .get(1)
+                .recordOutcome(Liked.so_so, null, null, null, null, null, null, true);
         session.complete(now);
         return session;
     }

@@ -27,6 +27,7 @@ const sampleInsights: InsightsResponse = {
   likedNo: 0,
   likedSkipped: 0,
   topLikedTextures: ["crunchy", "soft"],
+  topLikedTastes: ["salty", "sweet"],
   familiaritySafe: 4,
   familiarityFamiliarButNew: 2,
   familiarityTrulyNew: 0,
@@ -62,6 +63,7 @@ describe("InsightsClient", () => {
 
     expect(insights.ready).toBe(true)
     expect(insights.familiaritySafe).toBe(4)
+    expect(insights.topLikedTastes).toEqual(["salty", "sweet"])
     expect(insights.tips).toHaveLength(2)
     expect(String(fetchFn.mock.calls[0]?.[0])).toBe(
       "http://localhost:8080/api/insights",

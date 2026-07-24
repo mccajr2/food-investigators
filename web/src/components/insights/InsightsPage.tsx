@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react"
 
 import { InsightsClient } from "@/api"
 import type { InsightsResponse, Texture } from "@/api/types"
+import { TASTE_BASIC_LABELS } from "@/components/run/tasteBasics"
 import { Button } from "@/components/ui/button"
 
 type Status =
@@ -161,6 +162,16 @@ export function InsightsPage({
                 insights.topLikedTextures.length > 0
                   ? insights.topLikedTextures
                       .map((texture) => TEXTURE_LABELS[texture] ?? texture)
+                      .join(", ")
+                  : "None yet"
+              }
+            />
+            <Stat
+              label="Tastes liked most"
+              value={
+                insights.topLikedTastes.length > 0
+                  ? insights.topLikedTastes
+                      .map((taste) => TASTE_BASIC_LABELS[taste] ?? taste)
                       .join(", ")
                   : "None yet"
               }

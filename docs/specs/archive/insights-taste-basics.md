@@ -1,6 +1,6 @@
 # Spec: insights-taste-basics
 
-Status: draft  
+Status: done  
 Created: 2026-07-23  
 Parent: [docs/roadmap.md](../../roadmap.md)  
 Added: 2026-07-23 · enhancement  
@@ -60,30 +60,30 @@ the way they already can for crunchy/soft.
 
 ## Acceptance criteria
 
-- [ ] Authenticated `GET /api/insights` includes `topLikedTastes` (0–3
+- [x] Authenticated `GET /api/insights` includes `topLikedTastes` (0–3
       `TasteBasic` values) derived only from completed session foods with
       `liked=like` and non-empty `tastes`; snacks never affect this field.
-- [ ] Multi-select tastes on one liked food increment each selected taste’s
+- [x] Multi-select tastes on one liked food increment each selected taste’s
       count; skipped/empty tastes contribute nothing.
-- [ ] When ready and a top liked taste has count ≥ 2 (and tip not dismissed),
+- [x] When ready and a top liked taste has count ≥ 2 (and tip not dismissed),
       tips may include `lean_into_taste` with calm copy naming that taste;
       evaluation order places it after `lean_into_texture`; max 3 tips still.
-- [ ] Dismiss of `lean_into_taste` persists; unknown tip ids still **400**;
+- [x] Dismiss of `lean_into_taste` persists; unknown tip ids still **400**;
       unauthenticated insights/dismiss still **401**.
-- [ ] Web Insights shows top liked tastes (human labels) when present; existing
+- [x] Web Insights shows top liked tastes (human labels) when present; existing
       empty/not-ready and tip dismiss behavior unchanged otherwise.
-- [ ] OpenAPI + web + mobile sharedLogic clients aligned; unit + API + web
+- [x] OpenAPI + web + mobile sharedLogic clients aligned; unit + API + web
       tests cover taste aggregates, tip fire/exclusion, and UI label display.
-- [ ] Ready threshold, liked/texture snack merge, Plan/History/run/PDF
+- [x] Ready threshold, liked/texture snack merge, Plan/History/run/PDF
       unchanged; `ModularityTests` still pass.
 
 ## Tasks
 
-- [ ] Backend: `topLikedTastes` aggregate + `lean_into_taste` tip; unit tests.
-- [ ] Contract: OpenAPI `InsightsResponse` + tip id docs; align web + mobile
+- [x] Backend: `topLikedTastes` aggregate + `lean_into_taste` tip; unit tests.
+- [x] Contract: OpenAPI `InsightsResponse` + tip id docs; align web + mobile
       clients.
-- [ ] Web: Insights page shows taste labels; tip dismiss covers new id.
-- [ ] Tests: API IT for taste counts + tip; InsightsPage coverage for tastes
+- [x] Web: Insights page shows taste labels; tip dismiss covers new id.
+- [x] Tests: API IT for taste counts + tip; InsightsPage coverage for tastes
       display.
 
 ## Decisions (locked)
