@@ -260,6 +260,7 @@ class SessionsClientTest {
                                     texture = "crunchy",
                                     temperature = "cold",
                                     smell = "like",
+                                    tastes = listOf("sweet", "salty"),
                                     whyNote = "crunchy",
                                     changeNote = "less peel",
                                     ateEnough = true,
@@ -276,8 +277,10 @@ class SessionsClientTest {
 
             assertEquals("completed", completed.status)
             assertEquals("like", completed.foods[0].liked)
+            assertEquals(listOf("sweet", "salty"), completed.foods[0].tastes)
             assertEquals(true, completed.foods[0].ateEnough)
             assertEquals("no", completed.foods[1].liked)
+            assertEquals(emptyList(), completed.foods[1].tastes)
             assertEquals(false, completed.foods[1].ateEnough)
         }
 
@@ -347,6 +350,7 @@ class SessionsClientTest {
             "texture":"crunchy",
             "temperature":"cold",
             "smell":"like",
+            "tastes":["sweet","salty"],
             "whyNote":"crunchy",
             "changeNote":"less peel",
             "ateEnough":true},
@@ -360,6 +364,7 @@ class SessionsClientTest {
             "texture":null,
             "temperature":"warm",
             "smell":null,
+            "tastes":[],
             "whyNote":null,
             "changeNote":null,
             "ateEnough":false}

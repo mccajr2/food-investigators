@@ -573,6 +573,7 @@ class SessionsApiIntegrationTest {
                                               "texture":"crunchy",
                                               "temperature":"cold",
                                               "smell":"like",
+                                              "tastes":["sweet","salty","sweet"],
                                               "whyNote":"crunchy",
                                               "changeNote":"less peel",
                                               "ateEnough":true
@@ -582,6 +583,7 @@ class SessionsApiIntegrationTest {
                                               "liked":"no",
                                               "texture":"wet",
                                               "temperature":"warm",
+                                              "tastes":[],
                                               "ateEnough":false
                                             }
                                           ]
@@ -592,10 +594,14 @@ class SessionsApiIntegrationTest {
                 .andExpect(jsonPath("$.parentNote").value(nullValue()))
                 .andExpect(jsonPath("$.foods[0].liked").value("like"))
                 .andExpect(jsonPath("$.foods[0].texture").value("crunchy"))
+                .andExpect(jsonPath("$.foods[0].tastes[0]").value("sweet"))
+                .andExpect(jsonPath("$.foods[0].tastes[1]").value("salty"))
+                .andExpect(jsonPath("$.foods[0].tastes.length()").value(2))
                 .andExpect(jsonPath("$.foods[0].whyNote").value("crunchy"))
                 .andExpect(jsonPath("$.foods[0].changeNote").value("less peel"))
                 .andExpect(jsonPath("$.foods[0].ateEnough").value(true))
                 .andExpect(jsonPath("$.foods[1].liked").value("no"))
+                .andExpect(jsonPath("$.foods[1].tastes").isEmpty())
                 .andExpect(jsonPath("$.foods[1].ateEnough").value(false));
 
         mockMvc.perform(get("/api/sessions").header("Authorization", "Bearer " + token))
@@ -648,6 +654,102 @@ class SessionsApiIntegrationTest {
                                         {
                                           "foods":[
                                             {"position":1,"smell":"mild","ateEnough":true},
+                                            {"position":2,"ateEnough":false}
+                                          ]
+                                        }
+                                        """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Invalid request"));
+
+        mockMvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void completePersistsSkippedTastesWhenOmittedOrNull() throws Exception {
+        String token = register("sessions-tastes-skip-" + System.nanoTime() + "@example.com");
+        String sessionId =
+                idFrom(
+                        mockMvc.perform(
+                                        post("/api/sessions")
+                                                .header("Authorization", "Bearer " + token)
+                                                .contentType(MediaType.APPLICATION_JSON)
+                                                .content(
+                                                        createBody(
+                                                                day(0),
+                                                                APPLES,
+                                                                "safe",
+                                                                null,
+                                                                STRAWBERRIES,
+                                                                "truly_new",
+                                                                null)))
+                                .andExpect(status().isCreated())
+                                .andReturn());
+
+        mockMvc.perform(
+                        post("/api/sessions/" + sessionId + "/complete")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                                        {
+                                          "foods":[
+                                            {"position":1,"liked":"like","ateEnough":true},
+                                            {"position":2,"liked":"no","tastes":null,"ateEnough":false}
+                                          ]
+                                        }
+                                        """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.foods[0].tastes").isEmpty())
+                .andExpect(jsonPath("$.foods[1].tastes").isEmpty());
+    }
+
+    @Test
+    void completeRejectsUmamiAndUnknownTasteWithBadRequestNotUnauthorized() throws Exception {
+        String token = register("sessions-tastes-bad-" + System.nanoTime() + "@example.com");
+        String sessionId =
+                idFrom(
+                        mockMvc.perform(
+                                        post("/api/sessions")
+                                                .header("Authorization", "Bearer " + token)
+                                                .contentType(MediaType.APPLICATION_JSON)
+                                                .content(
+                                                        createBody(
+                                                                day(0),
+                                                                APPLES,
+                                                                "safe",
+                                                                null,
+                                                                STRAWBERRIES,
+                                                                "truly_new",
+                                                                null)))
+                                .andExpect(status().isCreated())
+                                .andReturn());
+
+        mockMvc.perform(
+                        post("/api/sessions/" + sessionId + "/complete")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                                        {
+                                          "foods":[
+                                            {"position":1,"tastes":["umami"],"ateEnough":true},
+                                            {"position":2,"ateEnough":false}
+                                          ]
+                                        }
+                                        """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Invalid request"));
+
+        mockMvc.perform(
+                        post("/api/sessions/" + sessionId + "/complete")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                                        {
+                                          "foods":[
+                                            {"position":1,"tastes":["spicy"],"ateEnough":true},
                                             {"position":2,"ateEnough":false}
                                           ]
                                         }
@@ -840,7 +942,9 @@ class SessionsApiIntegrationTest {
         assertThat(fullPdfText).contains("Safe");
         assertThat(fullPdfText).contains("Truly new");
         assertThat(fullPdfText).contains("Familiar but new");
+        assertThat(fullPdfText).contains("Tastes:");
         assertThat(fullPdfText).doesNotContain("Likes");
+        assertThat(fullPdfText).doesNotContain("Umami");
 
         MvcResult filteredResult =
                 mockMvc.perform(

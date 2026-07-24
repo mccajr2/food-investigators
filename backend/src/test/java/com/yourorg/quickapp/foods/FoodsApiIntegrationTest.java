@@ -40,10 +40,13 @@ class FoodsApiIntegrationTest {
         mockMvc.perform(get("/api/foods").header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[?(@.name == 'Apples')].system").value(true))
-                .andExpect(jsonPath("$.length()").value(23))
+                .andExpect(jsonPath("$.length()").value(26))
                 .andExpect(jsonPath("$[?(@.iconKey == 'cheese_pizza')].name").value("Cheese pizza"))
                 .andExpect(jsonPath("$[?(@.iconKey == 'soft_pretzel')].name").value("Soft pretzels"))
-                .andExpect(jsonPath("$[?(@.iconKey == 'raspberry')].name").value("Raspberries"));
+                .andExpect(jsonPath("$[?(@.iconKey == 'raspberry')].name").value("Raspberries"))
+                .andExpect(jsonPath("$[?(@.iconKey == 'broccoli')].name").value("Broccoli"))
+                .andExpect(jsonPath("$[?(@.iconKey == 'dark_chocolate')].name").value("Dark chocolate"))
+                .andExpect(jsonPath("$[?(@.iconKey == 'spinach')].name").value("Spinach"));
 
         MvcResult createResult =
                 mockMvc.perform(
@@ -66,7 +69,7 @@ class FoodsApiIntegrationTest {
 
         mockMvc.perform(get("/api/foods").header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(24))
+                .andExpect(jsonPath("$.length()").value(27))
                 .andExpect(jsonPath("$[?(@.id == '%s')].name".formatted(foodId)).value("Cucumber"));
 
         mockMvc.perform(
@@ -127,7 +130,7 @@ class FoodsApiIntegrationTest {
 
         mockMvc.perform(get("/api/foods").header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(23))
+                .andExpect(jsonPath("$.length()").value(26))
                 .andExpect(jsonPath("$[?(@.id == '%s')]".formatted(foodId)).isEmpty());
 
         mockMvc.perform(
@@ -135,7 +138,7 @@ class FoodsApiIntegrationTest {
                                 .param("includeArchived", "true")
                                 .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(24))
+                .andExpect(jsonPath("$.length()").value(27))
                 .andExpect(jsonPath("$[?(@.id == '%s')].archivedAt".formatted(foodId)).isNotEmpty());
     }
 
@@ -159,7 +162,7 @@ class FoodsApiIntegrationTest {
 
         mockMvc.perform(get("/api/foods").header("Authorization", "Bearer " + tokenB))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(23))
+                .andExpect(jsonPath("$.length()").value(26))
                 .andExpect(jsonPath("$[?(@.id == '%s')]".formatted(foodId)).isEmpty());
 
         mockMvc.perform(

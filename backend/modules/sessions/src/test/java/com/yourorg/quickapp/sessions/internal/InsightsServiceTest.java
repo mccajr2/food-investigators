@@ -133,10 +133,10 @@ class InsightsServiceTest {
                 now);
         session.getFoods()
                 .get(0)
-                .recordOutcome(Liked.like, Texture.crunchy, null, null, null, null, true);
+                .recordOutcome(Liked.like, Texture.crunchy, null, null, null, null, null, true);
         session.getFoods()
                 .get(1)
-                .recordOutcome(Liked.like, Texture.crunchy, null, null, null, null, true);
+                .recordOutcome(Liked.like, Texture.crunchy, null, null, null, null, null, true);
         session.complete(now);
         return session;
     }

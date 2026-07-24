@@ -1,6 +1,6 @@
 # Spec: run-taste-basics
 
-Status: in-progress  
+Status: done  
 Created: 2026-07-23  
 Parent: [docs/roadmap.md](../../roadmap.md)  
 Added: 2026-07-23 · enhancement  
@@ -64,33 +64,33 @@ learn those words from **familiar food pictures** — not abstract labels alone
 
 ## Acceptance criteria
 
-- [ ] `TasteBasic` is exactly `sweet`, `salty`, `bitter`, `sour`; OpenAPI + web
+- [x] `TasteBasic` is exactly `sweet`, `salty`, `bitter`, `sour`; OpenAPI + web
       + mobile clients aligned (no `umami`).
-- [ ] Completing a session accepts optional `tastes` arrays (0..4 unique values
+- [x] Completing a session accepts optional `tastes` arrays (0..4 unique values
       per food); empty/omit/null is allowed; duplicates collapsed.
-- [ ] Unknown taste or `umami` on write → **400**; unauthenticated complete
+- [x] Unknown taste or `umami` on write → **400**; unauthenticated complete
       still **401**; household scoping unchanged.
-- [ ] Web run includes a tastes step (after texture) with multi-select toggles;
+- [x] Web run includes a tastes step (after texture) with multi-select toggles;
       each option shows its label and 2–3 locked example icons from the table
       above.
-- [ ] System starters Broccoli / Dark chocolate / Spinach exist with icons;
+- [x] System starters Broccoli / Dark chocolate / Spinach exist with icons;
       bitter button examples use those three keys.
-- [ ] History detail and therapist PDF display selected taste labels (or a
+- [x] History detail and therapist PDF display selected taste labels (or a
       clear empty/skipped presentation when none).
-- [ ] Insights endpoints unchanged this PR (no taste aggregates/tips).
-- [ ] Unit + API + web tests cover multi-select, skip, reject bad values, and
+- [x] Insights endpoints unchanged this PR (no taste aggregates/tips).
+- [x] Unit + API + web tests cover multi-select, skip, reject bad values, and
       example-icon / new-starter wiring enough to fail if reverted.
-- [ ] `ModularityTests` still pass.
+- [x] `ModularityTests` still pass.
 
 ## Tasks
 
-- [ ] Backend: Flyway column + starters; `TasteBasic` enum; complete/list/get +
+- [x] Backend: Flyway column + starters; `TasteBasic` enum; complete/list/get +
       PDF; unit tests.
-- [ ] Contract: OpenAPI `TasteBasic` + `tastes` on outcome/response; align web +
+- [x] Contract: OpenAPI `TasteBasic` + `tastes` on outcome/response; align web +
       mobile clients.
-- [ ] Web: taste step UI (multi-toggle + example icons); History labels; new
+- [x] Web: taste step UI (multi-toggle + example icons); History labels; new
       FoodIcon SVGs + keys for broccoli / dark_chocolate / spinach.
-- [ ] Tests: API IT (multi tastes, skip, reject umami/unknown); RunSessionPage +
+- [x] Tests: API IT (multi tastes, skip, reject umami/unknown); RunSessionPage +
       History coverage for tastes display/selection.
 
 ## Decisions (locked)

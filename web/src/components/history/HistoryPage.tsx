@@ -7,9 +7,11 @@ import type {
   SessionFoodResponse,
   SessionResponse,
   Smell,
+  TasteBasic,
   Temperature,
   Texture,
 } from "@/api/types"
+import { TASTE_BASIC_LABELS } from "@/components/run/tasteBasics"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
@@ -58,6 +60,13 @@ const SMELL_LABELS: Record<Smell, string> = {
   like: "Like",
   so_so: "So-so",
   no: "No",
+}
+
+function tastesLabel(tastes?: TasteBasic[] | null): string {
+  if (!tastes || tastes.length === 0) {
+    return "Skipped"
+  }
+  return tastes.map((taste) => TASTE_BASIC_LABELS[taste]).join(", ")
 }
 
 export function HistoryPage({
@@ -333,6 +342,7 @@ function SessionDetail({ session, onClose }: SessionDetailProps) {
                 value={labelOrSkipped(food.temperature, TEMPERATURE_LABELS)}
               />
               <DetailRow label="Smell" value={labelOrSkipped(food.smell, SMELL_LABELS)} />
+              <DetailRow label="Tastes" value={tastesLabel(food.tastes)} />
               <DetailRow
                 label="Ate enough"
                 value={

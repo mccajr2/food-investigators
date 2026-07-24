@@ -36,8 +36,11 @@ describe("FoodIcon", () => {
     }
   })
 
-  it("still renders SVG for non-hero starter keys", () => {
-    const { container } = render(<FoodIcon iconKey="apple" />)
-    expect(container.querySelector("svg")).toBeTruthy()
+  it("still renders SVG for non-hero starter keys including bitter examples", () => {
+    for (const key of ["apple", "broccoli", "dark_chocolate", "spinach"] as const) {
+      const { container, unmount } = render(<FoodIcon iconKey={key} />)
+      expect(container.querySelector("svg"), `${key} should render SVG`).toBeTruthy()
+      unmount()
+    }
   })
 })

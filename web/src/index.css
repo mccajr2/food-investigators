@@ -160,6 +160,21 @@
   filter: brightness(0.98);
 }
 
+/* Multi-select (taste toggles): must read clearly vs default lime placemat edge. */
+[data-theme="kitchen-run"] .run-placemat--selected {
+  border-color: var(--brand-coral);
+  background: oklch(0.94 0.07 135 / 0.85);
+  box-shadow:
+    0 3px 0 var(--brand-coral),
+    0 10px 22px var(--run-placemat-shadow);
+}
+
+[data-theme="kitchen-run"] .run-placemat--selected:active {
+  box-shadow:
+    0 0 0 var(--brand-coral),
+    0 2px 8px var(--run-placemat-shadow);
+}
+
 [data-theme="kitchen-run"] .run-header {
   border-color: oklch(0.86 0.04 135 / 0.7);
   background: oklch(0.98 0.015 90 / 0.9);

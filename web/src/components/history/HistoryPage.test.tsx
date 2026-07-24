@@ -22,6 +22,7 @@ const completedSession: SessionResponse = {
       texture: "crunchy",
       temperature: "cold",
       smell: "like",
+      tastes: ["sweet", "salty"],
       whyNote: "crunchy",
       changeNote: "less peel",
       ateEnough: true,
@@ -37,6 +38,7 @@ const completedSession: SessionResponse = {
       texture: null,
       temperature: "warm",
       smell: null,
+      tastes: [],
       whyNote: null,
       changeNote: null,
       ateEnough: false,
@@ -103,6 +105,9 @@ describe("HistoryPage", () => {
 
     const detail = screen.getByLabelText("Food 1: Apples")
     expect(within(detail).getByText("Safe")).toBeInTheDocument()
+    expect(within(detail).getByText("Tastes").closest("div")?.querySelector("dd")).toHaveTextContent(
+      "Sweet, Salty",
+    )
     expect(within(detail).getAllByText("Like").length).toBe(2)
     expect(within(detail).getByText("Crunchy")).toBeInTheDocument()
     expect(within(detail).getByText("crunchy")).toBeInTheDocument()
@@ -111,6 +116,9 @@ describe("HistoryPage", () => {
 
     const food2 = screen.getByLabelText("Food 2: Strawberries")
     expect(within(food2).getByText("Truly new")).toBeInTheDocument()
+    expect(within(food2).getByText("Tastes").closest("div")?.querySelector("dd")).toHaveTextContent(
+      "Skipped",
+    )
     expect(within(food2).getAllByText("No").length).toBeGreaterThanOrEqual(1)
     expect(within(food2).getAllByText("Skipped").length).toBeGreaterThan(0)
     expect(within(food2).getByText("Warm")).toBeInTheDocument()

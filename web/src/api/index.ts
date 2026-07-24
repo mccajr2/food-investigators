@@ -21,6 +21,7 @@ export type {
   SessionResponse,
   SessionStatus,
   Smell,
+  TasteBasic,
   Temperature,
   Texture,
   UpdateFoodRequest,

@@ -7,6 +7,7 @@ import type {
   Liked,
   SessionResponse,
   Smell,
+  TasteBasic,
   Temperature,
   Texture,
 } from "@/api/types"
@@ -14,7 +15,12 @@ import { FoodIcon } from "@/components/food/FoodIcon"
 import { BrandLogo } from "@/components/BrandLogo"
 import { ParentNotesStep } from "@/components/run/ParentNotesStep"
 import { RewardFlow } from "@/components/run/RewardFlow"
-import { IconChoiceStep, SpeechNoteStep } from "@/components/run/RunSteps"
+import { IconChoiceStep, SpeechNoteStep, TasteMultiChoiceStep } from "@/components/run/RunSteps"
+import {
+  TASTE_BASIC_LABELS,
+  TASTE_BASIC_OPTIONS,
+  TASTE_EXAMPLE_ICONS,
+} from "@/components/run/tasteBasics"
 import { RUN_THEME } from "@/components/run/runTheme"
 import {
   initialRewardPhase,
@@ -31,6 +37,7 @@ import {
 export const RUN_STEPS = [
   "liked",
   "texture",
+  "tastes",
   "temperature",
   "smell",
   "why",
@@ -44,6 +51,7 @@ type FoodOutcomeDraft = {
   position: 1 | 2
   liked?: Liked | null
   texture?: Texture | null
+  tastes?: TasteBasic[] | null
   temperature?: Temperature | null
   smell?: Smell | null
   whyNote?: string | null
@@ -84,6 +92,12 @@ const SMELL_OPTIONS = [
   { value: "no" as const, label: "No", symbol: "👎" },
 ]
 
+const TASTE_OPTIONS = TASTE_BASIC_OPTIONS.map((value) => ({
+  value,
+  label: TASTE_BASIC_LABELS[value],
+  exampleIconKeys: TASTE_EXAMPLE_ICONS[value],
+}))
+
 const ATE_ENOUGH_OPTIONS = [
   { value: "yes" as const, label: "Yes", symbol: "✅" },
   { value: "no" as const, label: "No", symbol: "✖️" },
@@ -115,6 +129,10 @@ export function buildCompleteRequest(
       texture: draft.texture ?? null,
       temperature: draft.temperature ?? null,
       smell: draft.smell ?? null,
+      tastes:
+        draft.tastes && draft.tastes.length > 0
+          ? [...new Set(draft.tastes)]
+          : null,
       whyNote: why && why.length > 0 ? why : null,
       changeNote: change && change.length > 0 ? change : null,
       ateEnough: draft.ateEnough,
@@ -407,6 +425,30 @@ export function RunSessionPage({
             }}
             onSkip={() => {
               patchDraft({ texture: null })
+              advance()
+            }}
+          />
+        ) : null}
+
+        {!inReward && !inParentNotes && step === "tastes" ? (
+          <TasteMultiChoiceStep
+            prompt="How did it taste?"
+            options={TASTE_OPTIONS}
+            selected={currentDraft.tastes ?? []}
+            onToggle={(value) => {
+              const current = currentDraft.tastes ?? []
+              const next = current.includes(value)
+                ? current.filter((taste) => taste !== value)
+                : [...current, value]
+              patchDraft({ tastes: next })
+            }}
+            onConfirm={() => {
+              const selected = currentDraft.tastes ?? []
+              patchDraft({ tastes: selected.length > 0 ? selected : null })
+              advance()
+            }}
+            onSkip={() => {
+              patchDraft({ tastes: null })
               advance()
             }}
           />

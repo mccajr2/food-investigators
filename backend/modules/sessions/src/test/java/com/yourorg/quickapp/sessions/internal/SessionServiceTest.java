@@ -24,6 +24,7 @@ import com.yourorg.quickapp.sessions.SessionParentNoteNotAllowedException;
 import com.yourorg.quickapp.sessions.SessionResponse;
 import com.yourorg.quickapp.sessions.SessionStatus;
 import com.yourorg.quickapp.sessions.Smell;
+import com.yourorg.quickapp.sessions.TasteBasic;
 import com.yourorg.quickapp.sessions.Temperature;
 import com.yourorg.quickapp.sessions.Texture;
 import com.yourorg.quickapp.sessions.UpdateParentNoteRequest;
@@ -466,6 +467,7 @@ class SessionServiceTest {
                                                 Texture.crunchy,
                                                 Temperature.cold,
                                                 Smell.like,
+                                                List.of(TasteBasic.sweet, TasteBasic.salty, TasteBasic.sweet),
                                                 "  crunchy  ",
                                                 "less peel",
                                                 true),
@@ -477,17 +479,68 @@ class SessionServiceTest {
                                                 null,
                                                 null,
                                                 null,
+                                                null,
                                                 false))));
 
         assertThat(completed.status()).isEqualTo(SessionStatus.completed);
         assertThat(completed.parentNote()).isNull();
         assertThat(completed.foods().get(0).liked()).isEqualTo(Liked.like);
         assertThat(completed.foods().get(0).texture()).isEqualTo(Texture.crunchy);
+        assertThat(completed.foods().get(0).tastes())
+                .containsExactly(TasteBasic.sweet, TasteBasic.salty);
         assertThat(completed.foods().get(0).whyNote()).isEqualTo("crunchy");
         assertThat(completed.foods().get(0).changeNote()).isEqualTo("less peel");
         assertThat(completed.foods().get(0).ateEnough()).isTrue();
         assertThat(completed.foods().get(1).liked()).isEqualTo(Liked.so_so);
+        assertThat(completed.foods().get(1).tastes()).isEmpty();
         assertThat(completed.foods().get(1).ateEnough()).isFalse();
+    }
+
+    @Test
+    void completeAcceptsEmptyTastesAsSkipped() {
+        TastingSession session =
+                TastingSession.planned(householdId, LocalDate.of(2026, 7, 20), now);
+        session.replaceFoods(
+                List.of(
+                        TastingSessionFood.of(foodA, Familiarity.safe, null, 1),
+                        TastingSessionFood.of(foodB, Familiarity.truly_new, null, 2)),
+                now);
+        when(sessions.findByIdAndHouseholdId(session.getId(), householdId))
+                .thenReturn(Optional.of(session));
+        when(sessions.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        stubVisible(foodA, "Apples", "apple");
+        stubVisible(foodB, "Bananas", "banana");
+
+        SessionResponse completed =
+                service.complete(
+                        householdId,
+                        session.getId(),
+                        new CompleteSessionRequest(
+                                List.of(
+                                        new FoodOutcomeRequest(
+                                                1,
+                                                Liked.like,
+                                                null,
+                                                null,
+                                                null,
+                                                List.of(),
+                                                null,
+                                                null,
+                                                true),
+                                        new FoodOutcomeRequest(
+                                                2,
+                                                Liked.no,
+                                                null,
+                                                null,
+                                                null,
+                                                List.of(TasteBasic.bitter, TasteBasic.sour),
+                                                null,
+                                                null,
+                                                true))));
+
+        assertThat(completed.foods().get(0).tastes()).isEmpty();
+        assertThat(completed.foods().get(1).tastes())
+                .containsExactly(TasteBasic.bitter, TasteBasic.sour);
     }
 
     @Test
@@ -581,8 +634,8 @@ class SessionServiceTest {
                         TastingSessionFood.of(foodA, Familiarity.safe, null, 1),
                         TastingSessionFood.of(foodB, Familiarity.truly_new, null, 2)),
                 earlier);
-        older.getFoods().get(0).recordOutcome(Liked.like, null, null, null, "yay", null, true);
-        older.getFoods().get(1).recordOutcome(Liked.no, null, null, null, null, null, false);
+        older.getFoods().get(0).recordOutcome(Liked.like, null, null, null, null, "yay", null, true);
+        older.getFoods().get(1).recordOutcome(Liked.no, null, null, null, null, null, null, false);
         older.complete(earlier);
 
         TastingSession newer = TastingSession.planned(householdId, LocalDate.of(2026, 7, 20), later);
@@ -591,8 +644,8 @@ class SessionServiceTest {
                         TastingSessionFood.of(foodA, Familiarity.safe, "Honeycrisp", 1),
                         TastingSessionFood.of(foodB, Familiarity.familiar_but_new, null, 2)),
                 later);
-        newer.getFoods().get(0).recordOutcome(Liked.so_so, Texture.soft, null, null, null, null, true);
-        newer.getFoods().get(1).recordOutcome(null, null, null, null, null, null, true);
+        newer.getFoods().get(0).recordOutcome(Liked.so_so, Texture.soft, null, null, null, null, null, true);
+        newer.getFoods().get(1).recordOutcome(null, null, null, null, null, null, null, true);
         newer.complete(later);
 
         when(sessions.findByHouseholdIdAndStatusOrderByScheduledOnDescUpdatedAtDesc(
@@ -623,8 +676,16 @@ class SessionServiceTest {
                         TastingSessionFood.of(foodA, Familiarity.safe, null, 1),
                         TastingSessionFood.of(foodB, Familiarity.truly_new, null, 2)),
                 earlier);
-        older.getFoods().get(0).recordOutcome(Liked.like, Texture.crunchy, null, null, "yay", null, true);
-        older.getFoods().get(1).recordOutcome(Liked.no, null, null, null, null, null, false);
+        older.getFoods().get(0).recordOutcome(
+                Liked.like,
+                Texture.crunchy,
+                null,
+                null,
+                List.of(TasteBasic.sweet, TasteBasic.sour),
+                "yay",
+                null,
+                true);
+        older.getFoods().get(1).recordOutcome(Liked.no, null, null, null, null, null, null, false);
         older.complete(earlier);
         older.setParentNote("clinic was loud", earlier);
 
@@ -634,8 +695,8 @@ class SessionServiceTest {
                         TastingSessionFood.of(foodA, Familiarity.safe, "Honeycrisp", 1),
                         TastingSessionFood.of(foodB, Familiarity.familiar_but_new, null, 2)),
                 later);
-        newer.getFoods().get(0).recordOutcome(Liked.so_so, null, null, null, null, null, true);
-        newer.getFoods().get(1).recordOutcome(null, null, null, null, null, null, true);
+        newer.getFoods().get(0).recordOutcome(Liked.so_so, null, null, null, null, null, null, true);
+        newer.getFoods().get(1).recordOutcome(null, null, null, null, null, null, null, true);
         newer.complete(later);
 
         when(sessions.findByHouseholdIdAndStatusOrderByScheduledOnDescUpdatedAtDesc(
@@ -657,6 +718,9 @@ class SessionServiceTest {
         assertThat(fullText).contains("Safe");
         assertThat(fullText).contains("Truly new");
         assertThat(fullText).contains("Familiar but new");
+        assertThat(fullText).contains("Tastes:");
+        assertThat(fullText).contains("Sweet");
+        assertThat(fullText).contains("Sour");
         assertThat(fullText).doesNotContain("Likes");
         assertThat(fullText).doesNotContain("bbbbbbbb");
         // No empty Parent notes line for the session without a note (only one occurrence).
@@ -705,10 +769,10 @@ class SessionServiceTest {
                                                 List.of(
                                                         new FoodOutcomeRequest(
                                                                 1, null, null, null, null, null,
-                                                                null, true),
+                                                                null, null, true),
                                                         new FoodOutcomeRequest(
                                                                 2, null, null, null, null, null,
-                                                                null, true)))))
+                                                                null, null, true)))))
                 .isInstanceOf(SessionNotEditableException.class);
     }
 
