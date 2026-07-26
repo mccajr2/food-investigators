@@ -2,6 +2,7 @@ package com.yourorg.quickapp.sessions;
 
 import com.yourorg.quickapp.accounts.AccountPrincipal;
 import com.yourorg.quickapp.sessions.internal.SessionService;
+import com.yourorg.quickapp.sessions.internal.SessionSuggestionService;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.util.List;
@@ -28,9 +29,12 @@ import org.springframework.web.server.ResponseStatusException;
 public class SessionController {
 
     private final SessionService sessionService;
+    private final SessionSuggestionService suggestionService;
 
-    public SessionController(SessionService sessionService) {
+    public SessionController(
+            SessionService sessionService, SessionSuggestionService suggestionService) {
         this.sessionService = sessionService;
+        this.suggestionService = suggestionService;
     }
 
     @PostMapping
@@ -39,6 +43,12 @@ public class SessionController {
             @Valid @RequestBody CreateSessionRequest request) {
         SessionResponse created = sessionService.create(requireHouseholdId(principal), request);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    }
+
+    @GetMapping("/suggestions/next")
+    public SessionSuggestionResponse suggestNext(
+            @AuthenticationPrincipal AccountPrincipal principal) {
+        return suggestionService.suggestNext(requireHouseholdId(principal));
     }
 
     @GetMapping

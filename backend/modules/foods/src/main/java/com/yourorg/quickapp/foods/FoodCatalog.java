@@ -14,6 +14,12 @@ public interface FoodCatalog {
     Optional<CatalogFood> findSelectable(UUID householdId, UUID foodId);
 
     /**
+     * Active (non-archived) session-eligible foods visible to the household (system starters +
+     * household tasting foods).
+     */
+    List<CatalogFood> listSelectable(UUID householdId);
+
+    /**
      * Active (non-archived) snack foods for the household — {@code sessionEligible=false}.
      * Liked/texture may be null when unset.
      */

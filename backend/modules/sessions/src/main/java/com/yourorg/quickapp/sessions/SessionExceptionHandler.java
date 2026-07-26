@@ -49,6 +49,12 @@ public class SessionExceptionHandler {
         return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
     }
 
+    @ExceptionHandler(InsufficientSuggestionCatalogException.class)
+    ResponseEntity<Map<String, String>> insufficientCatalog(
+            InsufficientSuggestionCatalogException ex) {
+        return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
+    }
+
     @ExceptionHandler(InvalidHistoryPdfRequestException.class)
     ResponseEntity<Map<String, String>> invalidHistoryPdf(InvalidHistoryPdfRequestException ex) {
         return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));

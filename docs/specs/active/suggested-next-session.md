@@ -1,6 +1,6 @@
 # Spec: suggested-next-session
 
-Status: draft  
+Status: in-progress  
 Created: 2026-07-11  
 Parent: [docs/roadmap.md](../../roadmap.md)  
 Added: 2026-07-11 · initial  
@@ -109,7 +109,7 @@ fallback when data is thin or the model fails.
 
 ## Tasks
 
-- [ ] Backend: brief/shortlist builder + suggestion endpoint + Gemini Flash
+- [x] Backend: brief/shortlist builder + suggestion endpoint + Gemini Flash
       LLM port (mocked in tests) + heuristic fallback; wire approve to existing
       session create validation.
 - [ ] Contract: OpenAPI proposal schemas/paths; align web + mobile clients.
@@ -125,12 +125,11 @@ fallback when data is thin or the model fails.
 - Science evidence pack deferred to `suggestion-pacing-evidence`.
 - Parent always decides; Approve creates a normal planned session.
 - Web laptop Plan only this PR.
+- Gemini via JDK `HttpClient` + Jackson 3 (no Gemini SDK). Env:
+  `GEMINI_API_KEY`, `GEMINI_MODEL` (default `gemini-2.0-flash`),
+  `GEMINI_API_BASE_URL`. Config: `app.gemini.*`. Shortlist cap **20**.
+  Rationale shown when non-empty.
 
 ## Open questions
 
-- Exact Gemini model id + env var names / client library (confirm in the first
-  `/implement` task before adding a dependency).
-- Whether rationale is shown to the parent in v1 (default: yes, short calm
-  sentence; omit if empty).
-- Exact shortlist size cap (default **20**) and brief field list — refine in
-  implement if needed without changing the architecture.
+- _(none — Gemini client/env, rationale, and shortlist cap locked in Decisions)_
