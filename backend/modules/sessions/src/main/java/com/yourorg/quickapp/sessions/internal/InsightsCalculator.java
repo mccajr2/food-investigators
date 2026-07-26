@@ -7,6 +7,7 @@ import com.yourorg.quickapp.sessions.Familiarity;
 import com.yourorg.quickapp.sessions.InsightTip;
 import com.yourorg.quickapp.sessions.InsightsResponse;
 import com.yourorg.quickapp.sessions.Liked;
+import com.yourorg.quickapp.sessions.TasteBasic;
 import com.yourorg.quickapp.sessions.Texture;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -24,6 +25,7 @@ final class InsightsCalculator {
     static final int MAX_TIPS = 3;
     static final String TIP_SLOW_DOWN_TRULY_NEW = "slow_down_truly_new";
     static final String TIP_LEAN_INTO_TEXTURE = "lean_into_texture";
+    static final String TIP_LEAN_INTO_TASTE = "lean_into_taste";
     static final String TIP_CELEBRATE_ATE_ENOUGH = "celebrate_ate_enough";
     static final String TIP_MIX_FAMILIARITY = "mix_familiarity";
     static final String TIP_KEEP_GOING = "keep_going";
@@ -32,6 +34,7 @@ final class InsightsCalculator {
             Set.of(
                     TIP_SLOW_DOWN_TRULY_NEW,
                     TIP_LEAN_INTO_TEXTURE,
+                    TIP_LEAN_INTO_TASTE,
                     TIP_CELEBRATE_ATE_ENOUGH,
                     TIP_MIX_FAMILIARITY,
                     TIP_KEEP_GOING);
@@ -55,6 +58,7 @@ final class InsightsCalculator {
                 agg.likedNo,
                 agg.likedSkipped,
                 List.copyOf(agg.topLikedTextures),
+                List.copyOf(agg.topLikedTastes),
                 agg.familiaritySafe,
                 agg.familiarityFamiliarButNew,
                 agg.familiarityTrulyNew,
@@ -67,6 +71,7 @@ final class InsightsCalculator {
         List<InsightTip> tips = new ArrayList<>(MAX_TIPS);
         maybeAdd(tips, dismissed, slowDownTrulyNew(agg));
         maybeAdd(tips, dismissed, leanIntoTexture(agg));
+        maybeAdd(tips, dismissed, leanIntoTaste(agg));
         maybeAdd(tips, dismissed, celebrateAteEnough(agg));
         maybeAdd(tips, dismissed, mixFamiliarity(agg));
         while (tips.size() < MAX_TIPS) {
@@ -117,6 +122,17 @@ final class InsightsCalculator {
                 label + " textures seem to land — lean into that when you pick foods.");
     }
 
+    private static InsightTip leanIntoTaste(Aggregate agg) {
+        TasteCount top = agg.topTasteWithCount;
+        if (top == null || top.count() < 2) {
+            return null;
+        }
+        String label = capitalize(top.taste().name());
+        return new InsightTip(
+                TIP_LEAN_INTO_TASTE,
+                label + " tastes seem to land — lean into that when you pick foods.");
+    }
+
     private static InsightTip celebrateAteEnough(Aggregate agg) {
         if (agg.ateEnoughYes < 3 || agg.ateEnoughYes <= agg.ateEnoughNo) {
             return null;
@@ -149,6 +165,8 @@ final class InsightsCalculator {
 
     private record TextureCount(Texture texture, int count) {}
 
+    private record TasteCount(TasteBasic taste, int count) {}
+
     private static final class Aggregate {
         final int completedSessionCount;
         final int ateEnoughYes;
@@ -158,6 +176,7 @@ final class InsightsCalculator {
         final int likedNo;
         final int likedSkipped;
         final List<String> topLikedTextures;
+        final List<String> topLikedTastes;
         final int familiaritySafe;
         final int familiarityFamiliarButNew;
         final int familiarityTrulyNew;
@@ -166,6 +185,7 @@ final class InsightsCalculator {
         final int trulyNewOutcomes;
         final int trulyNewLikedNo;
         final TextureCount topTextureWithCount;
+        final TasteCount topTasteWithCount;
 
         private Aggregate(
                 int completedSessionCount,
@@ -176,6 +196,7 @@ final class InsightsCalculator {
                 int likedNo,
                 int likedSkipped,
                 List<String> topLikedTextures,
+                List<String> topLikedTastes,
                 int familiaritySafe,
                 int familiarityFamiliarButNew,
                 int familiarityTrulyNew,
@@ -183,7 +204,8 @@ final class InsightsCalculator {
                 boolean hasParentNotes,
                 int trulyNewOutcomes,
                 int trulyNewLikedNo,
-                TextureCount topTextureWithCount) {
+                TextureCount topTextureWithCount,
+                TasteCount topTasteWithCount) {
             this.completedSessionCount = completedSessionCount;
             this.ateEnoughYes = ateEnoughYes;
             this.ateEnoughNo = ateEnoughNo;
@@ -192,6 +214,7 @@ final class InsightsCalculator {
             this.likedNo = likedNo;
             this.likedSkipped = likedSkipped;
             this.topLikedTextures = topLikedTextures;
+            this.topLikedTastes = topLikedTastes;
             this.familiaritySafe = familiaritySafe;
             this.familiarityFamiliarButNew = familiarityFamiliarButNew;
             this.familiarityTrulyNew = familiarityTrulyNew;
@@ -200,6 +223,7 @@ final class InsightsCalculator {
             this.trulyNewOutcomes = trulyNewOutcomes;
             this.trulyNewLikedNo = trulyNewLikedNo;
             this.topTextureWithCount = topTextureWithCount;
+            this.topTasteWithCount = topTasteWithCount;
         }
 
         static Aggregate from(
@@ -217,6 +241,7 @@ final class InsightsCalculator {
             int trulyNewLikedNo = 0;
             boolean hasParentNotes = false;
             EnumMap<Texture, Integer> likedTextureCounts = new EnumMap<>(Texture.class);
+            EnumMap<TasteBasic, Integer> likedTasteCounts = new EnumMap<>(TasteBasic.class);
 
             for (TastingSession session : completedSessions) {
                 if (session.getParentNote() != null && !session.getParentNote().isBlank()) {
@@ -250,6 +275,9 @@ final class InsightsCalculator {
                         if (food.getTexture() != null) {
                             likedTextureCounts.merge(food.getTexture(), 1, Integer::sum);
                         }
+                        for (TasteBasic taste : food.getTastes()) {
+                            likedTasteCounts.merge(taste, 1, Integer::sum);
+                        }
                     } else if (liked == Liked.so_so) {
                         likedSoSo++;
                     } else if (liked == Liked.no) {
@@ -273,7 +301,7 @@ final class InsightsCalculator {
                 }
             }
 
-            List<Map.Entry<Texture, Integer>> ranked =
+            List<Map.Entry<Texture, Integer>> rankedTextures =
                     likedTextureCounts.entrySet().stream()
                             .sorted(
                                     Comparator.<Map.Entry<Texture, Integer>>comparingInt(
@@ -283,12 +311,33 @@ final class InsightsCalculator {
                             .toList();
 
             List<String> topLikedTextures =
-                    ranked.stream().limit(3).map(entry -> entry.getKey().name()).toList();
+                    rankedTextures.stream().limit(3).map(entry -> entry.getKey().name()).toList();
 
             TextureCount topTextureWithCount =
-                    ranked.isEmpty()
+                    rankedTextures.isEmpty()
                             ? null
-                            : new TextureCount(ranked.getFirst().getKey(), ranked.getFirst().getValue());
+                            : new TextureCount(
+                                    rankedTextures.getFirst().getKey(),
+                                    rankedTextures.getFirst().getValue());
+
+            List<Map.Entry<TasteBasic, Integer>> rankedTastes =
+                    likedTasteCounts.entrySet().stream()
+                            .sorted(
+                                    Comparator.<Map.Entry<TasteBasic, Integer>>comparingInt(
+                                                    Map.Entry::getValue)
+                                            .reversed()
+                                            .thenComparing(entry -> entry.getKey().name()))
+                            .toList();
+
+            List<String> topLikedTastes =
+                    rankedTastes.stream().limit(3).map(entry -> entry.getKey().name()).toList();
+
+            TasteCount topTasteWithCount =
+                    rankedTastes.isEmpty()
+                            ? null
+                            : new TasteCount(
+                                    rankedTastes.getFirst().getKey(),
+                                    rankedTastes.getFirst().getValue());
 
             return new Aggregate(
                     completedSessions.size(),
@@ -299,6 +348,7 @@ final class InsightsCalculator {
                     likedNo,
                     likedSkipped,
                     topLikedTextures,
+                    topLikedTastes,
                     familiaritySafe,
                     familiarityFamiliarButNew,
                     familiarityTrulyNew,
@@ -306,7 +356,8 @@ final class InsightsCalculator {
                     hasParentNotes,
                     trulyNewOutcomes,
                     trulyNewLikedNo,
-                    topTextureWithCount);
+                    topTextureWithCount,
+                    topTasteWithCount);
         }
 
         private static Texture toSessionTexture(FoodTexture texture) {

@@ -115,6 +115,7 @@ class InsightsApiIntegrationTest {
                         .andExpect(jsonPath("$.familiarityLikes").doesNotExist())
                         .andExpect(jsonPath("$.topLikedTextures", hasItem("crunchy")))
                         .andExpect(jsonPath("$.topLikedTextures", hasItem("soft")))
+                        .andExpect(jsonPath("$.topLikedTastes").isEmpty())
                         .andExpect(jsonPath("$.tips.length()").value(3))
                         .andReturn();
 
@@ -160,6 +161,53 @@ class InsightsApiIntegrationTest {
                 .andExpect(jsonPath("$.tips[*].id", not(hasItem(tipId))));
     }
 
+    @Test
+    void topLikedTastesFromSessionOutcomesOnlyAndLeanIntoTasteDismisses() throws Exception {
+        String token = register("insights-tastes-" + System.nanoTime() + "@example.com");
+
+        mockMvc.perform(
+                        post("/api/foods")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                                        {
+                                          "name":"Pretzel sticks",
+                                          "iconKey":"custom_pretzel_sticks",
+                                          "sessionEligible":false,
+                                          "liked":"like",
+                                          "texture":"crunchy",
+                                          "tasteNote":"salty"
+                                        }
+                                        """))
+                .andExpect(status().isCreated());
+
+        planAndCompleteWithTastes(
+                token, day(0), APPLES, STRAWBERRIES, "like", "[\"salty\",\"sweet\"]");
+        planAndCompleteWithTastes(token, day(1), STRAWBERRIES, BLUEBERRIES, "like", "[\"salty\"]");
+        planAndCompleteWithTastes(token, day(2), BLUEBERRIES, APPLES, "so_so", "[\"bitter\"]");
+
+        mockMvc.perform(get("/api/insights").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.ready").value(true))
+                .andExpect(jsonPath("$.snackCount").value(1))
+                .andExpect(jsonPath("$.topLikedTastes[0]").value("salty"))
+                .andExpect(jsonPath("$.topLikedTastes", hasItem("sweet")))
+                .andExpect(jsonPath("$.topLikedTastes", not(hasItem("bitter"))))
+                .andExpect(jsonPath("$.tips[*].id", hasItem("lean_into_taste")));
+
+        mockMvc.perform(
+                        post("/api/insights/tips/lean_into_taste/dismiss")
+                                .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("ok"));
+
+        mockMvc.perform(get("/api/insights").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.tips[*].id", not(hasItem("lean_into_taste"))))
+                .andExpect(jsonPath("$.topLikedTastes[0]").value("salty"));
+    }
+
     private void planAndComplete(
             String token,
             String scheduledOn,
@@ -167,6 +215,29 @@ class InsightsApiIntegrationTest {
             String food2,
             String liked1,
             String texture1)
+            throws Exception {
+        planAndCompleteWithTastes(token, scheduledOn, food1, food2, liked1, texture1, null);
+    }
+
+    private void planAndCompleteWithTastes(
+            String token,
+            String scheduledOn,
+            String food1,
+            String food2,
+            String liked1,
+            String tastesJson)
+            throws Exception {
+        planAndCompleteWithTastes(token, scheduledOn, food1, food2, liked1, "soft", tastesJson);
+    }
+
+    private void planAndCompleteWithTastes(
+            String token,
+            String scheduledOn,
+            String food1,
+            String food2,
+            String liked1,
+            String texture1,
+            String tastesJson)
             throws Exception {
         MvcResult created =
                 mockMvc.perform(
@@ -186,6 +257,8 @@ class InsightsApiIntegrationTest {
                         .andReturn();
         String sessionId = idFrom(created);
 
+        String food1Tastes =
+                tastesJson == null ? "" : ",\"tastes\":" + tastesJson;
         mockMvc.perform(
                         post("/api/sessions/" + sessionId + "/complete")
                                 .header("Authorization", "Bearer " + token)
@@ -194,12 +267,12 @@ class InsightsApiIntegrationTest {
                                         """
                                         {
                                           "foods":[
-                                            {"position":1,"liked":"%s","texture":"%s","ateEnough":true},
+                                            {"position":1,"liked":"%s","texture":"%s"%s,"ateEnough":true},
                                             {"position":2,"liked":"like","texture":"soft","ateEnough":true}
                                           ]
                                         }
                                         """
-                                                .formatted(liked1, texture1)))
+                                                .formatted(liked1, texture1, food1Tastes)))
                 .andExpect(status().isOk());
     }
 

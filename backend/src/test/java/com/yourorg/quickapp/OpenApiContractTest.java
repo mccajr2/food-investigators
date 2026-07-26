@@ -125,6 +125,8 @@ class OpenApiContractTest {
         assertThat(yaml).contains("ready");
         assertThat(yaml).contains("snackCount");
         assertThat(yaml).contains("topLikedTextures");
+        assertThat(yaml).contains("topLikedTastes");
+        assertThat(yaml).contains("lean_into_taste");
         assertThat(yaml).contains("familiaritySafe");
         assertThat(yaml).doesNotContain("familiarityLikes");
         assertThat(yaml).contains("hasParentNotes");

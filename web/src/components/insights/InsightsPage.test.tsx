@@ -16,6 +16,7 @@ const notReady: InsightsResponse = {
   likedNo: 0,
   likedSkipped: 0,
   topLikedTextures: [],
+  topLikedTastes: [],
   familiaritySafe: 2,
   familiarityFamiliarButNew: 0,
   familiarityTrulyNew: 0,
@@ -34,12 +35,17 @@ const ready: InsightsResponse = {
   likedNo: 0,
   likedSkipped: 0,
   topLikedTextures: ["crunchy", "soft"],
+  topLikedTastes: ["salty"],
   familiaritySafe: 4,
   familiarityFamiliarButNew: 2,
   familiarityTrulyNew: 0,
   snackCount: 1,
   hasParentNotes: true,
   tips: [
+    {
+      id: "lean_into_taste",
+      message: "Salty tastes seem to land — lean into that when you pick foods.",
+    },
     {
       id: "mix_familiarity",
       message:
@@ -84,11 +90,24 @@ describe("InsightsPage", () => {
       screen.getByText("4 Safe · 2 Familiar but new · 0 Truly new"),
     ).toBeInTheDocument()
     expect(screen.getByText("Crunchy, Soft")).toBeInTheDocument()
+    expect(screen.getByText("Salty")).toBeInTheDocument()
     expect(screen.getByText("Some nights have notes")).toBeInTheDocument()
 
     const tips = screen.getByRole("heading", { name: "Tips" }).closest("section")
     expect(tips).not.toBeNull()
+    expect(within(tips!).getByText(/Salty tastes seem to land/)).toBeInTheDocument()
     expect(within(tips!).getByText(/stuck to known foods/)).toBeInTheDocument()
+
+    await user.click(
+      screen.getByRole("button", { name: "Dismiss tip: lean_into_taste" }),
+    )
+
+    expect(dismissTip).toHaveBeenCalledWith("lean_into_taste")
+    await waitFor(() => {
+      expect(screen.queryByText(/Salty tastes seem to land/)).not.toBeInTheDocument()
+    })
+    expect(screen.getByText(/stuck to known foods/)).toBeInTheDocument()
+    expect(screen.getByText("Salty")).toBeInTheDocument()
 
     await user.click(
       screen.getByRole("button", { name: "Dismiss tip: keep_going" }),
@@ -101,6 +120,24 @@ describe("InsightsPage", () => {
       ).not.toBeInTheDocument()
     })
     expect(screen.getByText(/stuck to known foods/)).toBeInTheDocument()
+  })
+
+  it("shows None yet when no liked tastes", async () => {
+    render(
+      <InsightsPage
+        client={mockClient({
+          get: vi.fn().mockResolvedValue({
+            ...ready,
+            topLikedTastes: [],
+            tips: [],
+          }),
+        })}
+      />,
+    )
+
+    expect(await screen.findByText("Tastes liked most")).toBeInTheDocument()
+    const tastes = screen.getByText("Tastes liked most").closest("div")
+    expect(tastes?.querySelector("dd")).toHaveTextContent("None yet")
   })
 
   it("surfaces load errors", async () => {

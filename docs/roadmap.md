@@ -39,11 +39,10 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | insights-taste-basics | planned | 2026-07-23 · enhancement | Insights aggregates + tips from taste basics |
-| 2 | taste-profile-matches | planned | 2026-07-23 · enhancement | Show a small set of food icons matching a taste profile |
-| 3 | suggested-next-session | planned | 2026-07-11 · initial | App proposes next two foods + levels; parent approves or swaps |
-| 4 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
-| 5 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
+| 1 | taste-profile-matches | planned | 2026-07-23 · enhancement | Show a small set of food icons matching a taste profile |
+| 2 | suggested-next-session | planned | 2026-07-11 · initial | App proposes next two foods + levels; parent approves or swaps |
+| 3 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
+| 4 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
 
 Status values: `parking` · `planned` · `active` · `done` · `cancelled`  
 Added: `YYYY-MM-DD · initial` | `enhancement` | `re-rank split`
@@ -54,6 +53,7 @@ Unranked ideas. Promote into **Upcoming** with `/roadmap` (re-rank).
 
 | Id | Added | Summary |
 |----|-------|---------|
+| snack-taste-ai | 2026-07-24 · enhancement | Infer snack tastes via AI for Insights (no manual snack taste entry) |
 | signup-starter-snacks | 2026-07-23 · enhancement | Optional signup picks: child-specific starter tasting foods + snacks |
 | printable-plan-calendar | 2026-07-11 · initial | Print upcoming tasting schedule (doctor packet is history-first) |
 | offline-ipad-session | 2026-07-11 · initial | Run a session on iPad without network; sync later |
@@ -77,6 +77,7 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Completed | Spec |
 |----|-----------|------|
+| insights-taste-basics | 2026-07-24 | [archive](specs/archive/insights-taste-basics.md) |
 | run-taste-basics | 2026-07-24 | [archive](specs/archive/run-taste-basics.md) |
 | familiarity-retry | 2026-07-23 | [archive](specs/archive/familiarity-retry.md) |
 | pace-insights | 2026-07-23 | [archive](specs/archive/pace-insights.md) |
@@ -142,3 +143,4 @@ Only notable events (first carve-up, major re-rank, cancelled theme) — not eve
 | 2026-07-23 | Added taste-basics + familiarity-retry slices; re-rank: `familiarity-retry` Next up, then taste capture → insights → icon matches; `suggested-next-session` deferred. |
 | 2026-07-23 | familiarity-retry shipped (Safe/Retrying ladder; `likes`→`safe`). Next up: `run-taste-basics`. |
 | 2026-07-24 | run-taste-basics shipped (sweet/salty/bitter/sour on run; History/PDF; broccoli/dark chocolate/spinach starters). Next up: `insights-taste-basics`. |
+| 2026-07-24 | insights-taste-basics shipped (`topLikedTastes` + `lean_into_taste`; session-only). Next up: `taste-profile-matches`. |

@@ -186,6 +186,7 @@ export type InsightsResponse = {
   likedNo: number
   likedSkipped: number
   topLikedTextures: Texture[]
+  topLikedTastes: TasteBasic[]
   familiaritySafe: number
   familiarityFamiliarButNew: number
   familiarityTrulyNew: number
