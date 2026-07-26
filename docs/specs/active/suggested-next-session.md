@@ -112,7 +112,7 @@ fallback when data is thin or the model fails.
 - [x] Backend: brief/shortlist builder + suggestion endpoint + Gemini Flash
       LLM port (mocked in tests) + heuristic fallback; wire approve to existing
       session create validation.
-- [ ] Contract: OpenAPI proposal schemas/paths; align web + mobile clients.
+- [x] Contract: OpenAPI proposal schemas/paths; align web + mobile clients.
 - [ ] Web: Plan Suggest panel (swap, Approve, Dismiss) end-to-end.
 - [ ] Tests: API IT (ai/heuristic/401/scoping) + PlanPage suggestion flow.
 

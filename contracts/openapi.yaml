@@ -449,6 +449,55 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorMessage"
+  /api/sessions/suggestions/next:
+    get:
+      operationId: suggestNextSession
+      summary: Propose the next tasting night (draft — not persisted)
+      description: >
+        Returns a draft proposal with exactly two session-eligible catalog foods,
+        familiarity each, a `scheduledOn` (next UTC calendar day without a planned
+        or completed session), optional short rationale, and `source` of `ai` or
+        `heuristic`. Does not create a session — Approve uses `POST /api/sessions`.
+        AI is used when completed-session count is Insights-ready (>= 3) and Gemini
+        is configured; otherwise or on invalid/off-shortlist picks, heuristic
+        fallback still returns 200. Requires at least two selectable catalog foods.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Draft next-session proposal
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionSuggestionResponse"
+              example:
+                scheduledOn: "2026-07-16"
+                foods:
+                  - foodId: aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa04
+                    name: Apples
+                    iconKey: apple
+                    familiarity: safe
+                  - foodId: aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa05
+                    name: Strawberries
+                    iconKey: strawberry
+                    familiarity: familiar_but_new
+                rationale: A calm next night from foods that often work for you.
+                source: heuristic
+        "400":
+          description: >
+            Fewer than two session-eligible foods available to suggest from
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+              example:
+                message: Need at least two session-eligible foods to suggest a night
+        "401":
+          description: Missing or invalid session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
   /api/sessions/{sessionId}:
     get:
       operationId: getSession
@@ -1266,6 +1315,58 @@ components:
         updatedAt:
           type: string
           format: date-time
+    SuggestionSource:
+      type: string
+      enum:
+        - ai
+        - heuristic
+      description: Whether the draft came from Gemini Flash or rule-based fallback
+    SuggestedSessionFood:
+      type: object
+      required:
+        - foodId
+        - name
+        - iconKey
+        - familiarity
+      properties:
+        foodId:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Apples
+        iconKey:
+          type: string
+          example: apple
+        familiarity:
+          $ref: "#/components/schemas/Familiarity"
+    SessionSuggestionResponse:
+      type: object
+      required:
+        - scheduledOn
+        - foods
+        - source
+      properties:
+        scheduledOn:
+          type: string
+          format: date
+          example: "2026-07-16"
+          description: >
+            Suggested calendar day (UTC) — next day without a planned or completed
+            session for this household
+        foods:
+          type: array
+          minItems: 2
+          maxItems: 2
+          items:
+            $ref: "#/components/schemas/SuggestedSessionFood"
+        rationale:
+          type: string
+          nullable: true
+          description: Optional short calm sentence; omit or null when empty
+          example: Keeping it gentle — lean on familiar foods for a bit.
+        source:
+          $ref: "#/components/schemas/SuggestionSource"
     InsightTip:
       type: object
       required:
