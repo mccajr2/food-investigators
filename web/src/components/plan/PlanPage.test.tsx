@@ -130,6 +130,14 @@ function renderPlan(
   );
 }
 
+async function pickCalendarDay(
+  user: ReturnType<typeof userEvent.setup>,
+  form: HTMLElement,
+  dayLabel: RegExp,
+) {
+  await user.click(within(form).getByRole("button", { name: dayLabel }));
+}
+
 describe("PlanPage helpers", () => {
   it("formats local today for date min", () => {
     expect(localTodayIsoDate(new Date("2026-07-22T15:00:00"))).toBe(
@@ -169,14 +177,25 @@ describe("PlanPage", () => {
     expect(screen.getByText(/No planned nights yet/)).toBeInTheDocument();
   });
 
-  it("sets the date picker min to today", async () => {
+  it("disables days before today on the calendar", async () => {
+    const user = userEvent.setup();
     renderPlan(mockSessionsClient());
     await screen.findByRole("heading", { name: "Plan" });
-    await userEvent
-      .setup()
-      .click(screen.getByRole("button", { name: "Plan a night" }));
+    await user.click(screen.getByRole("button", { name: "Plan a night" }));
 
-    expect(screen.getByLabelText("Date")).toHaveAttribute("min", TODAY);
+    const form = screen.getByRole("form", { name: "Plan a night" });
+    expect(form.querySelector('input[type="date"]')).toBeNull();
+    expect(within(form).getByRole("grid")).toBeInTheDocument();
+
+    const pastDay = within(form).getByRole("button", { name: /July 14/i });
+    expect(pastDay).toBeDisabled();
+    await user.click(pastDay);
+    expect(within(form).getByTestId("Date summary")).toHaveTextContent(
+      /Pick a night/,
+    );
+    expect(
+      within(form).getByRole("button", { name: /July 15/i }),
+    ).not.toBeDisabled();
   });
 
   it("excludes snacks from food pickers", async () => {
@@ -232,7 +251,7 @@ describe("PlanPage", () => {
     ).toHaveValue("retrying");
     expect(within(familiarity).queryByRole("option", { name: "Likes" })).toBeNull();
 
-    await user.type(within(form).getByLabelText("Date"), "2026-07-20");
+    await pickCalendarDay(user, form, /July 20/i);
     await user.selectOptions(
       within(form).getByLabelText("Food 1 picker"),
       foods[0].id,
@@ -321,7 +340,7 @@ describe("PlanPage", () => {
     await user.click(screen.getByRole("button", { name: "Plan a night" }));
 
     const form = screen.getByRole("form", { name: "Plan a night" });
-    await user.type(within(form).getByLabelText("Date"), "2026-07-20");
+    await pickCalendarDay(user, form, /July 20/i);
     await user.selectOptions(
       within(form).getByLabelText("Food 1 picker"),
       foods[0].id,
@@ -371,7 +390,7 @@ describe("PlanPage", () => {
     await user.click(screen.getByRole("button", { name: "Plan a night" }));
 
     const form = screen.getByRole("form", { name: "Plan a night" });
-    await user.type(within(form).getByLabelText("Date"), "2026-07-20");
+    await pickCalendarDay(user, form, /July 20/i);
     await user.selectOptions(
       within(form).getByLabelText("Food 1 picker"),
       foods[0].id,
@@ -400,13 +419,11 @@ describe("PlanPage", () => {
     expect(create).not.toHaveBeenCalled();
   });
 
-  it("blocks creating on a date that already has a planned night", async () => {
+  it("greys out a date that already has a planned night", async () => {
     const user = userEvent.setup();
-    const create = vi.fn();
     renderPlan(
       mockSessionsClient({
         listUpcoming: vi.fn().mockResolvedValue([sampleSession]),
-        create,
       }),
     );
 
@@ -414,21 +431,46 @@ describe("PlanPage", () => {
     await user.click(screen.getByRole("button", { name: "Plan a night" }));
 
     const form = screen.getByRole("form", { name: "Plan a night" });
-    await user.type(within(form).getByLabelText("Date"), "2026-07-20");
-    await user.selectOptions(
-      within(form).getByLabelText("Food 1 picker"),
-      foods[0].id,
+    const occupied = within(form).getByRole("button", { name: /July 20/i });
+    expect(occupied).toBeDisabled();
+    await user.click(occupied);
+    expect(within(form).getByTestId("Date summary")).toHaveTextContent(
+      /Pick a night/,
     );
-    await user.selectOptions(
-      within(form).getByLabelText("Food 2 picker"),
-      foods[1].id,
-    );
-    await user.click(within(form).getByRole("button", { name: "Save night" }));
+  });
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(
-      "A session already exists on that date",
+  it("keeps the edited night's own date selectable", async () => {
+    const user = userEvent.setup();
+    const otherNight: SessionResponse = {
+      ...sampleSession,
+      id: "ffffffff-ffff-ffff-ffff-ffffffffffff",
+      scheduledOn: "2026-07-22",
+      foods: [
+        {
+          ...sampleSession.foods[0],
+          name: "Blueberries",
+          foodId: foods[2].id,
+          iconKey: "blueberry",
+          variantNote: null,
+        },
+        sampleSession.foods[1],
+      ],
+    };
+    renderPlan(
+      mockSessionsClient({
+        listUpcoming: vi.fn().mockResolvedValue([sampleSession, otherNight]),
+      }),
     );
-    expect(create).not.toHaveBeenCalled();
+
+    expect(await screen.findByText(/Honeycrisp/)).toBeInTheDocument();
+    await user.click(screen.getAllByRole("button", { name: "Edit" })[0]!);
+
+    const form = screen.getByRole("form", { name: "Edit night" });
+    expect(
+      within(form).getByRole("button", { name: /July 20.*selected/i }),
+    ).not.toBeDisabled();
+    expect(within(form).getByRole("button", { name: /July 22/i })).toBeDisabled();
+    expect(within(form).getByTestId("Date summary")).toHaveTextContent(/Jul/);
   });
 
   it("surfaces API save errors", async () => {
@@ -442,7 +484,7 @@ describe("PlanPage", () => {
     await user.click(screen.getByRole("button", { name: "Plan a night" }));
 
     const form = screen.getByRole("form", { name: "Plan a night" });
-    await user.type(within(form).getByLabelText("Date"), "2026-07-20");
+    await pickCalendarDay(user, form, /July 20/i);
     await user.selectOptions(
       within(form).getByLabelText("Food 1 picker"),
       foods[0].id,
@@ -500,9 +542,7 @@ describe("PlanPage", () => {
     await user.click(screen.getByRole("button", { name: "Edit" }));
 
     const form = screen.getByRole("form", { name: "Edit night" });
-    const date = within(form).getByLabelText("Date");
-    await user.clear(date);
-    await user.type(date, "2026-07-22");
+    await pickCalendarDay(user, form, /July 22/i);
     await user.selectOptions(
       within(form).getByLabelText("Food 1 picker"),
       foods[1].id,
@@ -581,7 +621,7 @@ describe("PlanPage", () => {
     const suggestNext = vi.fn().mockResolvedValue(sampleSuggestion);
     const create = vi.fn().mockResolvedValue({
       ...sampleSession,
-      scheduledOn: "2026-07-16",
+      scheduledOn: "2026-07-22",
       foods: [
         {
           foodId: foods[2].id,
@@ -616,10 +656,16 @@ describe("PlanPage", () => {
         /A calm next night from foods that often work for you/,
       ),
     ).toBeInTheDocument();
-    expect(within(form).getByLabelText("Suggested date")).toHaveValue(
-      "2026-07-16",
-    );
+    expect(form.querySelector('input[type="date"]')).toBeNull();
+    expect(within(form).getByRole("grid")).toBeInTheDocument();
+    expect(
+      within(form).getByTestId("Suggested date summary"),
+    ).toHaveTextContent(/Jul/);
+    expect(
+      within(form).getByRole("button", { name: /July 16.*selected/i }),
+    ).toBeInTheDocument();
 
+    await pickCalendarDay(user, form, /July 22/i);
     await user.selectOptions(
       within(form).getByLabelText("Food 1 picker"),
       foods[2].id,
@@ -632,7 +678,7 @@ describe("PlanPage", () => {
 
     await waitFor(() => {
       expect(create).toHaveBeenCalledWith({
-        scheduledOn: "2026-07-16",
+        scheduledOn: "2026-07-22",
         foods: [
           {
             foodId: foods[2].id,
