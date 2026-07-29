@@ -38,6 +38,22 @@ class JpaFoodCatalog implements FoodCatalog {
 
     @Override
     @Transactional(readOnly = true)
+    public List<CatalogFood> listSelectable(UUID householdId) {
+        List<CatalogFood> result = new java.util.ArrayList<>();
+        foods.findByHouseholdIdIsNullOrderByNameAsc().stream()
+                .filter(food -> !food.isArchived())
+                .filter(Food::isSessionEligible)
+                .map(this::toCatalog)
+                .forEach(result::add);
+        foods.findByHouseholdIdAndArchivedAtIsNullOrderByNameAsc(householdId).stream()
+                .filter(Food::isSessionEligible)
+                .map(this::toCatalog)
+                .forEach(result::add);
+        return List.copyOf(result);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<SnackPreferenceSnapshot> listActiveSnackPreferences(UUID householdId) {
         return foods
                 .findByHouseholdIdAndSessionEligibleFalseAndArchivedAtIsNullOrderByNameAsc(

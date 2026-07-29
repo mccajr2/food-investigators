@@ -3,7 +3,11 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 import type { FoodsClient, SessionsClient } from "@/api";
-import type { FoodResponse, SessionResponse } from "@/api/types";
+import type {
+  FoodResponse,
+  SessionResponse,
+  SessionSuggestionResponse,
+} from "@/api/types";
 import {
   localTodayIsoDate,
   PlanPage,
@@ -65,16 +69,40 @@ const sampleSession: SessionResponse = {
   updatedAt: "2026-07-15T00:00:00Z",
 };
 
+const sampleSuggestion: SessionSuggestionResponse = {
+  scheduledOn: "2026-07-16",
+  foods: [
+    {
+      foodId: foods[0].id,
+      name: "Apples",
+      iconKey: "apple",
+      familiarity: "safe",
+    },
+    {
+      foodId: foods[1].id,
+      name: "Strawberries",
+      iconKey: "strawberry",
+      familiarity: "familiar_but_new",
+    },
+  ],
+  rationale: "A calm next night from foods that often work for you.",
+  source: "heuristic",
+};
+
 function mockSessionsClient(
   overrides: Partial<SessionsClient> = {},
 ): SessionsClient {
   return {
     listUpcoming: vi.fn().mockResolvedValue([]),
+    listHistory: vi.fn(),
+    suggestNext: vi.fn(),
+    downloadHistoryPdf: vi.fn(),
     get: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
     cancel: vi.fn(),
     complete: vi.fn(),
+    updateParentNote: vi.fn(),
     ...overrides,
   } as SessionsClient;
 }
@@ -546,5 +574,103 @@ describe("PlanPage", () => {
     );
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Not signed in");
+  });
+
+  it("suggests a night, allows swap, and approves via create", async () => {
+    const user = userEvent.setup();
+    const suggestNext = vi.fn().mockResolvedValue(sampleSuggestion);
+    const create = vi.fn().mockResolvedValue({
+      ...sampleSession,
+      scheduledOn: "2026-07-16",
+      foods: [
+        {
+          foodId: foods[2].id,
+          name: "Blueberries",
+          iconKey: "blueberry",
+          familiarity: "safe",
+          variantNote: null,
+          position: 1,
+        },
+        {
+          foodId: foods[1].id,
+          name: "Strawberries",
+          iconKey: "strawberry",
+          familiarity: "familiar_but_new",
+          variantNote: null,
+          position: 2,
+        },
+      ],
+    });
+    renderPlan(mockSessionsClient({ suggestNext, create }));
+
+    await screen.findByRole("heading", { name: "Plan" });
+    await user.click(
+      screen.getByRole("button", { name: "Suggest next night" }),
+    );
+
+    const form = await screen.findByRole("form", {
+      name: "Suggested next night",
+    });
+    expect(
+      within(form).getByText(
+        /A calm next night from foods that often work for you/,
+      ),
+    ).toBeInTheDocument();
+    expect(within(form).getByLabelText("Suggested date")).toHaveValue(
+      "2026-07-16",
+    );
+
+    await user.selectOptions(
+      within(form).getByLabelText("Food 1 picker"),
+      foods[2].id,
+    );
+    await user.selectOptions(
+      within(form).getByLabelText("Food 1 familiarity"),
+      "safe",
+    );
+    await user.click(within(form).getByRole("button", { name: "Approve" }));
+
+    await waitFor(() => {
+      expect(create).toHaveBeenCalledWith({
+        scheduledOn: "2026-07-16",
+        foods: [
+          {
+            foodId: foods[2].id,
+            familiarity: "safe",
+            variantNote: null,
+          },
+          {
+            foodId: foods[1].id,
+            familiarity: "familiar_but_new",
+            variantNote: null,
+          },
+        ],
+      });
+    });
+    expect(screen.queryByRole("form", { name: "Suggested next night" })).toBeNull();
+    expect(await screen.findByText(/Blueberries/)).toBeInTheDocument();
+  });
+
+  it("dismisses a suggestion without creating", async () => {
+    const user = userEvent.setup();
+    const create = vi.fn();
+    renderPlan(
+      mockSessionsClient({
+        suggestNext: vi.fn().mockResolvedValue(sampleSuggestion),
+        create,
+      }),
+    );
+
+    await screen.findByRole("heading", { name: "Plan" });
+    await user.click(
+      screen.getByRole("button", { name: "Suggest next night" }),
+    );
+    const form = await screen.findByRole("form", {
+      name: "Suggested next night",
+    });
+    await user.click(within(form).getByRole("button", { name: "Dismiss" }));
+
+    expect(screen.queryByRole("form", { name: "Suggested next night" })).toBeNull();
+    expect(create).not.toHaveBeenCalled();
   });
 });

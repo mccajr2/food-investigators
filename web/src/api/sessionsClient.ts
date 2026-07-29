@@ -6,6 +6,7 @@ import type {
   CreateSessionRequest,
   ErrorMessage,
   SessionResponse,
+  SessionSuggestionResponse,
   UpdateParentNoteRequest,
   UpdateSessionRequest,
 } from "@/api/types"
@@ -39,6 +40,14 @@ export class SessionsClient {
       throw new Error(await readErrorMessage(response, "List history failed"))
     }
     return (await response.json()) as SessionResponse[]
+  }
+
+  async suggestNext(): Promise<SessionSuggestionResponse> {
+    const response = await this.authorized("/api/sessions/suggestions/next")
+    if (!response.ok) {
+      throw new Error(await readErrorMessage(response, "Suggest next session failed"))
+    }
+    return (await response.json()) as SessionSuggestionResponse
   }
 
   async downloadHistoryPdf(range?: {

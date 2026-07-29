@@ -23,3 +23,11 @@ node_modules/
 !gradle/wrapper/gradle-wrapper.jar
 DerivedData/
 *.xcuserstate
+
+# Local secrets for bootRun (see backend/.env.example)
+backend/.env
+**/.env
+!**/.env.example
+*.swp
+*~
+.*.swp

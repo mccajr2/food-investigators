@@ -30,3 +30,28 @@ dependencies {
 tasks.test {
     useJUnitPlatform()
 }
+
+// Load backend/.env into the bootRun process (gitignored local secrets).
+tasks.named<org.springframework.boot.gradle.tasks.run.BootRun>("bootRun") {
+    val envFile = file(".env")
+    if (envFile.exists()) {
+        envFile.readLines()
+            .map { it.trim() }
+            .filter { it.isNotEmpty() && !it.startsWith("#") }
+            .forEach { line ->
+                val idx = line.indexOf('=')
+                if (idx <= 0) {
+                    return@forEach
+                }
+                val key = line.substring(0, idx).trim().removePrefix("export").trim()
+                var value = line.substring(idx + 1).trim()
+                if ((value.startsWith("\"") && value.endsWith("\""))
+                    || (value.startsWith("'") && value.endsWith("'"))) {
+                    value = value.substring(1, value.length - 1)
+                }
+                if (key.isNotEmpty()) {
+                    environment(key, value)
+                }
+            }
+    }
+}

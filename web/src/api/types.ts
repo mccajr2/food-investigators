@@ -171,6 +171,23 @@ export type SessionResponse = {
   updatedAt: string
 }
 
+export type SuggestionSource = "ai" | "heuristic"
+
+export type SuggestedSessionFood = {
+  foodId: string
+  name: string
+  iconKey: FoodIconKey | string
+  familiarity: Familiarity
+}
+
+/** Draft proposal from GET /api/sessions/suggestions/next — not a persisted session. */
+export type SessionSuggestionResponse = {
+  scheduledOn: string
+  foods: [SuggestedSessionFood, SuggestedSessionFood] | SuggestedSessionFood[]
+  rationale?: string | null
+  source: SuggestionSource
+}
+
 export type InsightTip = {
   id: string
   message: string

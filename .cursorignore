@@ -1,0 +1,15 @@
+# Secrets — keep out of Agent / Tab / @ context (best-effort).
+# Same syntax as .gitignore. Does not stop terminal/MCP from reading files.
+
+backend/.env
+**/.env
+**/.env.*
+!**/.env.example
+
+# Common credential patterns
+**/*credentials*
+**/*secrets*
+*.pem
+*.key
+**/id_rsa
+**/id_ed25519

@@ -90,6 +90,23 @@ data class SessionResponse(
     val updatedAt: String,
 )
 
+@Serializable
+data class SuggestedSessionFood(
+    val foodId: String,
+    val name: String,
+    val iconKey: String,
+    val familiarity: String,
+)
+
+/** Draft from GET /api/sessions/suggestions/next — not a persisted session. */
+@Serializable
+data class SessionSuggestionResponse(
+    val scheduledOn: String,
+    val foods: List<SuggestedSessionFood>,
+    val rationale: String? = null,
+    val source: String,
+)
+
 class SessionsException(message: String) : Exception(message)
 
 class SessionsClient(
@@ -107,6 +124,14 @@ class SessionsClient(
 
     suspend fun listHistory(): List<SessionResponse> {
         val response = authorizedGet("$baseUrl/api/sessions/history")
+        if (!response.status.isSuccess()) {
+            throw SessionsException(readError(response))
+        }
+        return response.body()
+    }
+
+    suspend fun suggestNext(): SessionSuggestionResponse {
+        val response = authorizedGet("$baseUrl/api/sessions/suggestions/next")
         if (!response.status.isSuccess()) {
             throw SessionsException(readError(response))
         }

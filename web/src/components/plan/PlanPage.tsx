@@ -6,6 +6,8 @@ import type {
   FoodResponse,
   SessionFoodRequest,
   SessionResponse,
+  SessionSuggestionResponse,
+  SuggestionSource,
 } from "@/api/types"
 import { RunSessionPage } from "@/components/run/RunSessionPage"
 import { Button } from "@/components/ui/button"
@@ -24,10 +26,19 @@ type FoodSlot = {
   variantNote: string
 }
 
+type SuggestDraft = {
+  scheduledOn: string
+  slot1: FoodSlot
+  slot2: FoodSlot
+  rationale: string | null
+  source: SuggestionSource
+}
+
 type Status =
   | { kind: "loading" }
   | { kind: "ready" }
   | { kind: "saving" }
+  | { kind: "suggesting" }
   | { kind: "error"; message: string }
 
 type Editor =
@@ -73,6 +84,29 @@ export function sameFoodVariantError(
   return null
 }
 
+function suggestionToDraft(suggestion: SessionSuggestionResponse): SuggestDraft {
+  const first = suggestion.foods[0]
+  const second = suggestion.foods[1]
+  if (!first || !second) {
+    throw new Error("Suggestion did not include two foods")
+  }
+  return {
+    scheduledOn: suggestion.scheduledOn,
+    slot1: {
+      foodId: first.foodId,
+      familiarity: first.familiarity,
+      variantNote: "",
+    },
+    slot2: {
+      foodId: second.foodId,
+      familiarity: second.familiarity,
+      variantNote: "",
+    },
+    rationale: suggestion.rationale?.trim() ? suggestion.rationale.trim() : null,
+    source: suggestion.source,
+  }
+}
+
 export function PlanPage({
   sessionsClient: sessionsClientProp,
   foodsClient: foodsClientProp,
@@ -87,6 +121,7 @@ export function PlanPage({
   const [foods, setFoods] = useState<FoodResponse[]>([])
   const [status, setStatus] = useState<Status>({ kind: "loading" })
   const [editor, setEditor] = useState<Editor>({ mode: "closed" })
+  const [suggestDraft, setSuggestDraft] = useState<SuggestDraft | null>(null)
   const [scheduledOn, setScheduledOn] = useState("")
   const [slot1, setSlot1] = useState<FoodSlot>(emptySlot)
   const [slot2, setSlot2] = useState<FoodSlot>(emptySlot)
@@ -99,6 +134,9 @@ export function PlanPage({
   const selectableFoods = foods.filter((food) => food.sessionEligible !== false)
   const sameFoodSelected =
     Boolean(slot1.foodId) && slot1.foodId === slot2.foodId
+  const suggestSameFoodSelected =
+    Boolean(suggestDraft?.slot1.foodId) &&
+    suggestDraft?.slot1.foodId === suggestDraft?.slot2.foodId
 
   useEffect(() => {
     let cancelled = false
@@ -134,6 +172,7 @@ export function PlanPage({
   }, [sessionsClient, foodsClient])
 
   function openCreate() {
+    setSuggestDraft(null)
     setScheduledOn("")
     setSlot1(emptySlot())
     setSlot2(emptySlot())
@@ -141,6 +180,7 @@ export function PlanPage({
   }
 
   function openEdit(session: SessionResponse) {
+    setSuggestDraft(null)
     const first = session.foods.find((food) => food.position === 1) ?? session.foods[0]
     const second = session.foods.find((food) => food.position === 2) ?? session.foods[1]
     setScheduledOn(session.scheduledOn)
@@ -161,6 +201,13 @@ export function PlanPage({
     setEditor({ mode: "closed" })
   }
 
+  function dismissSuggestion() {
+    setSuggestDraft(null)
+    if (status.kind === "error") {
+      setStatus({ kind: "ready" })
+    }
+  }
+
   function toFoodRequest(slot: FoodSlot): SessionFoodRequest {
     const note = slot.variantNote.trim()
     return {
@@ -170,16 +217,108 @@ export function PlanPage({
     }
   }
 
-  function plannedNightOccupiesDate(date: string): boolean {
+  function plannedNightOccupiesDate(
+    date: string,
+    ignoreSessionId?: string,
+  ): boolean {
     return sessions.some((session) => {
       if (session.scheduledOn !== date) {
         return false
       }
-      if (editor.mode === "edit" && editor.session.id === session.id) {
+      if (ignoreSessionId && session.id === ignoreSessionId) {
         return false
       }
       return true
     })
+  }
+
+  async function onSuggestNext() {
+    setEditor({ mode: "closed" })
+    setStatus({ kind: "suggesting" })
+    try {
+      const suggestion = await sessionsClient.suggestNext()
+      if (!suggestion.foods || suggestion.foods.length !== 2) {
+        setStatus({
+          kind: "error",
+          message: "Suggestion did not include two foods",
+        })
+        return
+      }
+      setSuggestDraft(suggestionToDraft(suggestion))
+      setStatus({ kind: "ready" })
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Suggest next night failed"
+      if (isUnauthorizedMessage(message)) {
+        onUnauthorizedRef.current?.()
+        return
+      }
+      setStatus({ kind: "error", message })
+    }
+  }
+
+  async function onApproveSuggestion() {
+    if (!suggestDraft) {
+      return
+    }
+    if (
+      !suggestDraft.scheduledOn ||
+      !suggestDraft.slot1.foodId ||
+      !suggestDraft.slot2.foodId
+    ) {
+      setStatus({
+        kind: "error",
+        message: "Pick a date and two foods before approving.",
+      })
+      return
+    }
+    if (suggestDraft.scheduledOn < minDate) {
+      setStatus({
+        kind: "error",
+        message: "Scheduled date can't be in the past",
+      })
+      return
+    }
+    const variantError = sameFoodVariantError(
+      suggestDraft.slot1,
+      suggestDraft.slot2,
+    )
+    if (variantError) {
+      setStatus({ kind: "error", message: variantError })
+      return
+    }
+    if (plannedNightOccupiesDate(suggestDraft.scheduledOn)) {
+      setStatus({
+        kind: "error",
+        message: "A session already exists on that date",
+      })
+      return
+    }
+    const foodsPair: [SessionFoodRequest, SessionFoodRequest] = [
+      toFoodRequest(suggestDraft.slot1),
+      toFoodRequest(suggestDraft.slot2),
+    ]
+    setStatus({ kind: "saving" })
+    try {
+      const created = await sessionsClient.create({
+        scheduledOn: suggestDraft.scheduledOn,
+        foods: foodsPair,
+      })
+      setSessions((current) =>
+        [...current, created].sort((a, b) =>
+          a.scheduledOn.localeCompare(b.scheduledOn),
+        ),
+      )
+      setSuggestDraft(null)
+      setStatus({ kind: "ready" })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Approve failed"
+      if (isUnauthorizedMessage(message)) {
+        onUnauthorizedRef.current?.()
+        return
+      }
+      setStatus({ kind: "error", message })
+    }
   }
 
   async function onSave(event: FormEvent) {
@@ -203,7 +342,8 @@ export function PlanPage({
       setStatus({ kind: "error", message: variantError })
       return
     }
-    if (plannedNightOccupiesDate(scheduledOn)) {
+    const ignoreId = editor.mode === "edit" ? editor.session.id : undefined
+    if (plannedNightOccupiesDate(scheduledOn, ignoreId)) {
       setStatus({
         kind: "error",
         message: "A session already exists on that date",
@@ -268,7 +408,10 @@ export function PlanPage({
     }
   }
 
-  const busy = status.kind === "loading" || status.kind === "saving"
+  const busy =
+    status.kind === "loading" ||
+    status.kind === "saving" ||
+    status.kind === "suggesting"
 
   function onRunComplete(completed: SessionResponse) {
     setRunningSession(null)
@@ -295,9 +438,19 @@ export function PlanPage({
             Schedule tasting nights with two foods and how familiar each is.
           </p>
         </div>
-        <Button type="button" onClick={openCreate} disabled={busy}>
-          Plan a night
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => void onSuggestNext()}
+            disabled={busy}
+          >
+            {status.kind === "suggesting" ? "Suggesting…" : "Suggest next night"}
+          </Button>
+          <Button type="button" onClick={openCreate} disabled={busy}>
+            Plan a night
+          </Button>
+        </div>
       </div>
 
       {status.kind === "loading" ? (
@@ -306,10 +459,90 @@ export function PlanPage({
         </p>
       ) : null}
 
+      {status.kind === "suggesting" ? (
+        <p role="status" className="text-sm text-muted-foreground">
+          Suggesting a calm next night…
+        </p>
+      ) : null}
+
       {status.kind === "error" ? (
         <p role="alert" className="text-sm text-destructive">
           {status.message}
         </p>
+      ) : null}
+
+      {suggestDraft ? (
+        <form
+          className="flex flex-col gap-4 rounded-lg border border-border bg-card p-4"
+          onSubmit={(event) => {
+            event.preventDefault()
+            void onApproveSuggestion()
+          }}
+          aria-label="Suggested next night"
+        >
+          <div className="flex flex-col gap-1">
+            <p className="text-sm font-medium">Suggested next night</p>
+            <p className="text-xs text-muted-foreground">
+              Review, swap foods if you like, then approve to add it to Upcoming.
+              {suggestDraft.source === "ai" ? " Drawn with AI help." : null}
+            </p>
+            {suggestDraft.rationale ? (
+              <p className="mt-1 text-sm text-muted-foreground">
+                {suggestDraft.rationale}
+              </p>
+            ) : null}
+          </div>
+
+          <Input
+            aria-label="Suggested date"
+            type="date"
+            value={suggestDraft.scheduledOn}
+            min={minDate}
+            onChange={(event) =>
+              setSuggestDraft({
+                ...suggestDraft,
+                scheduledOn: event.target.value,
+              })
+            }
+            required
+            disabled={status.kind === "saving"}
+          />
+
+          <FoodSlotFields
+            label="Food 1"
+            slot={suggestDraft.slot1}
+            foods={selectableFoods}
+            disabled={status.kind === "saving"}
+            variantRequired={Boolean(suggestSameFoodSelected)}
+            onChange={(slot) =>
+              setSuggestDraft({ ...suggestDraft, slot1: slot })
+            }
+          />
+          <FoodSlotFields
+            label="Food 2"
+            slot={suggestDraft.slot2}
+            foods={selectableFoods}
+            disabled={status.kind === "saving"}
+            variantRequired={Boolean(suggestSameFoodSelected)}
+            onChange={(slot) =>
+              setSuggestDraft({ ...suggestDraft, slot2: slot })
+            }
+          />
+
+          <div className="flex flex-wrap gap-2">
+            <Button type="submit" disabled={status.kind === "saving"}>
+              {status.kind === "saving" ? "Approving…" : "Approve"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={dismissSuggestion}
+              disabled={status.kind === "saving"}
+            >
+              Dismiss
+            </Button>
+          </div>
+        </form>
       ) : null}
 
       {editor.mode !== "closed" ? (

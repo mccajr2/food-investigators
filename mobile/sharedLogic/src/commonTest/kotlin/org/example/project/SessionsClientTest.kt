@@ -77,6 +77,39 @@ class SessionsClientTest {
         }
 
     @Test
+    fun suggestNextSendsBearerAndParsesProposal() =
+        runTest {
+            val store = InMemoryTokenStore()
+            store.saveToken("tok", rememberMe = true)
+            var sawAuth: String? = null
+            val engine =
+                MockEngine { request ->
+                    assertEquals(HttpMethod.Get, request.method)
+                    assertEquals("/api/sessions/suggestions/next", request.url.encodedPath)
+                    sawAuth = request.headers[HttpHeaders.Authorization]
+                    respond(
+                        content = sampleSuggestionJson(),
+                        status = HttpStatusCode.OK,
+                        headers = headersOf(HttpHeaders.ContentType, "application/json"),
+                    )
+                }
+
+            val client = SessionsClient("http://localhost:8080", httpClient(engine), store)
+            val suggestion = client.suggestNext()
+
+            assertEquals("2026-07-16", suggestion.scheduledOn)
+            assertEquals("heuristic", suggestion.source)
+            assertEquals(2, suggestion.foods.size)
+            assertEquals("Apples", suggestion.foods[0].name)
+            assertEquals("familiar_but_new", suggestion.foods[1].familiarity)
+            assertEquals(
+                "A calm next night from foods that often work for you.",
+                suggestion.rationale,
+            )
+            assertEquals("Bearer tok", sawAuth)
+        }
+
+    @Test
     fun downloadHistoryPdfSendsBearerAndOptionalDateRange() =
         runTest {
             val store = InMemoryTokenStore()
@@ -400,6 +433,23 @@ class SessionsClientTest {
         """.trimIndent()
 
     private fun sampleSessionJsonArray(): String = "[${sampleSessionJson()}]"
+
+    private fun sampleSuggestionJson(): String =
+        """
+        {"scheduledOn":"2026-07-16",
+         "foods":[
+           {"foodId":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa04",
+            "name":"Apples",
+            "iconKey":"apple",
+            "familiarity":"safe"},
+           {"foodId":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa05",
+            "name":"Strawberries",
+            "iconKey":"strawberry",
+            "familiarity":"familiar_but_new"}
+         ],
+         "rationale":"A calm next night from foods that often work for you.",
+         "source":"heuristic"}
+        """.trimIndent()
 
     private fun httpClient(engine: MockEngine): HttpClient =
         HttpClient(engine) {

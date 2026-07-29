@@ -127,6 +127,50 @@ describe("SessionsClient", () => {
     )
   })
 
+  it("suggests next session with bearer auth", async () => {
+    const suggestion = {
+      scheduledOn: "2026-07-16",
+      foods: [
+        {
+          foodId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa04",
+          name: "Apples",
+          iconKey: "apple",
+          familiarity: "safe" as const,
+        },
+        {
+          foodId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa05",
+          name: "Strawberries",
+          iconKey: "strawberry",
+          familiarity: "familiar_but_new" as const,
+        },
+      ],
+      rationale: "A calm next night from foods that often work for you.",
+      source: "heuristic" as const,
+    }
+    const fetchFn = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify(suggestion), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    )
+    const client = new SessionsClient(
+      "http://localhost:8080",
+      fetchFn,
+      memoryStore(),
+    )
+
+    const result = await client.suggestNext()
+
+    expect(result.source).toBe("heuristic")
+    expect(result.foods).toHaveLength(2)
+    expect(result.scheduledOn).toBe("2026-07-16")
+    expect(String(fetchFn.mock.calls[0]?.[0])).toBe(
+      "http://localhost:8080/api/sessions/suggestions/next",
+    )
+    const init = fetchFn.mock.calls[0]?.[1] as RequestInit
+    expect(new Headers(init.headers).get("Authorization")).toBe("Bearer tok")
+  })
+
   it("creates a planned session", async () => {
     const fetchFn = vi.fn().mockResolvedValue(
       new Response(JSON.stringify(sampleSession), {

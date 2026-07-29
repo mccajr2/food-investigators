@@ -1,32 +1,35 @@
 # Spec stub: taste-profile-matches
 
-Status: planned  
+Status: parking  
 Parent: [docs/roadmap.md](../../roadmap.md)  
 Created: 2026-07-23  
-Added: 2026-07-23 · enhancement
+Added: 2026-07-23 · enhancement  
+Parked: 2026-07-25
 
-Thin stub from `/roadmap`. **Not implementable yet.** Run `/spec taste-profile-matches`
-to flesh out Approach, Acceptance Criteria, and Tasks before any code.
+Thin stub. **Not implementable.** Parked after `/spec`: the 2–3 example icons on
+run taste toggles (`run-taste-basics`) are enough for kid language learning for
+now. Promote via `/roadmap` only if parents later want a larger “foods that
+taste like this” discovery set (e.g. on Insights), distinct from those button
+examples.
 
-If fleshing out reveals more than one PR-sized slice, stop and `/roadmap` **split**
-(`Added: … · re-rank split`) — do not grow this stub into a mega-spec.
+## Problem (sketch)
 
-## Problem
-
-Parents want help comparing: “what else felt salty/sweet like this?” A small set of
-food icons matching a taste profile would make the survey/Insights conversation
-concrete without a dense catalog browser.
+Parents may eventually want help comparing: “what else felt salty/sweet like
+this?” beyond the fixed taste-button examples — a small icon set without a
+dense catalog browser.
 
 ## Non-goals (sketch)
 
-- Capturing or aggregating taste data (prior slices)
+- Replacing the 2–3 fixed example icons on taste toggles (already shipped)
+- Capturing or aggregating taste data (done in prior slices)
 - Grocery search / external food DBs
 - Auto-planning the next session (`suggested-next-session`)
 - Native iOS UI
+- AI snack-taste tagging (`snack-taste-ai`)
 
 ## Notes
 
-- Depends on `run-taste-basics` (+ ideally `insights-taste-basics` for context).
-- Likely a curated mapping from taste-basic tags → starter/household icon keys,
-  shown as a large-button subset on Insights or after a run step — lock surface at
-  `/spec`.
+- Depends on `run-taste-basics` (+ `insights-taste-basics` if surfaced on
+  Insights).
+- If revived: lock surface (Insights vs elsewhere) and matching source
+  (curated map vs session history) at `/spec` — keep one PR-sized.

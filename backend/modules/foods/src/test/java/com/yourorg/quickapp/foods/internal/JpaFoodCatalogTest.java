@@ -73,6 +73,23 @@ class JpaFoodCatalogTest {
     }
 
     @Test
+    void listSelectableReturnsSystemAndHouseholdSessionEligibleOnly() {
+        UUID systemId = UUID.randomUUID();
+        Food system = Food.system(systemId, "Apples", "apple", now);
+        Food snack = Food.household(householdId, "Chips", "custom", now);
+        snack.setSessionEligible(false, now);
+        Food tasting = Food.household(householdId, "Cucumber", "custom", now);
+        when(foods.findByHouseholdIdIsNullOrderByNameAsc()).thenReturn(List.of(system));
+        when(foods.findByHouseholdIdAndArchivedAtIsNullOrderByNameAsc(householdId))
+                .thenReturn(List.of(snack, tasting));
+
+        assertThat(catalog.listSelectable(householdId))
+                .containsExactly(
+                        new CatalogFood(systemId, "Apples", "apple"),
+                        new CatalogFood(tasting.getId(), "Cucumber", "custom"));
+    }
+
+    @Test
     void listActiveSnackPreferencesReturnsNonArchivedSnacksOnly() {
         Food snack = Food.household(householdId, "Chips", "apple", now);
         snack.setSessionEligible(false, now);
