@@ -1,7 +1,7 @@
 # Product roadmap
 
 Status: active  
-Updated: 2026-07-25
+Updated: 2026-07-28
 
 Living backlog for this product repo. **One roadmap ↔ many specs** (1:1 by
 kebab-case id). `/roadmap` updates and re-ranks; `/spec <id>` fleshes out the
@@ -12,14 +12,16 @@ next slice. Do not turn this file into a mega-spec.
 **Food Investigators** helps a parent and a picky eater build a calm, repeatable
 tasting ritual: plan two foods ahead on the laptop, run a parent-assisted session
 on the iPad with large icons and simple words, capture what he liked and *why*
-(in kid language), unlock simple food-themed mini-games when a serving goes well,
-and keep a therapist-ready history of what was tried and what worked.
+through kid-friendly **senses** (taste, texture/touch, smell, look — not a clinical
+panel), unlock simple food-themed mini-games when a stretch goes well (not for
+routine safe foods), celebrate milestones, and keep a therapist-ready history of
+what was tried and what worked.
 
 Familiarity ladder (parent-set at first): safe foods he consistently eats →
 familiar-but-new (prep/brand) → truly new → retrying (tried before, trying again).
-Pace stays parent-led early; later the app may suggest the next session for
-approval. Taste basics (sweet/salty/bitter/sour/…) deepen the run survey and
-Insights without becoming a clinical sensory panel.
+Pace stays parent-led early; the app may suggest the next session for approval.
+Later slices deepen prep retries for disliked foods and optional signup intake so
+the catalog starts closer to this child.
 
 ## Product non-goals
 
@@ -29,9 +31,10 @@ Insights without becoming a clinical sensory panel.
 - AI-invented games as the first reward system (templates + skins first)
 - App-driven schedules that the parent must follow (suggestions come later;
   parent always decides)
-- Multi-child / multi-household complexity in early slices
+- Multi-child complexity before a single child display name exists
 - Printable *upcoming* wall calendar as a v1 must-have (history print for doctor
   comes first)
+- Sound as a run-survey sense (taste / texture / smell / look only)
 
 ## Upcoming (ranked)
 
@@ -39,9 +42,16 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | suggestion-pacing-evidence | planned | 2026-07-25 · re-rank split | Science-backed pacing / preference guidance for suggestions |
-| 2 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
-| 3 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
+| 1 | reward-skip-safe | planned | 2026-07-28 · enhancement | Do not offer reward mini-games when both foods were `safe` |
+| 2 | why-outcome-depth | planned | 2026-07-28 · enhancement | Strengthen why capture for like *and* dislike; surface usefully in Insights/History |
+| 3 | run-sense-survey | planned | 2026-07-28 · enhancement | Reframe run survey around senses: taste, texture (touch), smell, look (sight) |
+| 4 | child-display-name | planned | 2026-07-28 · enhancement | Optional child’s first name at signup / settings (single-child profile) |
+| 5 | signup-starter-snacks | planned | 2026-07-23 · enhancement | Optional signup intake: liked tasting foods + snacks (else catalog defaults) |
+| 6 | suggestion-pacing-evidence | planned | 2026-07-25 · re-rank split | Science-backed pacing / preference guidance for suggestions |
+| 7 | disliked-prep-rotation | planned | 2026-07-28 · enhancement | Suggest distinct preps of a disliked food (~3 over weeks), then longer rest |
+| 8 | milestone-badges | planned | 2026-07-28 · enhancement | Celebration badges (e.g. first liked new food; 5/10/25 new foods) |
+| 9 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
+| 10 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
 
 Status values: `parking` · `planned` · `active` · `done` · `cancelled`  
 Added: `YYYY-MM-DD · initial` | `enhancement` | `re-rank split`
@@ -52,12 +62,11 @@ Unranked ideas. Promote into **Upcoming** with `/roadmap` (re-rank).
 
 | Id | Added | Summary |
 |----|-------|---------|
+| multi-child-profiles | 2026-07-11 · initial | More than one kid under one household (after `child-display-name`) |
 | taste-profile-matches | 2026-07-23 · enhancement | Larger “foods that taste like this” icon set (beyond run-button examples); parked 2026-07-25 |
 | snack-taste-ai | 2026-07-24 · enhancement | Infer snack tastes via AI for Insights (no manual snack taste entry) |
-| signup-starter-snacks | 2026-07-23 · enhancement | Optional signup picks: child-specific starter tasting foods + snacks |
 | printable-plan-calendar | 2026-07-11 · initial | Print upcoming tasting schedule (doctor packet is history-first) |
 | offline-ipad-session | 2026-07-11 · initial | Run a session on iPad without network; sync later |
-| multi-child-profiles | 2026-07-11 · initial | More than one kid under one household |
 | app-driven-schedule | 2026-07-11 · initial | App owns the calendar; parent mostly follows (after suggestions prove useful) |
 | free-play-games | 2026-07-11 · initial | Play mini-games outside a tasting reward |
 | reward-combo-streaks | 2026-07-21 · enhancement | Short combo / streak feedback in Catch or Cross for momentum |
@@ -72,6 +81,7 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Branch | Spec |
 |----|--------|------|
+| plan-occupied-dates | plan-occupied-dates | [active](specs/active/plan-occupied-dates.md) |
 
 ## Done
 
@@ -148,3 +158,5 @@ Only notable events (first carve-up, major re-rank, cancelled theme) — not eve
 | 2026-07-25 | Parked `taste-profile-matches` (taste-button examples enough for now). Next up: `suggested-next-session`. |
 | 2026-07-25 | Specced `suggested-next-session` (AI propose→approve; heuristic fallback). Split: `suggestion-pacing-evidence` ranked next. |
 | 2026-07-28 | suggested-next-session shipped (Plan Suggest→Approve; Gemini Flash + heuristic; OpenAPI/web/mobile clients). Next up: `suggestion-pacing-evidence`. |
+| 2026-07-28 | Carved ritual polish batch: occupied Plan dates, skip-safe rewards, why depth, sense survey, child name, prep rotation, badges; promoted `signup-starter-snacks`. Next up: `plan-occupied-dates`. |
+| 2026-07-28 | Specced `plan-occupied-dates` (web calendar picker via `react-day-picker`; disable past + occupied). Next up: `reward-skip-safe`. |
