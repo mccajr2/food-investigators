@@ -9,6 +9,7 @@ import type {
   SessionSuggestionResponse,
   SuggestionSource,
 } from "@/api/types"
+import { PlanDatePicker } from "@/components/plan/PlanDatePicker"
 import { RunSessionPage } from "@/components/run/RunSessionPage"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -50,7 +51,7 @@ type PlanPageProps = {
   sessionsClient?: SessionsClient
   foodsClient?: FoodsClient
   onUnauthorized?: () => void
-  /** ISO date (YYYY-MM-DD) for the date picker's min — defaults to local today. */
+  /** ISO date (YYYY-MM-DD) for the calendar min — defaults to local today. */
   todayIso?: string
 }
 
@@ -60,7 +61,7 @@ const emptySlot = (): FoodSlot => ({
   variantNote: "",
 })
 
-/** Local calendar today as YYYY-MM-DD for `<input type="date" min>`. */
+/** Local calendar today as YYYY-MM-DD for the Plan calendar min. */
 export function localTodayIsoDate(now: Date = new Date()): string {
   const year = now.getFullYear()
   const month = String(now.getMonth() + 1).padStart(2, "0")
@@ -412,6 +413,9 @@ export function PlanPage({
     status.kind === "loading" ||
     status.kind === "saving" ||
     status.kind === "suggesting"
+  const occupiedDates = sessions.map((session) => session.scheduledOn)
+  const editAllowDate =
+    editor.mode === "edit" ? editor.session.scheduledOn : undefined
 
   function onRunComplete(completed: SessionResponse) {
     setRunningSession(null)
@@ -493,19 +497,18 @@ export function PlanPage({
             ) : null}
           </div>
 
-          <Input
+          <PlanDatePicker
             aria-label="Suggested date"
-            type="date"
             value={suggestDraft.scheduledOn}
-            min={minDate}
-            onChange={(event) =>
+            minDate={minDate}
+            occupiedDates={occupiedDates}
+            disabled={status.kind === "saving"}
+            onChange={(scheduledOnIso) =>
               setSuggestDraft({
                 ...suggestDraft,
-                scheduledOn: event.target.value,
+                scheduledOn: scheduledOnIso,
               })
             }
-            required
-            disabled={status.kind === "saving"}
           />
 
           <FoodSlotFields
@@ -551,14 +554,14 @@ export function PlanPage({
           onSubmit={(event) => void onSave(event)}
           aria-label={editor.mode === "create" ? "Plan a night" : "Edit night"}
         >
-          <Input
+          <PlanDatePicker
             aria-label="Date"
-            type="date"
             value={scheduledOn}
-            min={minDate}
-            onChange={(event) => setScheduledOn(event.target.value)}
-            required
+            minDate={minDate}
+            occupiedDates={occupiedDates}
+            allowDate={editAllowDate}
             disabled={status.kind === "saving"}
+            onChange={setScheduledOn}
           />
 
           <FoodSlotFields

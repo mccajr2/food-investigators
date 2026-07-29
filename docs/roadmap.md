@@ -81,12 +81,12 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Branch | Spec |
 |----|--------|------|
-| plan-occupied-dates | plan-occupied-dates | [active](specs/active/plan-occupied-dates.md) |
 
 ## Done
 
 | Id | Completed | Spec |
 |----|-----------|------|
+| plan-occupied-dates | 2026-07-29 | [archive](specs/archive/plan-occupied-dates.md) |
 | suggested-next-session | 2026-07-28 | [archive](specs/archive/suggested-next-session.md) |
 | insights-taste-basics | 2026-07-24 | [archive](specs/archive/insights-taste-basics.md) |
 | run-taste-basics | 2026-07-24 | [archive](specs/archive/run-taste-basics.md) |
@@ -160,3 +160,4 @@ Only notable events (first carve-up, major re-rank, cancelled theme) — not eve
 | 2026-07-28 | suggested-next-session shipped (Plan Suggest→Approve; Gemini Flash + heuristic; OpenAPI/web/mobile clients). Next up: `suggestion-pacing-evidence`. |
 | 2026-07-28 | Carved ritual polish batch: occupied Plan dates, skip-safe rewards, why depth, sense survey, child name, prep rotation, badges; promoted `signup-starter-snacks`. Next up: `plan-occupied-dates`. |
 | 2026-07-28 | Specced `plan-occupied-dates` (web calendar picker via `react-day-picker`; disable past + occupied). Next up: `reward-skip-safe`. |
+| 2026-07-29 | plan-occupied-dates shipped (Plan/Suggest month calendar; past + occupied greyed). Next up: `reward-skip-safe`. |

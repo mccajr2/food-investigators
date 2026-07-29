@@ -1,10 +1,11 @@
 # Spec: plan-occupied-dates
 
-Status: draft  
+Status: done  
 Created: 2026-07-28  
 Parent: [docs/roadmap.md](../../roadmap.md)  
 Added: 2026-07-28 · enhancement  
-Specced: 2026-07-28
+Specced: 2026-07-28  
+Completed: 2026-07-29
 
 ## Problem
 
@@ -51,28 +52,28 @@ past dates already have—especially now that Suggest also proposes a date.
 
 ## Acceptance criteria
 
-- [ ] Plan create and edit forms use a calendar month picker (not a bare
+- [x] Plan create and edit forms use a calendar month picker (not a bare
       native date input) for `scheduledOn`.
-- [ ] Suggest next night draft uses the same picker for its suggested date.
-- [ ] Days before local today are visually disabled and cannot be selected
+- [x] Suggest next night draft uses the same picker for its suggested date.
+- [x] Days before local today are visually disabled and cannot be selected
       (parity with prior `min` behavior).
-- [ ] Days that already have a planned session in the loaded Upcoming list are
+- [x] Days that already have a planned session in the loaded Upcoming list are
       visually disabled and cannot be selected.
-- [ ] When editing a night, that session’s current `scheduledOn` remains
+- [x] When editing a night, that session’s current `scheduledOn` remains
       selectable even though it appears in Upcoming.
-- [ ] Selecting an available day updates the draft/form `scheduledOn` ISO value
+- [x] Selecting an available day updates the draft/form `scheduledOn` ISO value
       used by existing create/update/approve flows.
-- [ ] Save/Approve still obey existing client guards; server 409 remains if a
+- [x] Save/Approve still obey existing client guards; server 409 remains if a
       race occupies the day.
-- [ ] Component tests cover: occupied day not selectable; past day not
+- [x] Component tests cover: occupied day not selectable; past day not
       selectable; edit keeps own day selectable; Suggest panel uses the picker.
-- [ ] No OpenAPI / backend / native Plan changes in this PR.
+- [x] No OpenAPI / backend / native Plan changes in this PR.
 
 ## Tasks
 
-- [ ] Web: add `react-day-picker`; thin Calendar/PlanDatePicker; wire Plan
+- [x] Web: add `react-day-picker`; thin Calendar/PlanDatePicker; wire Plan
       create/edit + Suggest date; disable past + occupied (edit exception).
-- [ ] Tests: PlanPage (and/or PlanDatePicker) coverage for disabled/selectable
+- [x] Tests: PlanPage (and/or PlanDatePicker) coverage for disabled/selectable
       cases above.
 
 ## Decisions (locked)
