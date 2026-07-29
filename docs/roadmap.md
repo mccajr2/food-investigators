@@ -39,10 +39,9 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | suggested-next-session | active | 2026-07-11 · initial | AI proposes next two foods + levels; parent approves or swaps (heuristic fallback) |
-| 2 | suggestion-pacing-evidence | planned | 2026-07-25 · re-rank split | Science-backed pacing / preference guidance for suggestions |
-| 3 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
-| 4 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
+| 1 | suggestion-pacing-evidence | planned | 2026-07-25 · re-rank split | Science-backed pacing / preference guidance for suggestions |
+| 2 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
+| 3 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
 
 Status values: `parking` · `planned` · `active` · `done` · `cancelled`  
 Added: `YYYY-MM-DD · initial` | `enhancement` | `re-rank split`
@@ -73,12 +72,12 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Branch | Spec |
 |----|--------|------|
-| suggested-next-session | `suggested-next-session` | [active](specs/active/suggested-next-session.md) |
 
 ## Done
 
 | Id | Completed | Spec |
 |----|-----------|------|
+| suggested-next-session | 2026-07-28 | [archive](specs/archive/suggested-next-session.md) |
 | insights-taste-basics | 2026-07-24 | [archive](specs/archive/insights-taste-basics.md) |
 | run-taste-basics | 2026-07-24 | [archive](specs/archive/run-taste-basics.md) |
 | familiarity-retry | 2026-07-23 | [archive](specs/archive/familiarity-retry.md) |
@@ -148,3 +147,4 @@ Only notable events (first carve-up, major re-rank, cancelled theme) — not eve
 | 2026-07-24 | insights-taste-basics shipped (`topLikedTastes` + `lean_into_taste`; session-only). Next up: `taste-profile-matches`. |
 | 2026-07-25 | Parked `taste-profile-matches` (taste-button examples enough for now). Next up: `suggested-next-session`. |
 | 2026-07-25 | Specced `suggested-next-session` (AI propose→approve; heuristic fallback). Split: `suggestion-pacing-evidence` ranked next. |
+| 2026-07-28 | suggested-next-session shipped (Plan Suggest→Approve; Gemini Flash + heuristic; OpenAPI/web/mobile clients). Next up: `suggestion-pacing-evidence`. |

@@ -10,7 +10,7 @@ public record GeminiProperties(String apiKey, String model, String apiBaseUrl) {
             apiKey = "";
         }
         if (model == null || model.isBlank()) {
-            model = "gemini-2.0-flash";
+            model = "gemini-3.5-flash";
         }
         if (apiBaseUrl == null || apiBaseUrl.isBlank()) {
             apiBaseUrl = "https://generativelanguage.googleapis.com/v1beta";

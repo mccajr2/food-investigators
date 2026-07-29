@@ -18,7 +18,7 @@ class GeminiSuggestionLlmClientTest {
     void unconfiguredReturnsEmptyWithoutCallingNetwork() {
         GeminiSuggestionLlmClient client =
                 new GeminiSuggestionLlmClient(
-                        new GeminiProperties("", "gemini-2.0-flash", ""), jsonMapper);
+                        new GeminiProperties("", "gemini-3.5-flash", ""), jsonMapper);
 
         Optional<LlmSuggestionChoice> result =
                 client.propose(
@@ -51,7 +51,7 @@ class GeminiSuggestionLlmClientTest {
     void parseChoiceReadsStructuredGeminiText() {
         GeminiSuggestionLlmClient client =
                 new GeminiSuggestionLlmClient(
-                        new GeminiProperties("key", "gemini-2.0-flash", ""), jsonMapper);
+                        new GeminiProperties("key", "gemini-3.5-flash", ""), jsonMapper);
         UUID a = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa01");
         UUID b = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa02");
         String inner =

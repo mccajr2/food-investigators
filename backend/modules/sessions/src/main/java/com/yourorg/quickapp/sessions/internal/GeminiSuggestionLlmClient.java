@@ -61,7 +61,11 @@ class GeminiSuggestionLlmClient implements SuggestionLlmPort {
             HttpResponse<String> response =
                     httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                log.warn("Gemini suggestion call failed with HTTP {}", response.statusCode());
+                log.warn(
+                        "Gemini suggestion call failed with HTTP {} (model={}): {}",
+                        response.statusCode(),
+                        properties.model(),
+                        truncate(response.body(), 300));
                 return Optional.empty();
             }
             return parseChoice(response.body());
@@ -144,5 +148,16 @@ class GeminiSuggestionLlmClient implements SuggestionLlmPort {
             rationale = null;
         }
         return Optional.of(new LlmSuggestionChoice(List.copyOf(picks), rationale));
+    }
+
+    private static String truncate(String body, int maxChars) {
+        if (body == null || body.isBlank()) {
+            return "(empty body)";
+        }
+        String trimmed = body.strip();
+        if (trimmed.length() <= maxChars) {
+            return trimmed;
+        }
+        return trimmed.substring(0, maxChars) + "…";
     }
 }

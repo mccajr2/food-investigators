@@ -58,6 +58,7 @@ class OpenApiContractTest {
         assertThat(yaml).contains("/api/sessions");
         assertThat(yaml).contains("/api/sessions/history");
         assertThat(yaml).contains("/api/sessions/history.pdf");
+        assertThat(yaml).contains("/api/sessions/suggestions/next");
         assertThat(yaml).contains("/api/sessions/{sessionId}");
         assertThat(yaml).contains("/api/sessions/{sessionId}/cancel");
         assertThat(yaml).contains("/api/sessions/{sessionId}/complete");
@@ -65,6 +66,7 @@ class OpenApiContractTest {
         assertThat(yaml).contains("listUpcomingSessions");
         assertThat(yaml).contains("listSessionHistory");
         assertThat(yaml).contains("exportSessionHistoryPdf");
+        assertThat(yaml).contains("suggestNextSession");
         assertThat(yaml).contains("createSession");
         assertThat(yaml).contains("getSession");
         assertThat(yaml).contains("updateSession");
@@ -72,6 +74,9 @@ class OpenApiContractTest {
         assertThat(yaml).contains("completeSession");
         assertThat(yaml).contains("updateSessionParentNote");
         assertThat(yaml).contains("SessionResponse");
+        assertThat(yaml).contains("SessionSuggestionResponse");
+        assertThat(yaml).contains("SuggestedSessionFood");
+        assertThat(yaml).contains("SuggestionSource");
         assertThat(yaml).contains("CreateSessionRequest");
         assertThat(yaml).contains("UpdateSessionRequest");
         assertThat(yaml).contains("CompleteSessionRequest");
@@ -104,6 +109,8 @@ class OpenApiContractTest {
         assertThat(yaml).contains("familiar_but_new");
         assertThat(yaml).contains("truly_new");
         assertThat(yaml).contains("retrying");
+        assertThat(yaml).contains("- ai");
+        assertThat(yaml).contains("heuristic");
         assertThat(yaml).doesNotContain("- likes");
         assertThat(yaml).contains("variantNote");
         assertThat(yaml).contains("scheduledOn");

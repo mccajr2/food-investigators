@@ -1,11 +1,12 @@
 # Spec: suggested-next-session
 
-Status: in-progress  
+Status: done  
 Created: 2026-07-11  
 Parent: [docs/roadmap.md](../../roadmap.md)  
 Added: 2026-07-11 · initial  
 Specced: 2026-07-25  
 Split: 2026-07-25 · `suggestion-pacing-evidence` carved out (re-rank split)
+Completed: 2026-07-28
 
 ## Problem
 
@@ -82,29 +83,29 @@ fallback when data is thin or the model fails.
 
 ## Acceptance criteria
 
-- [ ] Authenticated parent can request a next-session **proposal** (not yet a
+- [x] Authenticated parent can request a next-session **proposal** (not yet a
       session); response includes exactly two catalog foods, familiarity each,
       a `scheduledOn`, optional rationale, and `source` of `ai` or `heuristic`.
-- [ ] When Insights-ready history exists and AI is configured, happy path uses
+- [x] When Insights-ready history exists and AI is configured, happy path uses
       **AI** (`source=ai`) choosing two foods **from the server shortlist**
       only; off-list or unknown ids are rejected and **fallback** runs
       (`source=heuristic`).
-- [ ] Suggestion context sent to the LLM is a **bounded brief + shortlist**,
+- [x] Suggestion context sent to the LLM is a **bounded brief + shortlist**,
       not the full growing session history; unit tests lock that the prompt
       payload stays within an agreed size budget (e.g. shortlist ≤ 20 foods).
-- [ ] When < 3 completed sessions, AI unconfigured, timeout, or parse
+- [x] When < 3 completed sessions, AI unconfigured, timeout, or parse
       failure → heuristic proposal still returns **200** with `source=heuristic`
       (not a hard failure for the parent).
-- [ ] Web Plan: Suggest → review/swap foods & familiarity & date → **Approve**
+- [x] Web Plan: Suggest → review/swap foods & familiarity & date → **Approve**
       creates a normal planned session obeying existing plan guards (past dates,
       one planned session per day, same-food variant rules); **Dismiss** creates
       nothing.
-- [ ] Unauthenticated suggestion/create → **401**; other households’ foods /
+- [x] Unauthenticated suggestion/create → **401**; other households’ foods /
       sessions never appear.
-- [ ] OpenAPI + web + mobile sharedLogic clients aligned; unit + API + web
+- [x] OpenAPI + web + mobile sharedLogic clients aligned; unit + API + web
       tests cover AI mock success, fallback, approve, and swap; `ModularityTests`
       pass.
-- [ ] No native Plan/suggestion UI; run/History/Insights/PDF unchanged except
+- [x] No native Plan/suggestion UI; run/History/Insights/PDF unchanged except
       as read-only context for suggestions.
 
 ## Tasks
@@ -114,7 +115,7 @@ fallback when data is thin or the model fails.
       session create validation.
 - [x] Contract: OpenAPI proposal schemas/paths; align web + mobile clients.
 - [x] Web: Plan Suggest panel (swap, Approve, Dismiss) end-to-end.
-- [ ] Tests: API IT (ai/heuristic/401/scoping) + PlanPage suggestion flow.
+- [x] Tests: API IT (ai/heuristic/401/scoping) + PlanPage suggestion flow.
 
 ## Decisions (locked)
 
@@ -126,7 +127,7 @@ fallback when data is thin or the model fails.
 - Parent always decides; Approve creates a normal planned session.
 - Web laptop Plan only this PR.
 - Gemini via JDK `HttpClient` + Jackson 3 (no Gemini SDK). Env:
-  `GEMINI_API_KEY`, `GEMINI_MODEL` (default `gemini-2.0-flash`),
+  `GEMINI_API_KEY`, `GEMINI_MODEL` (default `gemini-3.5-flash`),
   `GEMINI_API_BASE_URL`. Config: `app.gemini.*`. Shortlist cap **20**.
   Rationale shown when non-empty.
 
