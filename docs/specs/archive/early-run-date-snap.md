@@ -1,10 +1,11 @@
 # Spec: early-run-date-snap
 
-Status: draft  
+Status: done  
 Created: 2026-07-29  
 Parent: [docs/roadmap.md](../../roadmap.md)  
 Added: 2026-07-29 · enhancement  
-Specced: 2026-07-29
+Specced: 2026-07-29  
+Completed: 2026-07-29
 
 ## Problem
 
@@ -43,34 +44,36 @@ aligned with when the tasting actually happened.
   (parent finishes/cancels the other night first, or waits for the planned day).
 - **After snap:** Upcoming list reflects today’s date; the former future day is
   free on the Plan calendar; complete leaves History dated today.
-- **Layers:** Web Plan (Run entry) + existing sessions client update; backend
-  rules unchanged. Tests on Plan/Run entry flow.
+- **Layers:** Web Plan (Run entry) + existing sessions client update. Backend
+  past-date checks use `app.calendar.zone` (default `America/New_York`) so
+  “today” matches the parent’s evening local calendar, not UTC. No OpenAPI
+  change.
 
 ## Acceptance criteria
 
-- [ ] Tapping Run on a planned night with `scheduledOn` **after** local today
+- [x] Tapping Run on a planned night with `scheduledOn` **after** local today
       shows a confirm before the runner opens (planned date called out; record
       as today).
-- [ ] Choosing **Yes** updates the session to today’s ISO date via the existing
+- [x] Choosing **Yes** updates the session to today’s ISO date via the existing
       update API (foods unchanged), then opens the runner with that session.
-- [ ] Choosing **No** / dismiss does not open the runner and does not change
+- [x] Choosing **No** / dismiss does not open the runner and does not change
       `scheduledOn`.
-- [ ] Tapping Run when `scheduledOn` is **today** opens the runner with no
+- [x] Tapping Run when `scheduledOn` is **today** opens the runner with no
       early-run confirm.
-- [ ] If updating to today fails because the day is occupied (409), show a clear
+- [x] If updating to today fails because the day is occupied (409), show a clear
       error and do not open the runner.
-- [ ] After a successful early-run snap + complete, History shows today; the
+- [x] After a successful early-run snap + complete, History shows today; the
       original future date is free to plan a new night (no false 409 from the
       completed early run).
-- [ ] No OpenAPI / backend rule / native Run changes in this PR.
-- [ ] Component tests cover: future date → confirm → update then run; dismiss
+- [x] No OpenAPI / backend rule / native Run changes in this PR.
+- [x] Component tests cover: future date → confirm → update then run; dismiss
       skips run; today skips confirm; occupied-today error blocks run.
 
 ## Tasks
 
-- [ ] Web: Plan Run entry — early-run confirm + update-to-today then
+- [x] Web: Plan Run entry — early-run confirm + update-to-today then
       `setRunningSession`; handle 409; skip dialog when already today.
-- [ ] Tests: PlanPage (and/or small helper) coverage for the cases above.
+- [x] Tests: PlanPage (and/or small helper) coverage for the cases above.
 
 ## Decisions (locked)
 

@@ -9,6 +9,7 @@ import type {
   SessionSuggestionResponse,
 } from "@/api/types";
 import {
+  isEarlyRunNeeded,
   localTodayIsoDate,
   PlanPage,
   sameFoodVariantError,
@@ -143,6 +144,12 @@ describe("PlanPage helpers", () => {
     expect(localTodayIsoDate(new Date("2026-07-22T15:00:00"))).toBe(
       "2026-07-22",
     );
+  });
+
+  it("flags future nights as early-run", () => {
+    expect(isEarlyRunNeeded("2026-07-20", "2026-07-15")).toBe(true);
+    expect(isEarlyRunNeeded("2026-07-15", "2026-07-15")).toBe(false);
+    expect(isEarlyRunNeeded("2026-07-14", "2026-07-15")).toBe(false);
   });
 
   it("requires distinct variants when both slots share a food", () => {
@@ -590,20 +597,134 @@ describe("PlanPage", () => {
     });
   });
 
-  it("opens the runner from upcoming", async () => {
+  it("opens the runner from upcoming when scheduled for today", async () => {
     const user = userEvent.setup();
+    const tonight: SessionResponse = {
+      ...sampleSession,
+      scheduledOn: TODAY,
+    };
 
     renderPlan(
       mockSessionsClient({
-        listUpcoming: vi.fn().mockResolvedValue([sampleSession]),
+        listUpcoming: vi.fn().mockResolvedValue([tonight]),
       }),
     );
 
     expect(await screen.findByText(/Honeycrisp/)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Run" }));
     expect(
+      screen.queryByRole("dialog", { name: "Run this night early?" }),
+    ).not.toBeInTheDocument();
+    expect(
       screen.getByRole("dialog", { name: "Run tasting session" }),
     ).toBeInTheDocument();
+  });
+
+  it("confirms early run, snaps to today, then opens the runner", async () => {
+    const user = userEvent.setup();
+    const snapped: SessionResponse = {
+      ...sampleSession,
+      scheduledOn: TODAY,
+    };
+    const update = vi.fn().mockResolvedValue(snapped);
+
+    renderPlan(
+      mockSessionsClient({
+        listUpcoming: vi.fn().mockResolvedValue([sampleSession]),
+        update,
+      }),
+    );
+
+    expect(await screen.findByText(/Honeycrisp/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Run" }));
+
+    const confirm = screen.getByRole("dialog", {
+      name: "Run this night early?",
+    });
+    expect(confirm).toHaveTextContent(/planned for/);
+    expect(
+      screen.queryByRole("dialog", { name: "Run tasting session" }),
+    ).not.toBeInTheDocument();
+
+    await user.click(
+      within(confirm).getByRole("button", {
+        name: "Record as today and run",
+      }),
+    );
+
+    await waitFor(() => {
+      expect(update).toHaveBeenCalledWith(sampleSession.id, {
+        scheduledOn: TODAY,
+        foods: [
+          {
+            foodId: sampleSession.foods[0].foodId,
+            familiarity: sampleSession.foods[0].familiarity,
+            variantNote: sampleSession.foods[0].variantNote,
+          },
+          {
+            foodId: sampleSession.foods[1].foodId,
+            familiarity: sampleSession.foods[1].familiarity,
+            variantNote: sampleSession.foods[1].variantNote,
+          },
+        ],
+      });
+    });
+    expect(
+      await screen.findByRole("dialog", { name: "Run tasting session" }),
+    ).toBeInTheDocument();
+    // Snapped night is dated today; the former future date is no longer in Upcoming.
+    expect(screen.queryByText(/Mon, Jul 20/)).not.toBeInTheDocument();
+  });
+
+  it("dismisses early-run confirm without updating or opening the runner", async () => {
+    const user = userEvent.setup();
+    const update = vi.fn();
+
+    renderPlan(
+      mockSessionsClient({
+        listUpcoming: vi.fn().mockResolvedValue([sampleSession]),
+        update,
+      }),
+    );
+
+    expect(await screen.findByText(/Honeycrisp/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Run" }));
+    await user.click(screen.getByRole("button", { name: "Not now" }));
+
+    expect(update).not.toHaveBeenCalled();
+    expect(
+      screen.queryByRole("dialog", { name: "Run this night early?" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("dialog", { name: "Run tasting session" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("surfaces occupied-today errors and does not open the runner", async () => {
+    const user = userEvent.setup();
+    const update = vi
+      .fn()
+      .mockRejectedValue(new Error("A session already exists on that date"));
+
+    renderPlan(
+      mockSessionsClient({
+        listUpcoming: vi.fn().mockResolvedValue([sampleSession]),
+        update,
+      }),
+    );
+
+    expect(await screen.findByText(/Honeycrisp/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Run" }));
+    await user.click(
+      screen.getByRole("button", { name: "Record as today and run" }),
+    );
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "A session already exists on that date",
+    );
+    expect(
+      screen.queryByRole("dialog", { name: "Run tasting session" }),
+    ).not.toBeInTheDocument();
   });
 
   it("surfaces load errors", async () => {

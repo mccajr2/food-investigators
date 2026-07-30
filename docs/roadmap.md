@@ -89,12 +89,12 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Branch | Spec |
 |----|--------|------|
-| early-run-date-snap | early-run-date-snap | [active](specs/active/early-run-date-snap.md) |
 
 ## Done
 
 | Id | Completed | Spec |
 |----|-----------|------|
+| early-run-date-snap | 2026-07-29 | [archive](specs/archive/early-run-date-snap.md) |
 | plan-occupied-dates | 2026-07-29 | [archive](specs/archive/plan-occupied-dates.md) |
 | suggested-next-session | 2026-07-28 | [archive](specs/archive/suggested-next-session.md) |
 | insights-taste-basics | 2026-07-24 | [archive](specs/archive/insights-taste-basics.md) |
@@ -172,3 +172,4 @@ Only notable events (first carve-up, major re-rank, cancelled theme) — not eve
 | 2026-07-29 | plan-occupied-dates shipped (Plan/Suggest month calendar; past + occupied greyed). Next up: `reward-skip-safe`. |
 | 2026-07-29 | Re-rank for beta friend: ritual polish (incl. `early-run-date-snap`) → `welcome-orientation` → Render/Neon hosting + CI/CD; park `log-past-session` / `product-tour`. Next up: `early-run-date-snap`. |
 | 2026-07-29 | Specced `early-run-date-snap` (confirm at Run start; update to today via existing API). Next up after ship: `reward-skip-safe`. |
+| 2026-07-29 | early-run-date-snap shipped (Plan Run confirm + snap to today; calendar zone for past-date checks). Next up: `reward-skip-safe`. |

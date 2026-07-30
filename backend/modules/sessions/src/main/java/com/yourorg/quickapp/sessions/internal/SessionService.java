@@ -2,6 +2,7 @@ package com.yourorg.quickapp.sessions.internal;
 
 import com.yourorg.quickapp.foods.CatalogFood;
 import com.yourorg.quickapp.foods.FoodCatalog;
+import com.yourorg.quickapp.sessions.CalendarProperties;
 import com.yourorg.quickapp.sessions.CompleteSessionRequest;
 import com.yourorg.quickapp.sessions.CreateSessionRequest;
 import com.yourorg.quickapp.sessions.FoodOutcomeRequest;
@@ -23,6 +24,7 @@ import com.yourorg.quickapp.sessions.UpdateSessionRequest;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashSet;
@@ -30,6 +32,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,11 +45,23 @@ public class SessionService {
     private final TastingSessionRepository sessions;
     private final FoodCatalog foodCatalog;
     private final Clock clock;
+    private final ZoneId calendarZone;
 
-    SessionService(TastingSessionRepository sessions, FoodCatalog foodCatalog, Clock clock) {
+    @Autowired
+    SessionService(
+            TastingSessionRepository sessions,
+            FoodCatalog foodCatalog,
+            Clock clock,
+            CalendarProperties calendarProperties) {
         this.sessions = sessions;
         this.foodCatalog = foodCatalog;
         this.clock = clock;
+        this.calendarZone = calendarProperties.zoneId();
+    }
+
+    /** Test helper — same calendar zone as production default when omitted. */
+    SessionService(TastingSessionRepository sessions, FoodCatalog foodCatalog, Clock clock) {
+        this(sessions, foodCatalog, clock, new CalendarProperties("America/New_York"));
     }
 
     @Transactional
@@ -217,10 +232,14 @@ public class SessionService {
     }
 
     private void requireNotPast(LocalDate scheduledOn) {
-        LocalDate today = LocalDate.now(clock);
+        LocalDate today = today();
         if (scheduledOn.isBefore(today)) {
             throw new InvalidSessionScheduleException("Scheduled date can't be in the past");
         }
+    }
+
+    private LocalDate today() {
+        return LocalDate.now(clock.withZone(calendarZone));
     }
 
     private void requireDayAvailable(UUID householdId, LocalDate scheduledOn, UUID excludeId) {

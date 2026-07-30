@@ -3,6 +3,7 @@ package com.yourorg.quickapp.sessions.internal;
 import com.yourorg.quickapp.foods.CatalogFood;
 import com.yourorg.quickapp.foods.FoodCatalog;
 import com.yourorg.quickapp.foods.SnackPreferenceSnapshot;
+import com.yourorg.quickapp.sessions.CalendarProperties;
 import com.yourorg.quickapp.sessions.InsufficientSuggestionCatalogException;
 import com.yourorg.quickapp.sessions.InsightsResponse;
 import com.yourorg.quickapp.sessions.SessionStatus;
@@ -11,13 +12,14 @@ import com.yourorg.quickapp.sessions.SuggestedSessionFood;
 import com.yourorg.quickapp.sessions.SuggestionSource;
 import java.time.Clock;
 import java.time.LocalDate;
-import java.time.ZoneOffset;
+import java.time.ZoneId;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,16 +33,29 @@ public class SessionSuggestionService {
     private final FoodCatalog foodCatalog;
     private final SuggestionLlmPort llm;
     private final Clock clock;
+    private final ZoneId calendarZone;
 
+    @Autowired
+    SessionSuggestionService(
+            TastingSessionRepository sessions,
+            FoodCatalog foodCatalog,
+            SuggestionLlmPort llm,
+            Clock clock,
+            CalendarProperties calendarProperties) {
+        this.sessions = sessions;
+        this.foodCatalog = foodCatalog;
+        this.llm = llm;
+        this.clock = clock;
+        this.calendarZone = calendarProperties.zoneId();
+    }
+
+    /** Test helper — same calendar zone as production default when omitted. */
     SessionSuggestionService(
             TastingSessionRepository sessions,
             FoodCatalog foodCatalog,
             SuggestionLlmPort llm,
             Clock clock) {
-        this.sessions = sessions;
-        this.foodCatalog = foodCatalog;
-        this.llm = llm;
-        this.clock = clock;
+        this(sessions, foodCatalog, llm, clock, new CalendarProperties("America/New_York"));
     }
 
     @Transactional(readOnly = true)
@@ -120,7 +135,7 @@ public class SessionSuggestionService {
     }
 
     private LocalDate nextOpenDay(UUID householdId) {
-        LocalDate day = LocalDate.now(clock.withZone(ZoneOffset.UTC));
+        LocalDate day = today();
         for (int i = 0; i < 366; i++) {
             boolean occupied =
                     sessions.existsByHouseholdIdAndScheduledOnAndStatusIn(
@@ -130,6 +145,10 @@ public class SessionSuggestionService {
             }
             day = day.plusDays(1);
         }
-        return LocalDate.now(clock.withZone(ZoneOffset.UTC)).plusDays(1);
+        return today().plusDays(1);
+    }
+
+    private LocalDate today() {
+        return LocalDate.now(clock.withZone(calendarZone));
     }
 }

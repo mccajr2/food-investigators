@@ -26,3 +26,6 @@ app:
     api-key: ${GEMINI_API_KEY:}
     model: ${GEMINI_MODEL:gemini-3.5-flash}
     api-base-url: ${GEMINI_API_BASE_URL:https://generativelanguage.googleapis.com/v1beta}
+  calendar:
+    # Household calendar day for Plan/Run “today” (not server UTC).
+    zone: ${APP_CALENDAR_ZONE:America/New_York}
