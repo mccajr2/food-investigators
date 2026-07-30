@@ -18,7 +18,7 @@ without turning the step into an essay.
 ## Non-goals
 
 - Insights tips / aggregates / why snippets (`why-insights-surface` — next)
-- Full sense-survey reshape (`run-sense-survey`)
+- Full sense-survey reshape (`run-sense-survey` → later `run-survey-shorten`)
 - Clinical coding or NLP of free text
 - Requiring essays or blocking Skip forever
 - New OpenAPI fields (chips fold into existing `whyNote`)
