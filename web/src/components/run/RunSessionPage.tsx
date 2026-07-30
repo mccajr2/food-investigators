@@ -15,7 +15,7 @@ import { FoodIcon } from "@/components/food/FoodIcon"
 import { BrandLogo } from "@/components/BrandLogo"
 import { ParentNotesStep } from "@/components/run/ParentNotesStep"
 import { RewardFlow } from "@/components/run/RewardFlow"
-import { IconChoiceStep, SpeechNoteStep, TasteMultiChoiceStep } from "@/components/run/RunSteps"
+import { IconChoiceStep, SpeechNoteStep, TasteMultiChoiceStep, WhyNoteStep } from "@/components/run/RunSteps"
 import {
   TASTE_BASIC_LABELS,
   TASTE_BASIC_OPTIONS,
@@ -27,6 +27,11 @@ import {
   phaseAfterFoodPick,
   type RewardPhase,
 } from "@/components/run/rewardFoods"
+import {
+  canConfirmWhy,
+  encodeWhyNote,
+  whyChipsForLiked,
+} from "@/components/run/whyChips"
 import { Button } from "@/components/ui/button"
 import {
   createSpeechRecognition,
@@ -173,6 +178,7 @@ export function RunSessionPage({
   const [stepIndex, setStepIndex] = useState(0)
   const [outcomes, setOutcomes] = useState(() => initialOutcomes(session))
   const [noteDraft, setNoteDraft] = useState("")
+  const [whyChips, setWhyChips] = useState<string[]>([])
   const [listening, setListening] = useState(false)
   const [status, setStatus] = useState<RunStatus>({ kind: "running" })
   const [completedSession, setCompletedSession] = useState<SessionResponse | null>(
@@ -201,12 +207,14 @@ export function RunSessionPage({
     if (stepIndex < RUN_STEPS.length - 1) {
       setStepIndex((current) => current + 1)
       setNoteDraft("")
+      setWhyChips([])
       return
     }
     if (foodIndex < 1) {
       setFoodIndex(1)
       setStepIndex(0)
       setNoteDraft("")
+      setWhyChips([])
       return
     }
     void submit(nextOutcomes)
@@ -309,14 +317,30 @@ export function RunSessionPage({
   }
 
   function confirmNote(field: "whyNote" | "changeNote") {
+    if (field === "whyNote") {
+      const chips = whyChipsForLiked(currentDraft.liked)
+      patchDraft({
+        whyNote: encodeWhyNote(whyChips, noteDraft, chips),
+      })
+      advance()
+      return
+    }
     const trimmed = noteDraft.trim()
-    patchDraft({ [field]: trimmed.length > 0 ? trimmed : null })
+    patchDraft({ changeNote: trimmed.length > 0 ? trimmed : null })
     advance()
   }
 
   function skipNote(field: "whyNote" | "changeNote") {
     patchDraft({ [field]: null })
     advance()
+  }
+
+  function toggleWhyChip(chip: string) {
+    setWhyChips((current) =>
+      current.includes(chip)
+        ? current.filter((value) => value !== chip)
+        : [...current, chip],
+    )
   }
 
   const busy = status.kind === "submitting"
@@ -485,8 +509,11 @@ export function RunSessionPage({
         ) : null}
 
         {!inReward && !inParentNotes && step === "why" ? (
-          <SpeechNoteStep
+          <WhyNoteStep
             prompt={whyPrompt(currentDraft.liked)}
+            chips={whyChipsForLiked(currentDraft.liked)}
+            selectedChips={whyChips}
+            onToggleChip={toggleWhyChip}
             note={noteDraft}
             listening={listening}
             speechSupported={speechSupported}
@@ -494,6 +521,7 @@ export function RunSessionPage({
             onStartListening={onStartListening}
             onConfirm={() => confirmNote("whyNote")}
             onSkip={() => skipNote("whyNote")}
+            confirmDisabled={!canConfirmWhy(whyChips, noteDraft)}
           />
         ) : null}
 

@@ -68,6 +68,17 @@ async function skipAllOptionalSteps(user: ReturnType<typeof userEvent.setup>) {
   }
 }
 
+/** Liked → skip texture/tastes/temperature/smell → why. */
+async function advanceToWhyStep(
+  user: ReturnType<typeof userEvent.setup>,
+  likedLabel: "Like" | "So-so" | "No",
+) {
+  await user.click(screen.getByRole("option", { name: likedLabel }))
+  for (let step = 0; step < 4; step += 1) {
+    await user.click(screen.getByRole("button", { name: "Skip" }))
+  }
+}
+
 describe("buildCompleteRequest", () => {
   it("maps skipped fields to null and requires ateEnough", () => {
     const request = buildCompleteRequest([
@@ -211,6 +222,152 @@ describe("RunSessionPage", () => {
               position: 2,
               tastes: null,
             }),
+          ],
+        }),
+      )
+    })
+  })
+
+  it("shows like why chips and gates Continue until chip or note", async () => {
+    const user = userEvent.setup()
+    render(
+      <RunSessionPage
+        session={sampleSession}
+        sessionsClient={mockSessionsClient()}
+        onComplete={vi.fn()}
+        onExit={vi.fn()}
+      />,
+    )
+
+    await advanceToWhyStep(user, "Like")
+
+    expect(screen.getByLabelText("Why note")).toBeInTheDocument()
+    expect(screen.getByText("Why did you like it?")).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "tasty" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "crunchy" })).toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: "yucky taste" }),
+    ).not.toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled()
+
+    await user.click(screen.getByRole("button", { name: "tasty" }))
+    expect(screen.getByRole("button", { name: "tasty" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    )
+    expect(screen.getByRole("button", { name: "Continue" })).toBeEnabled()
+  })
+
+  it("shows dislike why chips for No", async () => {
+    const user = userEvent.setup()
+    render(
+      <RunSessionPage
+        session={sampleSession}
+        sessionsClient={mockSessionsClient()}
+        onComplete={vi.fn()}
+        onExit={vi.fn()}
+      />,
+    )
+
+    await advanceToWhyStep(user, "No")
+
+    expect(screen.getByText("Why didn't you like it?")).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: "yucky taste" }),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "tasty" })).not.toBeInTheDocument()
+  })
+
+  it("persists chips and optional note into whyNote on complete", async () => {
+    const user = userEvent.setup()
+    const complete = vi.fn().mockResolvedValue({
+      ...sampleSession,
+      status: "completed",
+      foods: sampleSession.foods.map((food) => ({
+        ...food,
+        ateEnough: false,
+      })),
+    })
+
+    render(
+      <RunSessionPage
+        session={sampleSession}
+        sessionsClient={mockSessionsClient({ complete })}
+        onComplete={vi.fn()}
+        onExit={vi.fn()}
+      />,
+    )
+
+    await advanceToWhyStep(user, "Like")
+    await user.click(screen.getByRole("button", { name: "crunchy" }))
+    await user.click(screen.getByRole("button", { name: "tasty" }))
+    await user.type(screen.getByLabelText("Answer"), "liked the peel")
+    await user.click(screen.getByRole("button", { name: "Continue" }))
+    // change note
+    await user.click(screen.getByRole("button", { name: "Skip" }))
+    await user.click(screen.getByRole("option", { name: "No" }))
+
+    await skipAllOptionalSteps(user)
+    await user.click(screen.getByRole("option", { name: "No" }))
+
+    await waitFor(() => {
+      expect(complete).toHaveBeenCalledWith(
+        sampleSession.id,
+        expect.objectContaining({
+          foods: [
+            expect.objectContaining({
+              position: 1,
+              liked: "like",
+              whyNote: "tasty, crunchy — liked the peel",
+            }),
+            expect.objectContaining({
+              position: 2,
+              whyNote: null,
+            }),
+          ],
+        }),
+      )
+    })
+  })
+
+  it("stores null whyNote when why is skipped", async () => {
+    const user = userEvent.setup()
+    const complete = vi.fn().mockResolvedValue({
+      ...sampleSession,
+      status: "completed",
+      foods: sampleSession.foods.map((food) => ({
+        ...food,
+        ateEnough: false,
+      })),
+    })
+
+    render(
+      <RunSessionPage
+        session={sampleSession}
+        sessionsClient={mockSessionsClient({ complete })}
+        onComplete={vi.fn()}
+        onExit={vi.fn()}
+      />,
+    )
+
+    await advanceToWhyStep(user, "Like")
+    await user.click(screen.getByRole("button", { name: "Skip" }))
+    await user.click(screen.getByRole("button", { name: "Skip" }))
+    await user.click(screen.getByRole("option", { name: "No" }))
+
+    await skipAllOptionalSteps(user)
+    await user.click(screen.getByRole("option", { name: "No" }))
+
+    await waitFor(() => {
+      expect(complete).toHaveBeenCalledWith(
+        sampleSession.id,
+        expect.objectContaining({
+          foods: [
+            expect.objectContaining({
+              position: 1,
+              whyNote: null,
+            }),
+            expect.anything(),
           ],
         }),
       )
@@ -661,7 +818,7 @@ describe("RunSessionPage", () => {
     await user.click(screen.getByRole("button", { name: "Skip" }))
 
     await user.type(screen.getByLabelText("Answer"), "crunchy")
-    await user.click(screen.getByRole("button", { name: "Use this" }))
+    await user.click(screen.getByRole("button", { name: "Continue" }))
     await user.type(screen.getByLabelText("Answer"), "less peel")
     await user.click(screen.getByRole("button", { name: "Use this" }))
     await user.click(screen.getByRole("option", { name: "Yes" }))

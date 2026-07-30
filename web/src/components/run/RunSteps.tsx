@@ -149,6 +149,8 @@ type SpeechNoteStepProps = {
   onStartListening: () => void
   onConfirm: () => void
   onSkip: () => void
+  confirmLabel?: string
+  confirmDisabled?: boolean
 }
 
 export function SpeechNoteStep({
@@ -160,6 +162,8 @@ export function SpeechNoteStep({
   onStartListening,
   onConfirm,
   onSkip,
+  confirmLabel = "Use this",
+  confirmDisabled = false,
 }: SpeechNoteStepProps) {
   return (
     <div
@@ -194,8 +198,119 @@ export function SpeechNoteStep({
         maxLength={500}
       />
       <div className="flex flex-wrap justify-center gap-3">
-        <Button type="button" size="lg" onClick={onConfirm}>
-          Use this
+        <Button
+          type="button"
+          size="lg"
+          onClick={onConfirm}
+          disabled={confirmDisabled}
+        >
+          {confirmLabel}
+        </Button>
+        <Button type="button" size="lg" variant="outline" onClick={onSkip}>
+          Skip
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+type WhyNoteStepProps = {
+  prompt: string
+  chips: readonly string[]
+  selectedChips: string[]
+  onToggleChip: (chip: string) => void
+  note: string
+  listening: boolean
+  speechSupported: boolean
+  onNoteChange: (value: string) => void
+  onStartListening: () => void
+  onConfirm: () => void
+  onSkip: () => void
+  confirmDisabled: boolean
+}
+
+export function WhyNoteStep({
+  prompt,
+  chips,
+  selectedChips,
+  onToggleChip,
+  note,
+  listening,
+  speechSupported,
+  onNoteChange,
+  onStartListening,
+  onConfirm,
+  onSkip,
+  confirmDisabled,
+}: WhyNoteStepProps) {
+  return (
+    <div
+      key={prompt}
+      className="run-enter flex min-h-[60vh] flex-col items-center justify-center gap-6 px-4 py-8"
+      aria-label="Why note"
+    >
+      <h2 className="run-prompt max-w-2xl text-center text-3xl leading-tight md:text-4xl lg:text-5xl">
+        {prompt}
+      </h2>
+      <p className="max-w-xl text-center text-base text-muted-foreground md:text-lg">
+        Tap all that fit — you can also add a short note.
+      </p>
+      <div
+        className="flex w-full max-w-2xl flex-wrap justify-center gap-3"
+        role="group"
+        aria-label="Why chips"
+      >
+        {chips.map((chip) => {
+          const isSelected = selectedChips.includes(chip)
+          return (
+            <button
+              key={chip}
+              type="button"
+              aria-pressed={isSelected}
+              aria-label={chip}
+              className={cn(
+                "run-placemat min-h-14 min-w-[8.5rem] px-4 py-3 text-center text-lg transition hover:brightness-[1.03] md:text-xl",
+                isSelected && "run-placemat--selected",
+              )}
+              onClick={() => onToggleChip(chip)}
+            >
+              {chip}
+            </button>
+          )
+        })}
+      </div>
+      {speechSupported ? (
+        <Button
+          type="button"
+          size="lg"
+          variant={listening ? "secondary" : "default"}
+          onClick={onStartListening}
+          disabled={listening}
+          aria-label="Tap to talk"
+        >
+          {listening ? "Listening…" : "Tap to talk"}
+        </Button>
+      ) : (
+        <p className="text-center text-sm text-muted-foreground">
+          Speech not available here — type the answer below.
+        </p>
+      )}
+      <Input
+        aria-label="Answer"
+        value={note}
+        onChange={(event) => onNoteChange(event.target.value)}
+        placeholder="Anything else? (optional)"
+        className="run-placemat max-w-2xl border-[3px] text-lg"
+        maxLength={500}
+      />
+      <div className="flex flex-wrap justify-center gap-3">
+        <Button
+          type="button"
+          size="lg"
+          onClick={onConfirm}
+          disabled={confirmDisabled}
+        >
+          Continue
         </Button>
         <Button type="button" size="lg" variant="outline" onClick={onSkip}>
           Skip

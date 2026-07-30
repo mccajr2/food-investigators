@@ -44,7 +44,7 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | why-outcome-depth | planned | 2026-07-28 · enhancement | Strengthen why capture for like *and* dislike; surface usefully in Insights/History |
+| 1 | why-insights-surface | planned | 2026-07-30 · re-rank split | Surface why notes in Insights (tips / snippets) after capture |
 | 2 | run-sense-survey | planned | 2026-07-28 · enhancement | Reframe run survey around senses: taste, texture (touch), smell, look (sight) |
 | 3 | child-display-name | planned | 2026-07-28 · enhancement | Optional child’s first name at signup / settings (single-child profile) |
 | 4 | signup-starter-snacks | planned | 2026-07-23 · enhancement | Optional signup intake: liked tasting foods + snacks (else catalog defaults) |
@@ -93,6 +93,7 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Completed | Spec |
 |----|-----------|------|
+| why-outcome-depth | 2026-07-30 | [archive](specs/archive/why-outcome-depth.md) |
 | reward-skip-safe | 2026-07-30 | [archive](specs/archive/reward-skip-safe.md) |
 | early-run-date-snap | 2026-07-29 | [archive](specs/archive/early-run-date-snap.md) |
 | plan-occupied-dates | 2026-07-29 | [archive](specs/archive/plan-occupied-dates.md) |
@@ -175,3 +176,5 @@ Only notable events (first carve-up, major re-rank, cancelled theme) — not eve
 | 2026-07-29 | early-run-date-snap shipped (Plan Run confirm + snap to today; calendar zone for past-date checks). Next up: `reward-skip-safe`. |
 | 2026-07-29 | Specced `reward-skip-safe` (games only for non-safe ate-enough; encourage when none). Next up after ship: `why-outcome-depth`. |
 | 2026-07-30 | reward-skip-safe shipped (stretch-only game unlock; habit vs try-again encourage copy). Next up: `why-outcome-depth`. |
+| 2026-07-30 | Specced `why-outcome-depth` (Run chips + optional note → `whyNote`). Split Insights to `why-insights-surface` (rank 2). |
+| 2026-07-30 | why-outcome-depth shipped (liked-specific why chips + optional note → `whyNote`). Next up: `why-insights-surface`. |
