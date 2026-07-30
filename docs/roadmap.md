@@ -44,7 +44,7 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | why-insights-surface | planned | 2026-07-30 · re-rank split | Surface why notes in Insights (tips / snippets) after capture |
+| 1 | why-insights-surface | active | 2026-07-30 · re-rank split | Surface why notes in Insights (tips / snippets) after capture |
 | 2 | run-sense-survey | planned | 2026-07-28 · enhancement | Reframe run survey around senses: taste, texture (touch), smell, look (sight) |
 | 3 | child-display-name | planned | 2026-07-28 · enhancement | Optional child’s first name at signup / settings (single-child profile) |
 | 4 | signup-starter-snacks | planned | 2026-07-23 · enhancement | Optional signup intake: liked tasting foods + snacks (else catalog defaults) |
@@ -88,6 +88,7 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Branch | Spec |
 |----|--------|------|
+| why-insights-surface | why-insights-surface | [active](specs/active/why-insights-surface.md) |
 
 ## Done
 
@@ -178,3 +179,4 @@ Only notable events (first carve-up, major re-rank, cancelled theme) — not eve
 | 2026-07-30 | reward-skip-safe shipped (stretch-only game unlock; habit vs try-again encourage copy). Next up: `why-outcome-depth`. |
 | 2026-07-30 | Specced `why-outcome-depth` (Run chips + optional note → `whyNote`). Split Insights to `why-insights-surface` (rank 2). |
 | 2026-07-30 | why-outcome-depth shipped (liked-specific why chips + optional note → `whyNote`). Next up: `why-insights-surface`. |
+| 2026-07-30 | Specced `why-insights-surface` (recent why snippets + chip-count tips on Insights; OpenAPI). Next up after ship: `run-sense-survey`. |
