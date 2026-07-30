@@ -193,6 +193,13 @@ export type InsightTip = {
   message: string
 }
 
+export type RecentWhyNote = {
+  scheduledOn: string
+  foodName: string
+  liked?: Liked | null
+  whyNote: string
+}
+
 export type InsightsResponse = {
   completedSessionCount: number
   ready: boolean
@@ -209,5 +216,6 @@ export type InsightsResponse = {
   familiarityTrulyNew: number
   snackCount: number
   hasParentNotes: boolean
+  recentWhyNotes: RecentWhyNote[]
   tips: InsightTip[]
 }

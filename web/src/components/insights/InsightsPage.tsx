@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 
 import { InsightsClient } from "@/api"
-import type { InsightsResponse, Texture } from "@/api/types"
+import type { InsightsResponse, Liked, Texture } from "@/api/types"
 import { TASTE_BASIC_LABELS } from "@/components/run/tasteBasics"
 import { Button } from "@/components/ui/button"
 
@@ -20,6 +20,12 @@ const TEXTURE_LABELS: Record<Texture, string> = {
   crunchy: "Crunchy",
   chewy: "Chewy",
   wet: "Wet",
+}
+
+const LIKED_LABELS: Record<Liked, string> = {
+  like: "Like",
+  so_so: "So-so",
+  no: "No",
 }
 
 const READY_THRESHOLD = 3
@@ -181,6 +187,44 @@ export function InsightsPage({
               value={insights.hasParentNotes ? "Some nights have notes" : "None yet"}
             />
           </dl>
+
+          <section
+            aria-labelledby="insights-recent-whys-heading"
+            className="flex flex-col gap-3"
+          >
+            <h3
+              id="insights-recent-whys-heading"
+              className="text-sm font-medium uppercase tracking-wide text-muted-foreground"
+            >
+              Recent whys
+            </h3>
+            {insights.recentWhyNotes.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No why notes yet — they’ll show up after tasting nights.
+              </p>
+            ) : (
+              <ul className="flex flex-col gap-3">
+                {insights.recentWhyNotes.map((note) => (
+                  <li
+                    key={`${note.scheduledOn}-${note.foodName}-${note.whyNote}`}
+                    className="rounded-lg border border-border bg-card p-4"
+                  >
+                    <p className="text-sm font-medium leading-snug">
+                      {note.foodName}
+                      <span className="font-normal text-muted-foreground">
+                        {" "}
+                        · {note.scheduledOn}
+                        {note.liked
+                          ? ` · ${LIKED_LABELS[note.liked] ?? note.liked}`
+                          : ""}
+                      </span>
+                    </p>
+                    <p className="mt-1 text-sm leading-relaxed">{note.whyNote}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
 
           <section aria-labelledby="insights-tips-heading" className="flex flex-col gap-3">
             <h3

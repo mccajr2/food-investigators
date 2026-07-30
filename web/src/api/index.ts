@@ -15,6 +15,7 @@ export type {
   InsightsResponse,
   Liked,
   LoginRequest,
+  RecentWhyNote,
   RegisterRequest,
   SessionFoodRequest,
   SessionFoodResponse,

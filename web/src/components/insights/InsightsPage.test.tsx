@@ -22,6 +22,7 @@ const notReady: InsightsResponse = {
   familiarityTrulyNew: 0,
   snackCount: 2,
   hasParentNotes: false,
+  recentWhyNotes: [],
   tips: [],
 }
 
@@ -41,7 +42,25 @@ const ready: InsightsResponse = {
   familiarityTrulyNew: 0,
   snackCount: 1,
   hasParentNotes: true,
+  recentWhyNotes: [
+    {
+      scheduledOn: "2026-07-20",
+      foodName: "Apples",
+      liked: "like",
+      whyNote: "tasty, crunchy — liked the peel",
+    },
+    {
+      scheduledOn: "2026-07-19",
+      foodName: "Broccoli",
+      liked: "no",
+      whyNote: "yucky smell",
+    },
+  ],
   tips: [
+    {
+      id: "lean_into_why_like",
+      message: 'Likes often mention "crunchy" — lean into that when you pick foods.',
+    },
     {
       id: "lean_into_taste",
       message: "Salty tastes seem to land — lean into that when you pick foods.",
@@ -50,10 +69,6 @@ const ready: InsightsResponse = {
       id: "mix_familiarity",
       message:
         "You've stuck to known foods — when you're ready, try one gentle familiar-but-new.",
-    },
-    {
-      id: "keep_going",
-      message: "You're building a tasting rhythm — keep going at a calm pace.",
     },
   ],
 }
@@ -93,8 +108,19 @@ describe("InsightsPage", () => {
     expect(screen.getByText("Salty")).toBeInTheDocument()
     expect(screen.getByText("Some nights have notes")).toBeInTheDocument()
 
+    const recentWhys = screen
+      .getByRole("heading", { name: "Recent whys" })
+      .closest("section")
+    expect(recentWhys).not.toBeNull()
+    expect(within(recentWhys!).getByText(/Apples/)).toBeInTheDocument()
+    expect(
+      within(recentWhys!).getByText(/tasty, crunchy — liked the peel/),
+    ).toBeInTheDocument()
+    expect(within(recentWhys!).getByText(/yucky smell/)).toBeInTheDocument()
+
     const tips = screen.getByRole("heading", { name: "Tips" }).closest("section")
     expect(tips).not.toBeNull()
+    expect(within(tips!).getByText(/Likes often mention/)).toBeInTheDocument()
     expect(within(tips!).getByText(/Salty tastes seem to land/)).toBeInTheDocument()
     expect(within(tips!).getByText(/stuck to known foods/)).toBeInTheDocument()
 
@@ -110,16 +136,33 @@ describe("InsightsPage", () => {
     expect(screen.getByText("Salty")).toBeInTheDocument()
 
     await user.click(
-      screen.getByRole("button", { name: "Dismiss tip: keep_going" }),
+      screen.getByRole("button", { name: "Dismiss tip: lean_into_why_like" }),
     )
 
-    expect(dismissTip).toHaveBeenCalledWith("keep_going")
+    expect(dismissTip).toHaveBeenCalledWith("lean_into_why_like")
     await waitFor(() => {
-      expect(
-        screen.queryByText(/building a tasting rhythm/),
-      ).not.toBeInTheDocument()
+      expect(screen.queryByText(/Likes often mention/)).not.toBeInTheDocument()
     })
     expect(screen.getByText(/stuck to known foods/)).toBeInTheDocument()
+  })
+
+  it("shows empty recent whys copy when none recorded", async () => {
+    render(
+      <InsightsPage
+        client={mockClient({
+          get: vi.fn().mockResolvedValue({
+            ...ready,
+            recentWhyNotes: [],
+            tips: [],
+          }),
+        })}
+      />,
+    )
+
+    expect(await screen.findByRole("heading", { name: "Recent whys" })).toBeInTheDocument()
+    expect(
+      screen.getByText(/No why notes yet/),
+    ).toBeInTheDocument()
   })
 
   it("shows None yet when no liked tastes", async () => {

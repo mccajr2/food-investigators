@@ -60,6 +60,7 @@ class SuggestionBriefBuilderTest {
                         3,
                         0,
                         false,
+                        List.of(),
                         List.of(
                                 new com.yourorg.quickapp.sessions.InsightTip(
                                         InsightsCalculator.TIP_SLOW_DOWN_TRULY_NEW, "ease off")));
@@ -97,6 +98,7 @@ class SuggestionBriefBuilderTest {
                 0,
                 0,
                 false,
+                List.of(),
                 List.of());
     }
 }

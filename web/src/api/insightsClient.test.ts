@@ -33,6 +33,14 @@ const sampleInsights: InsightsResponse = {
   familiarityTrulyNew: 0,
   snackCount: 1,
   hasParentNotes: false,
+  recentWhyNotes: [
+    {
+      scheduledOn: "2026-07-20",
+      foodName: "Apples",
+      liked: "like",
+      whyNote: "tasty, crunchy",
+    },
+  ],
   tips: [
     {
       id: "mix_familiarity",
@@ -64,6 +72,8 @@ describe("InsightsClient", () => {
     expect(insights.ready).toBe(true)
     expect(insights.familiaritySafe).toBe(4)
     expect(insights.topLikedTastes).toEqual(["salty", "sweet"])
+    expect(insights.recentWhyNotes).toHaveLength(1)
+    expect(insights.recentWhyNotes[0]?.whyNote).toBe("tasty, crunchy")
     expect(insights.tips).toHaveLength(2)
     expect(String(fetchFn.mock.calls[0]?.[0])).toBe(
       "http://localhost:8080/api/insights",

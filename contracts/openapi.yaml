@@ -843,7 +843,8 @@ components:
         example: keep_going
       description: >
         Fixed tip catalog id (e.g. slow_down_truly_new, lean_into_texture,
-        lean_into_taste, celebrate_ate_enough, mix_familiarity, keep_going).
+        lean_into_taste, lean_into_why_like, notice_why_dislike,
+        celebrate_ate_enough, mix_familiarity, keep_going).
   securitySchemes:
     bearerAuth:
       type: http
@@ -1380,6 +1381,29 @@ components:
         message:
           type: string
           example: You're building a tasting rhythm — keep going at a calm pace.
+    RecentWhyNote:
+      type: object
+      required:
+        - scheduledOn
+        - foodName
+        - whyNote
+      properties:
+        scheduledOn:
+          type: string
+          format: date
+          description: Calendar date of the completed tasting night
+        foodName:
+          type: string
+          example: Apples
+        liked:
+          allOf:
+            - $ref: "#/components/schemas/Liked"
+          nullable: true
+          description: Liked outcome for that food; null when skipped
+        whyNote:
+          type: string
+          maxLength: 500
+          example: tasty, crunchy — liked the peel
     InsightsResponse:
       type: object
       required:
@@ -1398,6 +1422,7 @@ components:
         - familiarityTrulyNew
         - snackCount
         - hasParentNotes
+        - recentWhyNotes
         - tips
       properties:
         completedSessionCount:
@@ -1460,6 +1485,14 @@ components:
           description: Active (non-archived) snack foods for the household
         hasParentNotes:
           type: boolean
+        recentWhyNotes:
+          type: array
+          maxItems: 5
+          items:
+            $ref: "#/components/schemas/RecentWhyNote"
+          description: >
+            Newest completed-food why notes (non-blank), up to 5 when ready;
+            empty when not ready or none recorded
         tips:
           type: array
           maxItems: 3

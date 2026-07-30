@@ -43,6 +43,10 @@ class InsightsClientTest {
             assertTrue(insights.ready)
             assertEquals(4, insights.familiaritySafe)
             assertEquals(listOf("salty", "sweet"), insights.topLikedTastes)
+            assertEquals(1, insights.recentWhyNotes.size)
+            assertEquals("Apples", insights.recentWhyNotes[0].foodName)
+            assertEquals("like", insights.recentWhyNotes[0].liked)
+            assertEquals("tasty, crunchy", insights.recentWhyNotes[0].whyNote)
             assertEquals(2, insights.tips.size)
             assertEquals("keep_going", insights.tips[1].id)
             assertEquals("Bearer tok", sawAuth)
@@ -120,6 +124,14 @@ class InsightsClientTest {
           "familiarityTrulyNew": 0,
           "snackCount": 1,
           "hasParentNotes": false,
+          "recentWhyNotes": [
+            {
+              "scheduledOn": "2026-07-20",
+              "foodName": "Apples",
+              "liked": "like",
+              "whyNote": "tasty, crunchy"
+            }
+          ],
           "tips": [
             {
               "id": "mix_familiarity",
