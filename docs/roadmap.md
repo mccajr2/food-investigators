@@ -1,7 +1,7 @@
 # Product roadmap
 
 Status: active  
-Updated: 2026-07-28
+Updated: 2026-07-29
 
 Living backlog for this product repo. **One roadmap ↔ many specs** (1:1 by
 kebab-case id). `/roadmap` updates and re-ranks; `/spec <id>` fleshes out the
@@ -21,7 +21,9 @@ Familiarity ladder (parent-set at first): safe foods he consistently eats →
 familiar-but-new (prep/brand) → truly new → retrying (tried before, trying again).
 Pace stays parent-led early; the app may suggest the next session for approval.
 Later slices deepen prep retries for disliked foods and optional signup intake so
-the catalog starts closer to this child.
+the catalog starts closer to this child. A short welcome orients new beta parents
+to the learning / guiding / pacing idea before friends try a hosted MVP
+(Render + Neon + keep-alive).
 
 ## Product non-goals
 
@@ -42,16 +44,21 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | reward-skip-safe | planned | 2026-07-28 · enhancement | Do not offer reward mini-games when both foods were `safe` |
-| 2 | why-outcome-depth | planned | 2026-07-28 · enhancement | Strengthen why capture for like *and* dislike; surface usefully in Insights/History |
-| 3 | run-sense-survey | planned | 2026-07-28 · enhancement | Reframe run survey around senses: taste, texture (touch), smell, look (sight) |
-| 4 | child-display-name | planned | 2026-07-28 · enhancement | Optional child’s first name at signup / settings (single-child profile) |
-| 5 | signup-starter-snacks | planned | 2026-07-23 · enhancement | Optional signup intake: liked tasting foods + snacks (else catalog defaults) |
-| 6 | suggestion-pacing-evidence | planned | 2026-07-25 · re-rank split | Science-backed pacing / preference guidance for suggestions |
-| 7 | disliked-prep-rotation | planned | 2026-07-28 · enhancement | Suggest distinct preps of a disliked food (~3 over weeks), then longer rest |
-| 8 | milestone-badges | planned | 2026-07-28 · enhancement | Celebration badges (e.g. first liked new food; 5/10/25 new foods) |
-| 9 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
-| 10 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
+| 1 | early-run-date-snap | planned | 2026-07-29 · enhancement | Confirm when running a future night early; snap `scheduledOn` to today so History/Plan occupancy stay truthful |
+| 2 | reward-skip-safe | planned | 2026-07-28 · enhancement | Do not offer reward mini-games when both foods were `safe` |
+| 3 | why-outcome-depth | planned | 2026-07-28 · enhancement | Strengthen why capture for like *and* dislike; surface usefully in Insights/History |
+| 4 | run-sense-survey | planned | 2026-07-28 · enhancement | Reframe run survey around senses: taste, texture (touch), smell, look (sight) |
+| 5 | child-display-name | planned | 2026-07-28 · enhancement | Optional child’s first name at signup / settings (single-child profile) |
+| 6 | signup-starter-snacks | planned | 2026-07-23 · enhancement | Optional signup intake: liked tasting foods + snacks (else catalog defaults) |
+| 7 | suggestion-pacing-evidence | planned | 2026-07-25 · re-rank split | Science-backed pacing / preference guidance for suggestions |
+| 8 | disliked-prep-rotation | planned | 2026-07-28 · enhancement | Suggest distinct preps of a disliked food (~3 over weeks), then longer rest |
+| 9 | milestone-badges | planned | 2026-07-28 · enhancement | Celebration badges (e.g. first liked new food; 5/10/25 new foods) |
+| 10 | welcome-orientation | planned | 2026-07-29 · enhancement | Dismissible welcome: why Food Investigators + Plan/Run/Insights lay of the land + pacing |
+| 11 | beta-backend-hosting | planned | 2026-07-29 · enhancement | Neon Postgres + Render backend + UptimeRobot keep-alive for beta |
+| 12 | beta-web-hosting | planned | 2026-07-29 · enhancement | Render web front pointed at prod API |
+| 13 | ci-cd-production | planned | 2026-07-29 · enhancement | After tests on `main`, auto-deploy backend + web to Render |
+| 14 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
+| 15 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
 
 Status values: `parking` · `planned` · `active` · `done` · `cancelled`  
 Added: `YYYY-MM-DD · initial` | `enhancement` | `re-rank split`
@@ -62,6 +69,8 @@ Unranked ideas. Promote into **Upcoming** with `/roadmap` (re-rank).
 
 | Id | Added | Summary |
 |----|-------|---------|
+| log-past-session | 2026-07-29 · enhancement | Explicit “log a past night” for vacation / away-from-iPad backfill (after `early-run-date-snap`) |
+| product-tour | 2026-07-29 · enhancement | Richer multi-step tour if welcome-orientation isn’t enough for beta parents |
 | multi-child-profiles | 2026-07-11 · initial | More than one kid under one household (after `child-display-name`) |
 | taste-profile-matches | 2026-07-23 · enhancement | Larger “foods that taste like this” icon set (beyond run-button examples); parked 2026-07-25 |
 | snack-taste-ai | 2026-07-24 · enhancement | Infer snack tastes via AI for Insights (no manual snack taste entry) |
@@ -161,3 +170,4 @@ Only notable events (first carve-up, major re-rank, cancelled theme) — not eve
 | 2026-07-28 | Carved ritual polish batch: occupied Plan dates, skip-safe rewards, why depth, sense survey, child name, prep rotation, badges; promoted `signup-starter-snacks`. Next up: `plan-occupied-dates`. |
 | 2026-07-28 | Specced `plan-occupied-dates` (web calendar picker via `react-day-picker`; disable past + occupied). Next up: `reward-skip-safe`. |
 | 2026-07-29 | plan-occupied-dates shipped (Plan/Suggest month calendar; past + occupied greyed). Next up: `reward-skip-safe`. |
+| 2026-07-29 | Re-rank for beta friend: ritual polish (incl. `early-run-date-snap`) → `welcome-orientation` → Render/Neon hosting + CI/CD; park `log-past-session` / `product-tour`. Next up: `early-run-date-snap`. |
