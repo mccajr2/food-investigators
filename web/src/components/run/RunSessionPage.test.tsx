@@ -11,6 +11,7 @@ import {
 } from "@/components/run/RunSessionPage"
 import { RUN_THEME } from "@/components/run/runTheme"
 import { BRAND_NAME } from "@/components/BrandLogo"
+import { WHY_CHIPS_BY_LIKED } from "@/components/run/whyChips"
 
 const sampleSession: SessionResponse = {
   id: "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
@@ -351,23 +352,50 @@ describe("RunSessionPage", () => {
     expect(screen.queryByRole("button", { name: "tasty" })).not.toBeInTheDocument()
   })
 
-  it("shows visible text label with each chip icon", async () => {
-    const user = userEvent.setup()
-    render(
-      <RunSessionPage
-        session={sampleSession}
-        sessionsClient={mockSessionsClient()}
-        onComplete={vi.fn()}
-        onExit={vi.fn()}
-      />,
-    )
-    await advanceToWhyStep(user, "Like")
-    for (const chip of ["tasty", "crunchy", "soft", "yummy smell"]) {
-      const button = screen.getByRole("button", { name: chip })
-      expect(button).toHaveTextContent(chip)
-      expect(button.querySelector("svg")).not.toBeNull()
-    }
-  })
+  it.each([
+    {
+      liked: "Like" as const,
+      chips: WHY_CHIPS_BY_LIKED.like,
+      absent: "yucky taste",
+    },
+    {
+      liked: "No" as const,
+      chips: WHY_CHIPS_BY_LIKED.no,
+      absent: "tasty",
+    },
+    {
+      liked: "So-so" as const,
+      chips: WHY_CHIPS_BY_LIKED.so_so,
+      absent: "tasty",
+    },
+  ])(
+    "shows icon + visible text label for every $liked why chip",
+    async ({ liked, chips, absent }) => {
+      const user = userEvent.setup()
+      render(
+        <RunSessionPage
+          session={sampleSession}
+          sessionsClient={mockSessionsClient()}
+          onComplete={vi.fn()}
+          onExit={vi.fn()}
+        />,
+      )
+      await advanceToWhyStep(user, liked)
+
+      for (const chip of chips) {
+        const button = screen.getByRole("button", { name: chip })
+        expect(button).toHaveTextContent(chip)
+        expect(button.querySelector("span")).toHaveTextContent(chip)
+        expect(button.querySelector("svg")).not.toBeNull()
+        expect(button.querySelector("svg")?.getAttribute("data-why-chip")).toBe(
+          chip,
+        )
+      }
+      expect(
+        screen.queryByRole("button", { name: absent }),
+      ).not.toBeInTheDocument()
+    },
+  )
 
   it("persists chips and optional note into whyNote on complete", async () => {
     const user = userEvent.setup()

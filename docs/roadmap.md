@@ -44,7 +44,7 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | ritual-illustrations | planned | 2026-07-30 · enhancement | Kid-clear cartoon art for why chips + foods (AI-assisted assets; replace confusing icons) |
+| 1 | food-illustrations-ai | planned | 2026-07-30 · re-rank split | Kid-clear food art: heroes + online on-demand AI for catalog (after why chips) |
 | 2 | child-display-name | planned | 2026-07-28 · enhancement | Optional child’s first name at signup / settings (single-child profile) |
 | 3 | signup-starter-snacks | planned | 2026-07-23 · enhancement | Optional signup intake: liked tasting foods + snacks (else catalog defaults) |
 | 4 | suggestion-pacing-evidence | planned | 2026-07-25 · re-rank split | Science-backed pacing / preference guidance for suggestions |
@@ -94,6 +94,7 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Completed | Spec |
 |----|-----------|------|
+| why-chip-illustrations | 2026-07-30 | [archive](specs/archive/why-chip-illustrations.md) |
 | run-survey-shorten | 2026-07-30 | [archive](specs/archive/run-survey-shorten.md) |
 | why-insights-surface | 2026-07-30 | [archive](specs/archive/why-insights-surface.md) |
 | why-outcome-depth | 2026-07-30 | [archive](specs/archive/why-outcome-depth.md) |
@@ -187,3 +188,5 @@ Only notable events (first carve-up, major re-rank, cancelled theme) — not eve
 | 2026-07-30 | Added `run-outcome-contract` (rank before `run-tasting-session-ios`): harden informal run/outcome encodings before native Run. |
 | 2026-07-30 | Added `ritual-illustrations` (rank 2): kid-clear cartoon art for why chips + foods; AI-assisted assets after `run-survey-shorten`. |
 | 2026-07-30 | run-survey-shorten shipped (adaptive Run path; why-chip icons; dual parent notes). Next up: `ritual-illustrations`. |
+| 2026-07-30 | Split `ritual-illustrations` → active `why-chip-illustrations` (offline AI-assisted chip art) + planned `food-illustrations-ai` (heroes + online on-demand food art). |
+| 2026-07-30 | why-chip-illustrations shipped (kid-clear why-chip cartoons + labels). Next up: `food-illustrations-ai`. |

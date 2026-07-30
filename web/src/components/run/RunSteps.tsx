@@ -276,6 +276,7 @@ export function WhyNoteStep({
               onClick={() => onToggleChip(chip)}
             >
               <WhyChipIcon chip={chip} />
+              {/* Visible label required — backup when art is unclear (why-chip-illustrations). */}
               <span className="run-prompt text-base leading-tight md:text-lg">
                 {chip}
               </span>
