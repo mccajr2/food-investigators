@@ -1,12 +1,13 @@
 # Spec: run-survey-shorten
 
-Status: draft  
+Status: done  
 Created: 2026-07-30  
 Parent: [docs/roadmap.md](../../roadmap.md)  
 Added: 2026-07-28 · enhancement (as `run-sense-survey`)  
 Renamed: 2026-07-30 · `run-sense-survey` → `run-survey-shorten`  
 Specced: 2026-07-30  
 Depends on: [why-outcome-depth](../archive/why-outcome-depth.md) (why chips); [reward-skip-safe](../archive/reward-skip-safe.md) (stretch = non-safe)
+Completed: 2026-07-30
 
 ## Problem
 
@@ -90,35 +91,35 @@ fields.
 
 ## Acceptance criteria
 
-- [ ] Safe food Run path is **liked → why → ateEnough** (no texture, tastes,
+- [x] Safe food Run path is **liked → why → ateEnough** (no texture, tastes,
       temperature, smell, or change steps).
-- [ ] Stretch food Run path is **liked → why → texture → tastes → ateEnough**
+- [x] Stretch food Run path is **liked → why → texture → tastes → ateEnough**
       (no temperature, smell, or change steps).
-- [ ] Stretch = any planned familiarity other than `safe`.
-- [ ] Complete request sends `null` for temperature, smell, and changeNote; safe
+- [x] Stretch = any planned familiarity other than `safe`.
+- [x] Complete request sends `null` for temperature, smell, and changeNote; safe
       foods also send `null` for texture and tastes when those steps were skipped
       by design.
-- [ ] Each why chip shows an icon and its text label; every v1 chip has an icon;
+- [x] Each why chip shows an icon and its text label; every v1 chip has an icon;
       chips remain multi-select with the same encode/`whyNote` rules.
-- [ ] After reward, parent notes screen has two text areas (general + change next
+- [x] After reward, parent notes screen has two text areas (general + change next
       time); Save writes one labeled `parentNote` (or null if both empty); Skip
       unchanged.
-- [ ] History/PDF still render existing fields; no layout redesign required.
-- [ ] No new OpenAPI schemas/fields; no native Run UI; no smell/look screens.
-- [ ] Tests: RunSessionPage covers safe vs stretch step sequences, complete
+- [x] History/PDF still render existing fields; no layout redesign required.
+- [x] No new OpenAPI schemas/fields; no native Run UI; no smell/look screens.
+- [x] Tests: RunSessionPage covers safe vs stretch step sequences, complete
       payload nulls, why chip icons present, ParentNotesStep dual-field save
       encoding.
 
 ## Tasks
 
-- [ ] Web: Adaptive `RUN_STEPS` (or equivalent) by food familiarity; remove
+- [x] Web: Adaptive `RUN_STEPS` (or equivalent) by food familiarity; remove
       temperature / smell / change from UI.
-- [ ] Web: Why chip icon map + `WhyNoteStep` UI (graphic + label).
-- [ ] Web: `ParentNotesStep` two textareas + labeled `parentNote` encode/decode
+- [x] Web: Why chip icon map + `WhyNoteStep` UI (graphic + label).
+- [x] Web: `ParentNotesStep` two textareas + labeled `parentNote` encode/decode
       for edit display if needed.
-- [ ] Tests: RunSessionPage safe/stretch paths + complete payload; WhyNoteStep /
+- [x] Tests: RunSessionPage safe/stretch paths + complete payload; WhyNoteStep /
       chip icons; ParentNotesStep encoding.
-- [ ] Docs: Roadmap rename (`run-sense-survey` → `run-survey-shorten`); archive
+- [x] Docs: Roadmap rename (`run-sense-survey` → `run-survey-shorten`); archive
       planned stub.
 
 ## Decisions (locked)
@@ -136,4 +137,4 @@ fields.
 
 ## Open questions
 
-- _(none — ready for approval before implementation)_
+- _(none)_

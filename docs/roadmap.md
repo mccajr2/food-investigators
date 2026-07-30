@@ -44,7 +44,7 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | run-survey-shorten | active | 2026-07-28 · enhancement · renamed 2026-07-30 | Shorten Run survey (adaptive safe vs stretch); why-chip icons; parent change prompt |
+| 1 | ritual-illustrations | planned | 2026-07-30 · enhancement | Kid-clear cartoon art for why chips + foods (AI-assisted assets; replace confusing icons) |
 | 2 | child-display-name | planned | 2026-07-28 · enhancement | Optional child’s first name at signup / settings (single-child profile) |
 | 3 | signup-starter-snacks | planned | 2026-07-23 · enhancement | Optional signup intake: liked tasting foods + snacks (else catalog defaults) |
 | 4 | suggestion-pacing-evidence | planned | 2026-07-25 · re-rank split | Science-backed pacing / preference guidance for suggestions |
@@ -88,12 +88,13 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Branch | Spec |
 |----|--------|------|
-| run-survey-shorten | run-survey-shorten | [active](specs/active/run-survey-shorten.md) |
+| — | — | _(none)_ |
 
 ## Done
 
 | Id | Completed | Spec |
 |----|-----------|------|
+| run-survey-shorten | 2026-07-30 | [archive](specs/archive/run-survey-shorten.md) |
 | why-insights-surface | 2026-07-30 | [archive](specs/archive/why-insights-surface.md) |
 | why-outcome-depth | 2026-07-30 | [archive](specs/archive/why-outcome-depth.md) |
 | reward-skip-safe | 2026-07-30 | [archive](specs/archive/reward-skip-safe.md) |
@@ -184,3 +185,5 @@ Only notable events (first carve-up, major re-rank, cancelled theme) — not eve
 | 2026-07-30 | why-insights-surface shipped (Insights recent whys + chip-count tips). Next up: `run-sense-survey`. |
 | 2026-07-30 | Renamed `run-sense-survey` → `run-survey-shorten`; specced shorten + adaptive stretch + why-chip icons (not sense-screen tour). |
 | 2026-07-30 | Added `run-outcome-contract` (rank before `run-tasting-session-ios`): harden informal run/outcome encodings before native Run. |
+| 2026-07-30 | Added `ritual-illustrations` (rank 2): kid-clear cartoon art for why chips + foods; AI-assisted assets after `run-survey-shorten`. |
+| 2026-07-30 | run-survey-shorten shipped (adaptive Run path; why-chip icons; dual parent notes). Next up: `ritual-illustrations`. |

@@ -3,19 +3,18 @@ import { useEffect, useRef, useState } from "react"
 import { SessionsClient } from "@/api"
 import type {
   CompleteSessionRequest,
+  Familiarity,
   FoodOutcomeRequest,
   Liked,
   SessionResponse,
-  Smell,
   TasteBasic,
-  Temperature,
   Texture,
 } from "@/api/types"
 import { FoodIcon } from "@/components/food/FoodIcon"
 import { BrandLogo } from "@/components/BrandLogo"
-import { ParentNotesStep } from "@/components/run/ParentNotesStep"
+import { encodeParentNote, ParentNotesStep } from "@/components/run/ParentNotesStep"
 import { RewardFlow } from "@/components/run/RewardFlow"
-import { IconChoiceStep, SpeechNoteStep, TasteMultiChoiceStep, WhyNoteStep } from "@/components/run/RunSteps"
+import { IconChoiceStep, TasteMultiChoiceStep, WhyNoteStep } from "@/components/run/RunSteps"
 import {
   TASTE_BASIC_LABELS,
   TASTE_BASIC_OPTIONS,
@@ -39,28 +38,35 @@ import {
   transcriptFromEvent,
 } from "@/lib/speechRecognition"
 
-export const RUN_STEPS = [
+/** All possible kid/parent survey steps (order depends on familiarity). */
+export const RUN_STEP_KINDS = [
   "liked",
+  "why",
   "texture",
   "tastes",
-  "temperature",
-  "smell",
-  "why",
-  "change",
   "ateEnough",
 ] as const
 
-export type RunStepKind = (typeof RUN_STEPS)[number]
+export type RunStepKind = (typeof RUN_STEP_KINDS)[number]
+
+/** Stretch = anything that is not safe (same rule as reward games). */
+export function isStretchFamiliarity(familiarity: Familiarity): boolean {
+  return familiarity !== "safe"
+}
+
+export function runStepsForFamiliarity(familiarity: Familiarity): RunStepKind[] {
+  if (isStretchFamiliarity(familiarity)) {
+    return ["liked", "why", "texture", "tastes", "ateEnough"]
+  }
+  return ["liked", "why", "ateEnough"]
+}
 
 type FoodOutcomeDraft = {
   position: 1 | 2
   liked?: Liked | null
   texture?: Texture | null
   tastes?: TasteBasic[] | null
-  temperature?: Temperature | null
-  smell?: Smell | null
   whyNote?: string | null
-  changeNote?: string | null
   ateEnough?: boolean
 }
 
@@ -83,18 +89,6 @@ const TEXTURE_OPTIONS = [
   { value: "crunchy" as const, label: "Crunchy", symbol: "🥕" },
   { value: "chewy" as const, label: "Chewy", symbol: "🍬" },
   { value: "wet" as const, label: "Wet", symbol: "💧" },
-]
-
-const TEMPERATURE_OPTIONS = [
-  { value: "cold" as const, label: "Cold", symbol: "❄️" },
-  { value: "warm" as const, label: "Warm", symbol: "☀️" },
-  { value: "hot" as const, label: "Hot", symbol: "🔥" },
-]
-
-const SMELL_OPTIONS = [
-  { value: "like" as const, label: "Like", symbol: "😊" },
-  { value: "so_so" as const, label: "So-so", symbol: "😐" },
-  { value: "no" as const, label: "No", symbol: "👎" },
 ]
 
 const TASTE_OPTIONS = TASTE_BASIC_OPTIONS.map((value) => ({
@@ -124,7 +118,6 @@ export function buildCompleteRequest(
 ): CompleteSessionRequest {
   const toFood = (draft: FoodOutcomeDraft): FoodOutcomeRequest => {
     const why = draft.whyNote?.trim()
-    const change = draft.changeNote?.trim()
     if (draft.ateEnough === undefined) {
       throw new Error("Each food needs ateEnough before completing")
     }
@@ -132,14 +125,15 @@ export function buildCompleteRequest(
       position: draft.position,
       liked: draft.liked ?? null,
       texture: draft.texture ?? null,
-      temperature: draft.temperature ?? null,
-      smell: draft.smell ?? null,
+      // Demoted from kid path — stay on contract as null for new runs.
+      temperature: null,
+      smell: null,
       tastes:
         draft.tastes && draft.tastes.length > 0
           ? [...new Set(draft.tastes)]
           : null,
       whyNote: why && why.length > 0 ? why : null,
-      changeNote: change && change.length > 0 ? change : null,
+      changeNote: null,
       ateEnough: draft.ateEnough,
     }
   }
@@ -186,7 +180,8 @@ export function RunSessionPage({
   )
   const [rewardPhase, setRewardPhase] = useState<RewardPhase | null>(null)
   const [showParentNotes, setShowParentNotes] = useState(false)
-  const [parentNoteDraft, setParentNoteDraft] = useState("")
+  const [parentNotesDraft, setParentNotesDraft] = useState("")
+  const [parentChangeDraft, setParentChangeDraft] = useState("")
   const [parentNoteError, setParentNoteError] = useState<string | null>(null)
   const [savingParentNote, setSavingParentNote] = useState(false)
   const speechSupported = isSpeechRecognitionSupported()
@@ -197,14 +192,15 @@ export function RunSessionPage({
   const currentFood =
     session.foods.find((food) => food.position === foodIndex + 1) ??
     session.foods[foodIndex]
-  const step = RUN_STEPS[stepIndex] ?? "liked"
+  const steps = runStepsForFamiliarity(currentFood?.familiarity ?? "safe")
+  const step = steps[stepIndex] ?? "liked"
   const currentDraft = outcomes[foodIndex]
   const inParentNotes = showParentNotes && completedSession !== null
   const inReward =
     !inParentNotes && rewardPhase !== null && completedSession !== null
 
   function advance(nextOutcomes?: [FoodOutcomeDraft, FoodOutcomeDraft]) {
-    if (stepIndex < RUN_STEPS.length - 1) {
+    if (stepIndex < steps.length - 1) {
       setStepIndex((current) => current + 1)
       setNoteDraft("")
       setWhyChips([])
@@ -241,7 +237,8 @@ export function RunSessionPage({
 
   function finishReward() {
     setShowParentNotes(true)
-    setParentNoteDraft("")
+    setParentNotesDraft("")
+    setParentChangeDraft("")
     setParentNoteError(null)
   }
 
@@ -252,9 +249,9 @@ export function RunSessionPage({
     setSavingParentNote(true)
     setParentNoteError(null)
     try {
-      const trimmed = parentNoteDraft.trim()
+      const encoded = encodeParentNote(parentNotesDraft, parentChangeDraft)
       const updated = await sessionsClient.updateParentNote(completedSession.id, {
-        parentNote: trimmed.length > 0 ? trimmed : null,
+        parentNote: encoded,
       })
       onComplete(updated)
     } catch (error) {
@@ -316,22 +313,16 @@ export function RunSessionPage({
     recognition.start()
   }
 
-  function confirmNote(field: "whyNote" | "changeNote") {
-    if (field === "whyNote") {
-      const chips = whyChipsForLiked(currentDraft.liked)
-      patchDraft({
-        whyNote: encodeWhyNote(whyChips, noteDraft, chips),
-      })
-      advance()
-      return
-    }
-    const trimmed = noteDraft.trim()
-    patchDraft({ changeNote: trimmed.length > 0 ? trimmed : null })
+  function confirmWhy() {
+    const chips = whyChipsForLiked(currentDraft.liked)
+    patchDraft({
+      whyNote: encodeWhyNote(whyChips, noteDraft, chips),
+    })
     advance()
   }
 
-  function skipNote(field: "whyNote" | "changeNote") {
-    patchDraft({ [field]: null })
+  function skipWhy() {
+    patchDraft({ whyNote: null })
     advance()
   }
 
@@ -399,10 +390,12 @@ export function RunSessionPage({
       <main className="flex-1 overflow-y-auto">
         {inParentNotes ? (
           <ParentNotesStep
-            note={parentNoteDraft}
+            notes={parentNotesDraft}
+            changeNextTime={parentChangeDraft}
             busy={savingParentNote}
             error={parentNoteError}
-            onNoteChange={setParentNoteDraft}
+            onNotesChange={setParentNotesDraft}
+            onChangeNextTimeChange={setParentChangeDraft}
             onSave={() => void saveParentNote()}
             onSkip={skipParentNote}
           />
@@ -436,6 +429,23 @@ export function RunSessionPage({
               patchDraft({ liked: null })
               advance()
             }}
+          />
+        ) : null}
+
+        {!inReward && !inParentNotes && step === "why" ? (
+          <WhyNoteStep
+            prompt={whyPrompt(currentDraft.liked)}
+            chips={whyChipsForLiked(currentDraft.liked)}
+            selectedChips={whyChips}
+            onToggleChip={toggleWhyChip}
+            note={noteDraft}
+            listening={listening}
+            speechSupported={speechSupported}
+            onNoteChange={setNoteDraft}
+            onStartListening={onStartListening}
+            onConfirm={confirmWhy}
+            onSkip={skipWhy}
+            confirmDisabled={!canConfirmWhy(whyChips, noteDraft)}
           />
         ) : null}
 
@@ -475,66 +485,6 @@ export function RunSessionPage({
               patchDraft({ tastes: null })
               advance()
             }}
-          />
-        ) : null}
-
-        {!inReward && !inParentNotes && step === "temperature" ? (
-          <IconChoiceStep
-            prompt="What was the temperature?"
-            options={TEMPERATURE_OPTIONS}
-            onChoose={(value) => {
-              patchDraft({ temperature: value })
-              advance()
-            }}
-            onSkip={() => {
-              patchDraft({ temperature: null })
-              advance()
-            }}
-          />
-        ) : null}
-
-        {!inReward && !inParentNotes && step === "smell" ? (
-          <IconChoiceStep
-            prompt="How did it smell?"
-            options={SMELL_OPTIONS}
-            onChoose={(value) => {
-              patchDraft({ smell: value })
-              advance()
-            }}
-            onSkip={() => {
-              patchDraft({ smell: null })
-              advance()
-            }}
-          />
-        ) : null}
-
-        {!inReward && !inParentNotes && step === "why" ? (
-          <WhyNoteStep
-            prompt={whyPrompt(currentDraft.liked)}
-            chips={whyChipsForLiked(currentDraft.liked)}
-            selectedChips={whyChips}
-            onToggleChip={toggleWhyChip}
-            note={noteDraft}
-            listening={listening}
-            speechSupported={speechSupported}
-            onNoteChange={setNoteDraft}
-            onStartListening={onStartListening}
-            onConfirm={() => confirmNote("whyNote")}
-            onSkip={() => skipNote("whyNote")}
-            confirmDisabled={!canConfirmWhy(whyChips, noteDraft)}
-          />
-        ) : null}
-
-        {!inReward && !inParentNotes && step === "change" ? (
-          <SpeechNoteStep
-            prompt="Is there something we could change next time?"
-            note={noteDraft}
-            listening={listening}
-            speechSupported={speechSupported}
-            onNoteChange={setNoteDraft}
-            onStartListening={onStartListening}
-            onConfirm={() => confirmNote("changeNote")}
-            onSkip={() => skipNote("changeNote")}
           />
         ) : null}
 
