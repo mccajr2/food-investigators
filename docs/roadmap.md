@@ -44,7 +44,7 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | reward-skip-safe | planned | 2026-07-28 · enhancement | Do not offer reward mini-games when both foods were `safe` |
+| 1 | reward-skip-safe | active | 2026-07-28 · enhancement | Reward games only for non-safe ate-enough foods (safe never unlocks) |
 | 2 | why-outcome-depth | planned | 2026-07-28 · enhancement | Strengthen why capture for like *and* dislike; surface usefully in Insights/History |
 | 3 | run-sense-survey | planned | 2026-07-28 · enhancement | Reframe run survey around senses: taste, texture (touch), smell, look (sight) |
 | 4 | child-display-name | planned | 2026-07-28 · enhancement | Optional child’s first name at signup / settings (single-child profile) |
@@ -89,6 +89,7 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Branch | Spec |
 |----|--------|------|
+| reward-skip-safe | reward-skip-safe | [active](specs/active/reward-skip-safe.md) |
 
 ## Done
 
@@ -173,3 +174,4 @@ Only notable events (first carve-up, major re-rank, cancelled theme) — not eve
 | 2026-07-29 | Re-rank for beta friend: ritual polish (incl. `early-run-date-snap`) → `welcome-orientation` → Render/Neon hosting + CI/CD; park `log-past-session` / `product-tour`. Next up: `early-run-date-snap`. |
 | 2026-07-29 | Specced `early-run-date-snap` (confirm at Run start; update to today via existing API). Next up after ship: `reward-skip-safe`. |
 | 2026-07-29 | early-run-date-snap shipped (Plan Run confirm + snap to today; calendar zone for past-date checks). Next up: `reward-skip-safe`. |
+| 2026-07-29 | Specced `reward-skip-safe` (games only for non-safe ate-enough; encourage when none). Next up after ship: `why-outcome-depth`. |
