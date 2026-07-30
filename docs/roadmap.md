@@ -88,12 +88,14 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Branch | Spec |
 |----|--------|------|
-| why-chip-illustrations | `why-chip-illustrations` | [active](specs/active/why-chip-illustrations.md) |
+| — | — | _(none)_ |
 
 ## Done
 
 | Id | Completed | Spec |
 |----|-----------|------|
+| why-chip-illustrations | 2026-07-30 | [archive](specs/archive/why-chip-illustrations.md) |
+| run-survey-shorten | 2026-07-30 | [archive](specs/archive/run-survey-shorten.md) |
 | why-insights-surface | 2026-07-30 | [archive](specs/archive/why-insights-surface.md) |
 | why-outcome-depth | 2026-07-30 | [archive](specs/archive/why-outcome-depth.md) |
 | reward-skip-safe | 2026-07-30 | [archive](specs/archive/reward-skip-safe.md) |
@@ -183,3 +185,4 @@ Only notable events (first carve-up, major re-rank, cancelled theme) — not eve
 | 2026-07-30 | Specced `why-insights-surface` (recent why snippets + chip-count tips on Insights; OpenAPI). Next up after ship: `run-sense-survey`. |
 | 2026-07-30 | why-insights-surface shipped (Insights recent whys + chip-count tips). Next up: `run-sense-survey`. |
 | 2026-07-30 | Split `ritual-illustrations` → active `why-chip-illustrations` (offline AI-assisted chip art) + planned `food-illustrations-ai` (heroes + online on-demand food art). |
+| 2026-07-30 | why-chip-illustrations shipped (kid-clear why-chip cartoons + labels; includes run-survey-shorten Run path). Next up: `food-illustrations-ai`. |

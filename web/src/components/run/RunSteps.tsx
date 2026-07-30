@@ -1,4 +1,5 @@
 import { FoodIcon } from "@/components/food/FoodIcon"
+import { WhyChipIcon } from "@/components/run/whyChipIcons"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import type { FoodIconKey } from "@/api/types"
@@ -269,12 +270,16 @@ export function WhyNoteStep({
               aria-pressed={isSelected}
               aria-label={chip}
               className={cn(
-                "run-placemat min-h-14 min-w-[8.5rem] px-4 py-3 text-center text-lg transition hover:brightness-[1.03] md:text-xl",
+                "run-placemat flex min-h-20 min-w-[9rem] flex-col items-center justify-center gap-2 px-3 py-3 text-center transition hover:brightness-[1.03]",
                 isSelected && "run-placemat--selected",
               )}
               onClick={() => onToggleChip(chip)}
             >
-              {chip}
+              <WhyChipIcon chip={chip} />
+              {/* Visible label required — backup when art is unclear (why-chip-illustrations). */}
+              <span className="run-prompt text-base leading-tight md:text-lg">
+                {chip}
+              </span>
             </button>
           )
         })}

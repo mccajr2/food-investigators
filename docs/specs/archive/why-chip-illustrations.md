@@ -1,10 +1,11 @@
 # Spec: why-chip-illustrations
 
-Status: in-progress  
+Status: done  
 Created: 2026-07-30  
 Parent: [docs/roadmap.md](../../roadmap.md)  
 Added: 2026-07-30 · re-rank split (from `ritual-illustrations`)  
-Depends on: [run-survey-shorten](../archive/run-survey-shorten.md) (why chips + v1 `whyChipIcons`; merge/rebase if not on `main` yet)
+Depends on: [run-survey-shorten](./run-survey-shorten.md) (why chips + v1 `whyChipIcons`)  
+Completed: 2026-07-30
 
 ## Problem
 
@@ -44,32 +45,30 @@ No contract changes.
 
 ## Acceptance criteria
 
-- [ ] Every why-chip string in `WHY_CHIPS_BY_LIKED` (like / no / so_so) renders an
+- [x] Every why-chip string in `WHY_CHIPS_BY_LIKED` (like / no / so_so) renders an
       illustration **and** its text label on the Run why step.
-- [ ] Illustrations share one locked cartoon art direction (not mixed emoji +
+- [x] Illustrations share one locked cartoon art direction (not mixed emoji +
       abstract + realistic styles).
-- [ ] Polarity is kid-obvious: like vs no variants for the same sense are not
+- [x] Polarity is kid-obvious: like vs no variants for the same sense are not
       identical art with only the label differing.
-- [ ] Assets are static (committed); Run does **not** call an AI API to draw chips.
-- [ ] Chip selection / multi-select / `encodeWhyNote` behavior unchanged.
-- [ ] No OpenAPI, backend, iOS, food-icon, or reward-game changes in this PR.
-- [ ] Tests: each chip key resolves to a non-empty icon; Run why step still shows
+- [x] Assets are static (committed); Run does **not** call an AI API to draw chips.
+- [x] Chip selection / multi-select / `encodeWhyNote` behavior unchanged.
+- [x] No OpenAPI, backend, iOS, food-icon, or reward-game changes in this PR.
+- [x] Tests: each chip key resolves to a non-empty icon; Run why step still shows
       label text for a representative chip from each liked set.
 
 ## Tasks
 
 - [x] Web: lock a short offline art brief (style, palette, “readable at chip
       size”, polarity cues) used for all generations.
-- [ ] Web: produce/replace assets for all why-chip strings; map them in the
+- [x] Web: produce/replace assets for all why-chip strings; map them in the
       existing why-chip icon module.
-- [ ] Web: keep labels visible; verify like / no / so_so sets on Run.
-- [ ] Tests: icon map coverage for every chip string; Run why-step assertion that
+- [x] Web: keep labels visible; verify like / no / so_so sets on Run.
+- [x] Tests: icon map coverage for every chip string; Run why-step assertion that
       icon + label render (extend `whyChipIcons` / `RunSessionPage` tests).
-- [ ] Docs: leave `food-illustrations-ai` planned stub for the food follow-on.
+- [x] Docs: leave `food-illustrations-ai` planned stub for the food follow-on.
 
 ## Open questions
 
-- None blocking — food online AI and hero/catalog volume live under
-  `food-illustrations-ai` (`/spec` may split that later).
-- If `run-survey-shorten` is not merged when implementation starts: rebase this
-  branch onto it (or onto `main` after merge) before coding icons.
+- Prefer merging `run-survey-shorten` (PR #33) then rebasing this branch before
+  `/pr` if history still includes a partial file checkout of that work.

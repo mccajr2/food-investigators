@@ -6,10 +6,12 @@ import type { SessionsClient } from "@/api"
 import type { SessionResponse } from "@/api/types"
 import {
   buildCompleteRequest,
+  runStepsForFamiliarity,
   RunSessionPage,
 } from "@/components/run/RunSessionPage"
 import { RUN_THEME } from "@/components/run/runTheme"
 import { BRAND_NAME } from "@/components/BrandLogo"
+import { WHY_CHIPS_BY_LIKED } from "@/components/run/whyChips"
 
 const sampleSession: SessionResponse = {
   id: "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
@@ -54,33 +56,59 @@ function mockSessionsClient(
   } as SessionsClient
 }
 
-async function skipOptionalStepsAfterLiked(
-  user: ReturnType<typeof userEvent.setup>,
-) {
-  for (let step = 0; step < 6; step += 1) {
-    await user.click(screen.getByRole("button", { name: "Skip" }))
+type User = ReturnType<typeof userEvent.setup>
+
+/** From liked: skip optional steps through why (+ stretch texture/tastes). Leaves ateEnough. */
+async function skipToAteEnough(user: User, stretch: boolean) {
+  await user.click(screen.getByRole("button", { name: "Skip" })) // liked
+  await user.click(screen.getByRole("button", { name: "Skip" })) // why
+  if (stretch) {
+    await user.click(screen.getByRole("button", { name: "Skip" })) // texture
+    await user.click(screen.getByRole("button", { name: "Skip" })) // tastes
   }
 }
 
-async function skipAllOptionalSteps(user: ReturnType<typeof userEvent.setup>) {
-  for (let step = 0; step < 7; step += 1) {
-    await user.click(screen.getByRole("button", { name: "Skip" }))
-  }
-}
-
-/** Liked → skip texture/tastes/temperature/smell → why. */
+/** Liked choice → why is next immediately. */
 async function advanceToWhyStep(
-  user: ReturnType<typeof userEvent.setup>,
+  user: User,
   likedLabel: "Like" | "So-so" | "No",
 ) {
   await user.click(screen.getByRole("option", { name: likedLabel }))
-  for (let step = 0; step < 4; step += 1) {
-    await user.click(screen.getByRole("button", { name: "Skip" }))
-  }
 }
 
+describe("runStepsForFamiliarity", () => {
+  it("uses short path for safe and stretch path otherwise", () => {
+    expect(runStepsForFamiliarity("safe")).toEqual([
+      "liked",
+      "why",
+      "ateEnough",
+    ])
+    expect(runStepsForFamiliarity("familiar_but_new")).toEqual([
+      "liked",
+      "why",
+      "texture",
+      "tastes",
+      "ateEnough",
+    ])
+    expect(runStepsForFamiliarity("truly_new")).toEqual([
+      "liked",
+      "why",
+      "texture",
+      "tastes",
+      "ateEnough",
+    ])
+    expect(runStepsForFamiliarity("retrying")).toEqual([
+      "liked",
+      "why",
+      "texture",
+      "tastes",
+      "ateEnough",
+    ])
+  })
+})
+
 describe("buildCompleteRequest", () => {
-  it("maps skipped fields to null and requires ateEnough", () => {
+  it("maps skipped fields to null, forces demoted fields null, requires ateEnough", () => {
     const request = buildCompleteRequest([
       {
         position: 1,
@@ -92,7 +120,6 @@ describe("buildCompleteRequest", () => {
         position: 2,
         liked: null,
         whyNote: "  ",
-        changeNote: "less sugar",
         ateEnough: false,
       },
     ])
@@ -109,7 +136,7 @@ describe("buildCompleteRequest", () => {
       ateEnough: true,
     })
     expect(request.foods[1].whyNote).toBeNull()
-    expect(request.foods[1].changeNote).toBe("less sugar")
+    expect(request.foods[1].changeNote).toBeNull()
     expect(request.foods[1].ateEnough).toBe(false)
   })
 
@@ -132,6 +159,39 @@ describe("buildCompleteRequest", () => {
   })
 })
 describe("RunSessionPage", () => {
+  it("uses short steps for safe and stretch steps for non-safe foods", async () => {
+    const user = userEvent.setup()
+    render(
+      <RunSessionPage
+        session={sampleSession}
+        sessionsClient={mockSessionsClient()}
+        onComplete={vi.fn()}
+        onExit={vi.fn()}
+      />,
+    )
+
+    // Safe food 1: liked → why → ateEnough (no texture)
+    await user.click(screen.getByRole("option", { name: "Like" }))
+    expect(screen.getByText("Why did you like it?")).toBeInTheDocument()
+    expect(screen.queryByText("What was the texture?")).not.toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: "Skip" }))
+    expect(screen.getByText("Did they eat enough?")).toBeInTheDocument()
+    await user.click(screen.getByRole("option", { name: "No" }))
+
+    // Stretch food 2: liked → why → texture → tastes → ateEnough
+    await user.click(screen.getByRole("option", { name: "Like" }))
+    expect(screen.getByText("Why did you like it?")).toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: "Skip" }))
+    expect(screen.getByText("What was the texture?")).toBeInTheDocument()
+    expect(
+      screen.queryByText("What was the temperature?"),
+    ).not.toBeInTheDocument()
+    expect(screen.queryByText("How did it smell?")).not.toBeInTheDocument()
+    expect(
+      screen.queryByText("Is there something we could change next time?"),
+    ).not.toBeInTheDocument()
+  })
+
   it("exposes the scoped kitchen-run theme on the run root", () => {
     render(
       <RunSessionPage
@@ -153,10 +213,17 @@ describe("RunSessionPage", () => {
 
   it("captures multi-select tastes with example icons then continues", async () => {
     const user = userEvent.setup()
-    const complete = vi.fn().mockResolvedValue({
+    const stretchFirst: SessionResponse = {
       ...sampleSession,
+      foods: [
+        { ...sampleSession.foods[1], position: 1 },
+        { ...sampleSession.foods[0], position: 2 },
+      ],
+    }
+    const complete = vi.fn().mockResolvedValue({
+      ...stretchFirst,
       status: "completed",
-      foods: sampleSession.foods.map((food) => ({
+      foods: stretchFirst.foods.map((food) => ({
         ...food,
         liked: "like",
         ateEnough: true,
@@ -165,7 +232,7 @@ describe("RunSessionPage", () => {
 
     render(
       <RunSessionPage
-        session={sampleSession}
+        session={stretchFirst}
         sessionsClient={mockSessionsClient({ complete })}
         onComplete={vi.fn()}
         onExit={vi.fn()}
@@ -173,6 +240,7 @@ describe("RunSessionPage", () => {
     )
 
     await user.click(screen.getByRole("option", { name: "Like" }))
+    await user.click(screen.getByRole("button", { name: "Skip" })) // why
     await user.click(screen.getByRole("option", { name: "Soft" }))
 
     expect(screen.getByText("How did it taste?")).toBeInTheDocument()
@@ -200,18 +268,15 @@ describe("RunSessionPage", () => {
       "run-placemat--selected",
     )
     await user.click(screen.getByRole("button", { name: "Done" }))
-
-    for (let step = 0; step < 4; step += 1) {
-      await user.click(screen.getByRole("button", { name: "Skip" }))
-    }
     await user.click(screen.getByRole("option", { name: "Yes" }))
 
-    await skipAllOptionalSteps(user)
+    // Food 2 safe: skip to ateEnough
+    await skipToAteEnough(user, false)
     await user.click(screen.getByRole("option", { name: "No" }))
 
     await waitFor(() => {
       expect(complete).toHaveBeenCalledWith(
-        sampleSession.id,
+        stretchFirst.id,
         expect.objectContaining({
           foods: [
             expect.objectContaining({
@@ -244,6 +309,12 @@ describe("RunSessionPage", () => {
     expect(screen.getByLabelText("Why note")).toBeInTheDocument()
     expect(screen.getByText("Why did you like it?")).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "tasty" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "tasty" })).toHaveTextContent(
+      "tasty",
+    )
+    expect(
+      screen.getByRole("button", { name: "tasty" }).querySelector("svg"),
+    ).not.toBeNull()
     expect(screen.getByRole("button", { name: "crunchy" })).toBeInTheDocument()
     expect(
       screen.queryByRole("button", { name: "yucky taste" }),
@@ -255,6 +326,9 @@ describe("RunSessionPage", () => {
       "aria-pressed",
       "true",
     )
+    expect(
+      screen.getByRole("button", { name: "tasty" }).querySelector("svg"),
+    ).not.toBeNull()
     expect(screen.getByRole("button", { name: "Continue" })).toBeEnabled()
   })
 
@@ -277,6 +351,51 @@ describe("RunSessionPage", () => {
     ).toBeInTheDocument()
     expect(screen.queryByRole("button", { name: "tasty" })).not.toBeInTheDocument()
   })
+
+  it.each([
+    {
+      liked: "Like" as const,
+      chips: WHY_CHIPS_BY_LIKED.like,
+      absent: "yucky taste",
+    },
+    {
+      liked: "No" as const,
+      chips: WHY_CHIPS_BY_LIKED.no,
+      absent: "tasty",
+    },
+    {
+      liked: "So-so" as const,
+      chips: WHY_CHIPS_BY_LIKED.so_so,
+      absent: "tasty",
+    },
+  ])(
+    "shows icon + visible text label for every $liked why chip",
+    async ({ liked, chips, absent }) => {
+      const user = userEvent.setup()
+      render(
+        <RunSessionPage
+          session={sampleSession}
+          sessionsClient={mockSessionsClient()}
+          onComplete={vi.fn()}
+          onExit={vi.fn()}
+        />,
+      )
+      await advanceToWhyStep(user, liked)
+
+      for (const chip of chips) {
+        const button = screen.getByRole("button", { name: chip })
+        expect(button).toHaveTextContent(chip)
+        expect(button.querySelector("span")).toHaveTextContent(chip)
+        expect(button.querySelector("svg")).not.toBeNull()
+        expect(button.querySelector("svg")?.getAttribute("data-why-chip")).toBe(
+          chip,
+        )
+      }
+      expect(
+        screen.queryByRole("button", { name: absent }),
+      ).not.toBeInTheDocument()
+    },
+  )
 
   it("persists chips and optional note into whyNote on complete", async () => {
     const user = userEvent.setup()
@@ -303,11 +422,10 @@ describe("RunSessionPage", () => {
     await user.click(screen.getByRole("button", { name: "tasty" }))
     await user.type(screen.getByLabelText("Answer"), "liked the peel")
     await user.click(screen.getByRole("button", { name: "Continue" }))
-    // change note
-    await user.click(screen.getByRole("button", { name: "Skip" }))
+    // Safe food: ateEnough next
     await user.click(screen.getByRole("option", { name: "No" }))
 
-    await skipAllOptionalSteps(user)
+    await skipToAteEnough(user, true)
     await user.click(screen.getByRole("option", { name: "No" }))
 
     await waitFor(() => {
@@ -351,11 +469,10 @@ describe("RunSessionPage", () => {
     )
 
     await advanceToWhyStep(user, "Like")
-    await user.click(screen.getByRole("button", { name: "Skip" }))
-    await user.click(screen.getByRole("button", { name: "Skip" }))
+    await user.click(screen.getByRole("button", { name: "Skip" })) // why
     await user.click(screen.getByRole("option", { name: "No" }))
 
-    await skipAllOptionalSteps(user)
+    await skipToAteEnough(user, true)
     await user.click(screen.getByRole("option", { name: "No" }))
 
     await waitFor(() => {
@@ -413,11 +530,11 @@ describe("RunSessionPage", () => {
     )
 
     await user.click(screen.getByRole("option", { name: "Like" }))
-    await skipOptionalStepsAfterLiked(user)
+    await user.click(screen.getByRole("button", { name: "Skip" })) // why (safe)
     await user.click(screen.getByRole("option", { name: "No" }))
 
     expect(screen.getByText("Food 2 of 2")).toBeInTheDocument()
-    await skipAllOptionalSteps(user)
+    await skipToAteEnough(user, true)
     await user.click(screen.getByRole("option", { name: "Yes" }))
 
     await waitFor(() => {
@@ -427,11 +544,19 @@ describe("RunSessionPage", () => {
             position: 1,
             liked: "like",
             ateEnough: false,
+            texture: null,
+            tastes: null,
+            temperature: null,
+            smell: null,
+            changeNote: null,
           }),
           expect.objectContaining({
             position: 2,
             liked: null,
             ateEnough: true,
+            temperature: null,
+            smell: null,
+            changeNote: null,
           }),
         ],
       })
@@ -486,9 +611,9 @@ describe("RunSessionPage", () => {
       />,
     )
 
-    await skipAllOptionalSteps(user)
+    await skipToAteEnough(user, true)
     await user.click(screen.getByRole("option", { name: "Yes" }))
-    await skipAllOptionalSteps(user)
+    await skipToAteEnough(user, true)
     await user.click(screen.getByRole("option", { name: "Yes" }))
 
     expect(
@@ -545,9 +670,9 @@ describe("RunSessionPage", () => {
       />,
     )
 
-    await skipAllOptionalSteps(user)
+    await skipToAteEnough(user, false)
     await user.click(screen.getByRole("option", { name: "No" }))
-    await skipAllOptionalSteps(user)
+    await skipToAteEnough(user, true)
     await user.click(screen.getByRole("option", { name: "Yes" }))
 
     expect(await screen.findByLabelText("Pick game")).toBeInTheDocument()
@@ -586,9 +711,9 @@ describe("RunSessionPage", () => {
       />,
     )
 
-    await skipAllOptionalSteps(user)
+    await skipToAteEnough(user, false)
     await user.click(screen.getByRole("option", { name: "No" }))
-    await skipAllOptionalSteps(user)
+    await skipToAteEnough(user, true)
     await user.click(screen.getByRole("option", { name: "Yes" }))
 
     expect(await screen.findByLabelText("Pick game")).toBeInTheDocument()
@@ -627,9 +752,9 @@ describe("RunSessionPage", () => {
       />,
     )
 
-    await skipAllOptionalSteps(user)
+    await skipToAteEnough(user, false)
     await user.click(screen.getByRole("option", { name: "No" }))
-    await skipAllOptionalSteps(user)
+    await skipToAteEnough(user, true)
     await user.click(screen.getByRole("option", { name: "Yes" }))
 
     expect(await screen.findByLabelText("Pick game")).toBeInTheDocument()
@@ -672,9 +797,9 @@ describe("RunSessionPage", () => {
       />,
     )
 
-    await skipAllOptionalSteps(user)
+    await skipToAteEnough(user, false)
     await user.click(screen.getByRole("option", { name: "No" }))
-    await skipAllOptionalSteps(user)
+    await skipToAteEnough(user, true)
     await user.click(screen.getByRole("option", { name: "No" }))
 
     expect(await screen.findByLabelText("Encouragement")).toBeInTheDocument()
@@ -715,9 +840,9 @@ describe("RunSessionPage", () => {
       />,
     )
 
-    await skipAllOptionalSteps(user)
+    await skipToAteEnough(user, false)
     await user.click(screen.getByRole("option", { name: "Yes" }))
-    await skipAllOptionalSteps(user)
+    await skipToAteEnough(user, true)
     await user.click(screen.getByRole("option", { name: "No" }))
 
     expect(await screen.findByLabelText("Encouragement")).toBeInTheDocument()
@@ -741,7 +866,8 @@ describe("RunSessionPage", () => {
     }
     const withNote: SessionResponse = {
       ...completed,
-      parentNote: "Tired after school",
+      parentNote:
+        "Notes: Tired after school\n\nChange next time: smaller piece",
     }
     const updateParentNote = vi.fn().mockResolvedValue(withNote)
     const onComplete = vi.fn()
@@ -758,9 +884,9 @@ describe("RunSessionPage", () => {
       />,
     )
 
-    await skipAllOptionalSteps(user)
+    await skipToAteEnough(user, false)
     await user.click(screen.getByRole("option", { name: "No" }))
-    await skipAllOptionalSteps(user)
+    await skipToAteEnough(user, true)
     await user.click(screen.getByRole("option", { name: "Yes" }))
 
     expect(await screen.findByLabelText("Pick game")).toBeInTheDocument()
@@ -769,17 +895,65 @@ describe("RunSessionPage", () => {
 
     expect(await screen.findByLabelText("Parent notes")).toBeInTheDocument()
     await user.type(
-      screen.getByRole("textbox", { name: "Optional parent note" }),
+      screen.getByRole("textbox", { name: "Session notes" }),
       "Tired after school",
+    )
+    await user.type(
+      screen.getByRole("textbox", { name: "Change next time" }),
+      "smaller piece",
     )
     await user.click(screen.getByRole("button", { name: "Save" }))
 
     await waitFor(() => {
       expect(updateParentNote).toHaveBeenCalledWith(completed.id, {
-        parentNote: "Tired after school",
+        parentNote:
+          "Notes: Tired after school\n\nChange next time: smaller piece",
       })
     })
     expect(onComplete).toHaveBeenCalledWith(withNote)
+  })
+
+  it("saves null parentNote when both parent fields are empty", async () => {
+    const user = userEvent.setup()
+    const completed: SessionResponse = {
+      ...sampleSession,
+      status: "completed",
+      foods: sampleSession.foods.map((food, index) => ({
+        ...food,
+        ateEnough: index === 1,
+      })),
+    }
+    const updateParentNote = vi.fn().mockResolvedValue(completed)
+    const onComplete = vi.fn()
+
+    render(
+      <RunSessionPage
+        session={sampleSession}
+        sessionsClient={mockSessionsClient({
+          complete: vi.fn().mockResolvedValue(completed),
+          updateParentNote,
+        })}
+        onComplete={onComplete}
+        onExit={vi.fn()}
+      />,
+    )
+
+    await skipToAteEnough(user, false)
+    await user.click(screen.getByRole("option", { name: "No" }))
+    await skipToAteEnough(user, true)
+    await user.click(screen.getByRole("option", { name: "Yes" }))
+    await user.click(await screen.findByRole("button", { name: "Catch" }))
+    await user.click(await screen.findByRole("button", { name: "Done" }))
+
+    expect(await screen.findByLabelText("Parent notes")).toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: "Save" }))
+
+    await waitFor(() => {
+      expect(updateParentNote).toHaveBeenCalledWith(completed.id, {
+        parentNote: null,
+      })
+    })
+    expect(onComplete).toHaveBeenCalledWith(completed)
   })
 
   it("supports typing mic answers when speech is unavailable", async () => {
@@ -811,29 +985,26 @@ describe("RunSessionPage", () => {
     )
 
     await user.click(screen.getByRole("option", { name: "Like" }))
-    // Skip texture, tastes, temperature, smell → why note
-    await user.click(screen.getByRole("button", { name: "Skip" }))
-    await user.click(screen.getByRole("button", { name: "Skip" }))
-    await user.click(screen.getByRole("button", { name: "Skip" }))
-    await user.click(screen.getByRole("button", { name: "Skip" }))
-
     await user.type(screen.getByLabelText("Answer"), "crunchy")
     await user.click(screen.getByRole("button", { name: "Continue" }))
-    await user.type(screen.getByLabelText("Answer"), "less peel")
-    await user.click(screen.getByRole("button", { name: "Use this" }))
+    // Stretch: skip texture + tastes
+    await user.click(screen.getByRole("button", { name: "Skip" }))
+    await user.click(screen.getByRole("button", { name: "Skip" }))
     await user.click(screen.getByRole("option", { name: "Yes" }))
 
-    await skipAllOptionalSteps(user)
+    await skipToAteEnough(user, true)
     await user.click(screen.getByRole("option", { name: "Yes" }))
 
     await waitFor(() => {
       expect(complete).toHaveBeenCalledWith(
-        sampleSession.id,
+        twoStretch.id,
         expect.objectContaining({
           foods: [
             expect.objectContaining({
               whyNote: "crunchy",
-              changeNote: "less peel",
+              changeNote: null,
+              temperature: null,
+              smell: null,
             }),
             expect.anything(),
           ],
