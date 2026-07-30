@@ -70,5 +70,5 @@ No contract changes.
 
 ## Open questions
 
-- Prefer merging `run-survey-shorten` (PR #33) then rebasing this branch before
-  `/pr` if history still includes a partial file checkout of that work.
+- None — shipped with `run-survey-shorten` Run foundation in the same PR when
+  #33 was still open.
