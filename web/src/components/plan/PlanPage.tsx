@@ -85,6 +85,45 @@ export function sameFoodVariantError(
   return null
 }
 
+/** True when Run would record a future planned night early (snap to today). */
+export function isEarlyRunNeeded(
+  scheduledOn: string,
+  todayIso: string,
+): boolean {
+  return scheduledOn > todayIso
+}
+
+function sessionToUpdatePayload(
+  session: SessionResponse,
+  scheduledOn: string,
+): {
+  scheduledOn: string
+  foods: [SessionFoodRequest, SessionFoodRequest]
+} {
+  const first =
+    session.foods.find((food) => food.position === 1) ?? session.foods[0]
+  const second =
+    session.foods.find((food) => food.position === 2) ?? session.foods[1]
+  if (!first || !second) {
+    throw new Error("Session did not include two foods")
+  }
+  return {
+    scheduledOn,
+    foods: [
+      {
+        foodId: first.foodId,
+        familiarity: first.familiarity,
+        variantNote: first.variantNote,
+      },
+      {
+        foodId: second.foodId,
+        familiarity: second.familiarity,
+        variantNote: second.variantNote,
+      },
+    ],
+  }
+}
+
 function suggestionToDraft(suggestion: SessionSuggestionResponse): SuggestDraft {
   const first = suggestion.foods[0]
   const second = suggestion.foods[1]
@@ -129,6 +168,8 @@ export function PlanPage({
   const [runningSession, setRunningSession] = useState<SessionResponse | null>(
     null,
   )
+  const [earlyRunSession, setEarlyRunSession] =
+    useState<SessionResponse | null>(null)
   const onUnauthorizedRef = useRef(onUnauthorized)
   onUnauthorizedRef.current = onUnauthorized
   const minDate = todayIso ?? localTodayIsoDate()
@@ -422,6 +463,50 @@ export function PlanPage({
     setSessions((current) => current.filter((item) => item.id !== completed.id))
   }
 
+  function requestRun(session: SessionResponse) {
+    if (isEarlyRunNeeded(session.scheduledOn, minDate)) {
+      setEarlyRunSession(session)
+      return
+    }
+    setEarlyRunSession(null)
+    setRunningSession(session)
+  }
+
+  function dismissEarlyRun() {
+    setEarlyRunSession(null)
+  }
+
+  async function confirmEarlyRun() {
+    if (!earlyRunSession) {
+      return
+    }
+    const pending = earlyRunSession
+    setStatus({ kind: "saving" })
+    try {
+      const updated = await sessionsClient.update(
+        pending.id,
+        sessionToUpdatePayload(pending, minDate),
+      )
+      setSessions((current) =>
+        current
+          .map((session) => (session.id === updated.id ? updated : session))
+          .sort((a, b) => a.scheduledOn.localeCompare(b.scheduledOn)),
+      )
+      setEarlyRunSession(null)
+      setRunningSession(updated)
+      setStatus({ kind: "ready" })
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Could not record as today"
+      if (isUnauthorizedMessage(message)) {
+        onUnauthorizedRef.current?.()
+        return
+      }
+      setEarlyRunSession(null)
+      setStatus({ kind: "error", message })
+    }
+  }
+
   return (
     <section aria-labelledby="plan-heading" className="flex flex-col gap-6">
       {runningSession ? (
@@ -432,6 +517,46 @@ export function PlanPage({
           onExit={() => setRunningSession(null)}
           onUnauthorized={onUnauthorized}
         />
+      ) : null}
+      {earlyRunSession && !runningSession ? (
+        <div
+          role="dialog"
+          aria-labelledby="early-run-heading"
+          aria-describedby="early-run-copy"
+          className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4"
+        >
+          <div className="flex flex-col gap-1">
+            <h3
+              id="early-run-heading"
+              className="text-base font-semibold tracking-tight"
+            >
+              Run this night early?
+            </h3>
+            <p id="early-run-copy" className="text-sm text-muted-foreground">
+              This night was planned for {formatDate(earlyRunSession.scheduledOn)}.
+              Record it as today instead so History and Plan stay in sync?
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              onClick={() => void confirmEarlyRun()}
+              disabled={status.kind === "saving"}
+            >
+              {status.kind === "saving"
+                ? "Updating…"
+                : "Record as today and run"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={dismissEarlyRun}
+              disabled={status.kind === "saving"}
+            >
+              Not now
+            </Button>
+          </div>
+        </div>
       ) : null}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
@@ -636,7 +761,7 @@ export function PlanPage({
                     <Button
                       type="button"
                       size="sm"
-                      onClick={() => setRunningSession(session)}
+                      onClick={() => requestRun(session)}
                       disabled={busy}
                     >
                       Run

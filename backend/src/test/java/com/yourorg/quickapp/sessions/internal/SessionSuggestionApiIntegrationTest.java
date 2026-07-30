@@ -13,7 +13,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.yourorg.quickapp.sessions.Familiarity;
 import com.yourorg.quickapp.support.PostgresTestcontainersConfiguration;
 import java.time.LocalDate;
-import java.time.ZoneOffset;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -250,7 +250,7 @@ class SessionSuggestionApiIntegrationTest {
     }
 
     private static String day(int offsetDays) {
-        return LocalDate.now(ZoneOffset.UTC).plusDays(offsetDays).toString();
+        return LocalDate.now(ZoneId.of("America/New_York")).plusDays(offsetDays).toString();
     }
 
     private static String createBody(

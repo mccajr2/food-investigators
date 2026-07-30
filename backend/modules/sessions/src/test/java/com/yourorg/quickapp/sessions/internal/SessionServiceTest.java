@@ -179,6 +179,32 @@ class SessionServiceTest {
     }
 
     @Test
+    void createAllowsHouseholdTodayWhenUtcDateHasAlreadyRolled() {
+        // 01:30 UTC on Jul 30 is still Jul 29 in America/New_York.
+        service =
+                new SessionService(
+                        sessions,
+                        foodCatalog,
+                        Clock.fixed(Instant.parse("2026-07-30T01:30:00Z"), ZoneOffset.UTC));
+        stubSelectable(foodA, "Apples", "apple");
+        stubSelectable(foodB, "Bananas", "banana");
+        stubVisible(foodA, "Apples", "apple");
+        stubVisible(foodB, "Bananas", "banana");
+        when(sessions.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        SessionResponse created =
+                service.create(
+                        householdId,
+                        new CreateSessionRequest(
+                                LocalDate.of(2026, 7, 29),
+                                List.of(
+                                        new SessionFoodRequest(foodA, Familiarity.safe, null),
+                                        new SessionFoodRequest(foodB, Familiarity.safe, null))));
+
+        assertThat(created.scheduledOn()).isEqualTo(LocalDate.of(2026, 7, 29));
+    }
+
+    @Test
     void createRejectsWhenPlannedOrCompletedOccupiesDay() {
         when(sessions.existsByHouseholdIdAndScheduledOnAndStatusIn(
                         org.mockito.ArgumentMatchers.eq(householdId),
