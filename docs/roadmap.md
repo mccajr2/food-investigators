@@ -184,5 +184,9 @@ Only notable events (first carve-up, major re-rank, cancelled theme) — not eve
 | 2026-07-30 | why-outcome-depth shipped (liked-specific why chips + optional note → `whyNote`). Next up: `why-insights-surface`. |
 | 2026-07-30 | Specced `why-insights-surface` (recent why snippets + chip-count tips on Insights; OpenAPI). Next up after ship: `run-sense-survey`. |
 | 2026-07-30 | why-insights-surface shipped (Insights recent whys + chip-count tips). Next up: `run-sense-survey`. |
+| 2026-07-30 | Renamed `run-sense-survey` → `run-survey-shorten`; specced shorten + adaptive stretch + why-chip icons (not sense-screen tour). |
+| 2026-07-30 | Added `run-outcome-contract` (rank before `run-tasting-session-ios`): harden informal run/outcome encodings before native Run. |
+| 2026-07-30 | Added `ritual-illustrations` (rank 2): kid-clear cartoon art for why chips + foods; AI-assisted assets after `run-survey-shorten`. |
+| 2026-07-30 | run-survey-shorten shipped (adaptive Run path; why-chip icons; dual parent notes). Next up: `ritual-illustrations`. |
 | 2026-07-30 | Split `ritual-illustrations` → active `why-chip-illustrations` (offline AI-assisted chip art) + planned `food-illustrations-ai` (heroes + online on-demand food art). |
-| 2026-07-30 | why-chip-illustrations shipped (kid-clear why-chip cartoons + labels; includes run-survey-shorten Run path). Next up: `food-illustrations-ai`. |
+| 2026-07-30 | why-chip-illustrations shipped (kid-clear why-chip cartoons + labels). Next up: `food-illustrations-ai`. |
