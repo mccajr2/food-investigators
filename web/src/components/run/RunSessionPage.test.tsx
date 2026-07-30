@@ -304,7 +304,7 @@ describe("RunSessionPage", () => {
       ...sampleSession,
       foods: sampleSession.foods.map((food) =>
         food.familiarity === "safe"
-          ? { ...food, familiarity: "familiar" as const }
+          ? { ...food, familiarity: "familiar_but_new" as const }
           : food,
       ),
     }
@@ -631,7 +631,7 @@ describe("RunSessionPage", () => {
       ...sampleSession,
       foods: sampleSession.foods.map((food) =>
         food.familiarity === "safe"
-          ? { ...food, familiarity: "familiar" as const }
+          ? { ...food, familiarity: "familiar_but_new" as const }
           : food,
       ),
     }

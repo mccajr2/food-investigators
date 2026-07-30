@@ -31,7 +31,7 @@ otherwise the carrot loses meaning while the habit is still forming.
 
 - **Eligibility:** A session food is reward-eligible only when
   `ateEnough === true` **and** `familiarity !== "safe"`.
-  Stretch = `familiar` | `truly_new` | `retrying` (existing ladder values).
+  Stretch = `familiar_but_new` | `truly_new` | `retrying` (existing ladder values).
 - **Phases:** `initialRewardPhase` returns `encourage` when zero eligible,
   `pickGame` when one, `pick` when two — only the eligible set shrinks.
 - **Encourage copy:** Branch on tone — `tryAgain` when nobody ate enough

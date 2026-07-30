@@ -127,7 +127,7 @@ describe("rewardFoods", () => {
       foods: [
         {
           ...baseSession.foods[0],
-          familiarity: "familiar",
+          familiarity: "familiar_but_new",
           ateEnough: false,
         },
         {
@@ -171,13 +171,13 @@ describe("rewardFoods", () => {
     }
   })
 
-  it("familiar and retrying count as stretch (not safe)", () => {
+  it("familiar_but_new and retrying count as stretch (not safe)", () => {
     const session: SessionResponse = {
       ...baseSession,
       foods: [
         {
           ...baseSession.foods[0],
-          familiarity: "familiar",
+          familiarity: "familiar_but_new",
           ateEnough: true,
         },
         {
@@ -188,7 +188,9 @@ describe("rewardFoods", () => {
       ],
     }
     expect(eligibleRewardFoods(session)).toHaveLength(1)
-    expect(eligibleRewardFoods(session)[0]?.familiarity).toBe("familiar")
+    expect(eligibleRewardFoods(session)[0]?.familiarity).toBe(
+      "familiar_but_new",
+    )
   })
 
   it("phaseForGame builds catch, cross, and match phases", () => {
