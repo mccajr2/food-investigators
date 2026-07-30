@@ -26,9 +26,10 @@ illustrations so recognition is mostly visual, with labels as backup.
 ## Approach
 
 **Web-only.** Replace the v1 React SVG why-chip icons with a locked **realistic
-cartoon** art direction (one offline AI style guide / prompt pack so all chips
-feel like the same world). Commit static assets (SVG preferred; PNG/WebP OK if
-SVG quality fails) and map every `WHY_CHIPS_BY_LIKED` string to an illustration.
+cartoon** art direction (see [why-chip art brief](../../design/why-chip-art-brief.md)
+— offline AI style guide / prompt pack so all chips feel like the same world).
+Commit static assets (SVG preferred; PNG/WebP OK if SVG quality fails) and map
+every `WHY_CHIPS_BY_LIKED` string to an illustration.
 
 **Kid-clarity rule:** a 5-year-old should recognize the idea at a glance. Shared
 motifs across like / no / so_so are allowed only when **polarity is visually
@@ -57,7 +58,7 @@ No contract changes.
 
 ## Tasks
 
-- [ ] Web: lock a short offline art brief (style, palette, “readable at chip
+- [x] Web: lock a short offline art brief (style, palette, “readable at chip
       size”, polarity cues) used for all generations.
 - [ ] Web: produce/replace assets for all why-chip strings; map them in the
       existing why-chip icon module.
