@@ -1,11 +1,12 @@
 # Spec: why-outcome-depth
 
-Status: draft  
+Status: done  
 Created: 2026-07-28  
 Parent: [docs/roadmap.md](../../roadmap.md)  
 Added: 2026-07-28 · enhancement  
 Specced: 2026-07-30  
-Split: Insights surfacing → `why-insights-surface` (2026-07-30 · re-rank split)
+Split: Insights surfacing → `why-insights-surface` (2026-07-30 · re-rank split)  
+Completed: 2026-07-30
 
 ## Problem
 
@@ -49,25 +50,25 @@ without turning the step into an essay.
 
 ## Acceptance criteria
 
-- [ ] Why step shows multi-select chips appropriate to the current food’s
+- [x] Why step shows multi-select chips appropriate to the current food’s
       `liked` value (like / no / so_so).
-- [ ] Parent can select multiple chips and/or enter an optional short note
+- [x] Parent can select multiple chips and/or enter an optional short note
       (mic/type as today).
-- [ ] Continue is enabled only when ≥1 chip is selected or the note is
+- [x] Continue is enabled only when ≥1 chip is selected or the note is
       non-empty; Skip remains and stores `whyNote: null`.
-- [ ] Completing with chips only persists `whyNote` as the joined chip labels
+- [x] Completing with chips only persists `whyNote` as the joined chip labels
       (comma-separated).
-- [ ] Completing with chips + note persists
+- [x] Completing with chips + note persists
       `"chip1, chip2 — note text"` (same separator rules).
-- [ ] Completing with note only (no chips) persists the trimmed note.
-- [ ] No OpenAPI / backend / Insights / iOS changes.
-- [ ] Tests cover encoding helper + Run why step: chip sets by liked, continue
+- [x] Completing with note only (no chips) persists the trimmed note.
+- [x] No OpenAPI / backend / Insights / iOS changes.
+- [x] Tests cover encoding helper + Run why step: chip sets by liked, continue
       gating, Skip → null, complete payload shape.
 
 ## Tasks
 
-- [ ] Web: Why-step chips UI + encode into `whyNote` on confirm (shared helper).
-- [ ] Tests: Encoding helper + RunSessionPage / step coverage for the ACs above.
+- [x] Web: Why-step chips UI + encode into `whyNote` on confirm (shared helper).
+- [x] Tests: Encoding helper + RunSessionPage / step coverage for the ACs above.
 
 ## Decisions (locked)
 
