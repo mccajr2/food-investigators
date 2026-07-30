@@ -57,6 +57,7 @@ function mockInsightsClient(
       familiarityTrulyNew: 0,
       snackCount: 0,
       hasParentNotes: false,
+      recentWhyNotes: [],
       tips: [],
     }),
     dismissTip: vi.fn(),

@@ -7,34 +7,67 @@ import com.yourorg.quickapp.sessions.Familiarity;
 import com.yourorg.quickapp.sessions.InsightTip;
 import com.yourorg.quickapp.sessions.InsightsResponse;
 import com.yourorg.quickapp.sessions.Liked;
+import com.yourorg.quickapp.sessions.RecentWhyNote;
 import com.yourorg.quickapp.sessions.TasteBasic;
 import com.yourorg.quickapp.sessions.Texture;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
+import java.util.function.Function;
 
 /** Pure aggregation + tip evaluation for Insights (unit-testable without Spring). */
 final class InsightsCalculator {
 
     static final int READY_SESSION_THRESHOLD = 3;
     static final int MAX_TIPS = 3;
+    static final int MAX_RECENT_WHY_NOTES = 5;
+    static final int WHY_CHIP_TIP_THRESHOLD = 2;
+
     static final String TIP_SLOW_DOWN_TRULY_NEW = "slow_down_truly_new";
     static final String TIP_LEAN_INTO_TEXTURE = "lean_into_texture";
     static final String TIP_LEAN_INTO_TASTE = "lean_into_taste";
+    static final String TIP_LEAN_INTO_WHY_LIKE = "lean_into_why_like";
+    static final String TIP_NOTICE_WHY_DISLIKE = "notice_why_dislike";
     static final String TIP_CELEBRATE_ATE_ENOUGH = "celebrate_ate_enough";
     static final String TIP_MIX_FAMILIARITY = "mix_familiarity";
     static final String TIP_KEEP_GOING = "keep_going";
+
+    /** Same v1 labels as web whyChips (like / no). */
+    static final List<String> WHY_CHIPS_LIKE =
+            List.of(
+                    "tasty",
+                    "crunchy",
+                    "soft",
+                    "yummy smell",
+                    "looks good",
+                    "warm",
+                    "cold");
+
+    static final List<String> WHY_CHIPS_NO =
+            List.of(
+                    "yucky taste",
+                    "too crunchy",
+                    "too soft",
+                    "yucky smell",
+                    "looks weird",
+                    "too hot",
+                    "too cold");
 
     static final Set<String> KNOWN_TIP_IDS =
             Set.of(
                     TIP_SLOW_DOWN_TRULY_NEW,
                     TIP_LEAN_INTO_TEXTURE,
                     TIP_LEAN_INTO_TASTE,
+                    TIP_LEAN_INTO_WHY_LIKE,
+                    TIP_NOTICE_WHY_DISLIKE,
                     TIP_CELEBRATE_ATE_ENOUGH,
                     TIP_MIX_FAMILIARITY,
                     TIP_KEEP_GOING);
@@ -45,9 +78,19 @@ final class InsightsCalculator {
             List<TastingSession> completedSessions,
             List<SnackPreferenceSnapshot> snacks,
             Set<String> dismissedTipIds) {
-        Aggregate agg = Aggregate.from(completedSessions, snacks);
+        return compute(completedSessions, snacks, dismissedTipIds, id -> "Unknown food");
+    }
+
+    static InsightsResponse compute(
+            List<TastingSession> completedSessions,
+            List<SnackPreferenceSnapshot> snacks,
+            Set<String> dismissedTipIds,
+            Function<UUID, String> foodNameResolver) {
+        Aggregate agg = Aggregate.from(completedSessions, snacks, foodNameResolver);
         boolean ready = agg.completedSessionCount >= READY_SESSION_THRESHOLD;
         List<InsightTip> tips = ready ? selectTips(agg, dismissedTipIds) : List.of();
+        List<RecentWhyNote> recentWhyNotes =
+                ready ? List.copyOf(agg.recentWhyNotes) : List.of();
         return new InsightsResponse(
                 agg.completedSessionCount,
                 ready,
@@ -64,6 +107,7 @@ final class InsightsCalculator {
                 agg.familiarityTrulyNew,
                 agg.snackCount,
                 agg.hasParentNotes,
+                recentWhyNotes,
                 tips);
     }
 
@@ -72,6 +116,8 @@ final class InsightsCalculator {
         maybeAdd(tips, dismissed, slowDownTrulyNew(agg));
         maybeAdd(tips, dismissed, leanIntoTexture(agg));
         maybeAdd(tips, dismissed, leanIntoTaste(agg));
+        maybeAdd(tips, dismissed, leanIntoWhyLike(agg));
+        maybeAdd(tips, dismissed, noticeWhyDislike(agg));
         maybeAdd(tips, dismissed, celebrateAteEnough(agg));
         maybeAdd(tips, dismissed, mixFamiliarity(agg));
         while (tips.size() < MAX_TIPS) {
@@ -133,6 +179,44 @@ final class InsightsCalculator {
                 label + " tastes seem to land — lean into that when you pick foods.");
     }
 
+    private static InsightTip leanIntoWhyLike(Aggregate agg) {
+        String chip = topChipAtOrAboveThreshold(agg.likeWhyChipCounts, WHY_CHIPS_LIKE);
+        if (chip == null) {
+            return null;
+        }
+        return new InsightTip(
+                TIP_LEAN_INTO_WHY_LIKE,
+                "Likes often mention \""
+                        + chip
+                        + "\" — lean into that when you pick foods.");
+    }
+
+    private static InsightTip noticeWhyDislike(Aggregate agg) {
+        String chip = topChipAtOrAboveThreshold(agg.noWhyChipCounts, WHY_CHIPS_NO);
+        if (chip == null) {
+            return null;
+        }
+        return new InsightTip(
+                TIP_NOTICE_WHY_DISLIKE,
+                "Dislikes often mention \""
+                        + chip
+                        + "\" — worth watching on the next few nights.");
+    }
+
+    private static String topChipAtOrAboveThreshold(
+            Map<String, Integer> counts, List<String> chipOrder) {
+        String best = null;
+        int bestCount = 0;
+        for (String chip : chipOrder) {
+            int count = counts.getOrDefault(chip, 0);
+            if (count >= WHY_CHIP_TIP_THRESHOLD && count > bestCount) {
+                best = chip;
+                bestCount = count;
+            }
+        }
+        return best;
+    }
+
     private static InsightTip celebrateAteEnough(Aggregate agg) {
         if (agg.ateEnoughYes < 3 || agg.ateEnoughYes <= agg.ateEnoughNo) {
             return null;
@@ -167,6 +251,9 @@ final class InsightsCalculator {
 
     private record TasteCount(TasteBasic taste, int count) {}
 
+    private record WhyCandidate(
+            LocalDate scheduledOn, int position, UUID foodId, Liked liked, String whyNote) {}
+
     private static final class Aggregate {
         final int completedSessionCount;
         final int ateEnoughYes;
@@ -186,6 +273,9 @@ final class InsightsCalculator {
         final int trulyNewLikedNo;
         final TextureCount topTextureWithCount;
         final TasteCount topTasteWithCount;
+        final List<RecentWhyNote> recentWhyNotes;
+        final Map<String, Integer> likeWhyChipCounts;
+        final Map<String, Integer> noWhyChipCounts;
 
         private Aggregate(
                 int completedSessionCount,
@@ -205,7 +295,10 @@ final class InsightsCalculator {
                 int trulyNewOutcomes,
                 int trulyNewLikedNo,
                 TextureCount topTextureWithCount,
-                TasteCount topTasteWithCount) {
+                TasteCount topTasteWithCount,
+                List<RecentWhyNote> recentWhyNotes,
+                Map<String, Integer> likeWhyChipCounts,
+                Map<String, Integer> noWhyChipCounts) {
             this.completedSessionCount = completedSessionCount;
             this.ateEnoughYes = ateEnoughYes;
             this.ateEnoughNo = ateEnoughNo;
@@ -224,10 +317,15 @@ final class InsightsCalculator {
             this.trulyNewLikedNo = trulyNewLikedNo;
             this.topTextureWithCount = topTextureWithCount;
             this.topTasteWithCount = topTasteWithCount;
+            this.recentWhyNotes = recentWhyNotes;
+            this.likeWhyChipCounts = likeWhyChipCounts;
+            this.noWhyChipCounts = noWhyChipCounts;
         }
 
         static Aggregate from(
-                List<TastingSession> completedSessions, List<SnackPreferenceSnapshot> snacks) {
+                List<TastingSession> completedSessions,
+                List<SnackPreferenceSnapshot> snacks,
+                Function<UUID, String> foodNameResolver) {
             int ateEnoughYes = 0;
             int ateEnoughNo = 0;
             int likedLike = 0;
@@ -242,6 +340,9 @@ final class InsightsCalculator {
             boolean hasParentNotes = false;
             EnumMap<Texture, Integer> likedTextureCounts = new EnumMap<>(Texture.class);
             EnumMap<TasteBasic, Integer> likedTasteCounts = new EnumMap<>(TasteBasic.class);
+            Map<String, Integer> likeWhyChipCounts = new HashMap<>();
+            Map<String, Integer> noWhyChipCounts = new HashMap<>();
+            List<WhyCandidate> whyCandidates = new ArrayList<>();
 
             for (TastingSession session : completedSessions) {
                 if (session.getParentNote() != null && !session.getParentNote().isBlank()) {
@@ -282,6 +383,22 @@ final class InsightsCalculator {
                         likedSoSo++;
                     } else if (liked == Liked.no) {
                         likedNo++;
+                    }
+
+                    String whyNote = food.getWhyNote();
+                    if (whyNote != null && !whyNote.isBlank()) {
+                        whyCandidates.add(
+                                new WhyCandidate(
+                                        session.getScheduledOn(),
+                                        food.getPosition(),
+                                        food.getFoodId(),
+                                        liked,
+                                        whyNote.trim()));
+                        if (liked == Liked.like) {
+                            countChipsInNote(whyNote, WHY_CHIPS_LIKE, likeWhyChipCounts);
+                        } else if (liked == Liked.no) {
+                            countChipsInNote(whyNote, WHY_CHIPS_NO, noWhyChipCounts);
+                        }
                     }
                 }
             }
@@ -339,6 +456,22 @@ final class InsightsCalculator {
                                     rankedTastes.getFirst().getKey(),
                                     rankedTastes.getFirst().getValue());
 
+            List<RecentWhyNote> recentWhyNotes =
+                    whyCandidates.stream()
+                            .sorted(
+                                    Comparator.comparing(WhyCandidate::scheduledOn)
+                                            .reversed()
+                                            .thenComparingInt(WhyCandidate::position))
+                            .limit(MAX_RECENT_WHY_NOTES)
+                            .map(
+                                    candidate ->
+                                            new RecentWhyNote(
+                                                    candidate.scheduledOn(),
+                                                    foodNameResolver.apply(candidate.foodId()),
+                                                    candidate.liked(),
+                                                    candidate.whyNote()))
+                            .toList();
+
             return new Aggregate(
                     completedSessions.size(),
                     ateEnoughYes,
@@ -357,7 +490,20 @@ final class InsightsCalculator {
                     trulyNewOutcomes,
                     trulyNewLikedNo,
                     topTextureWithCount,
-                    topTasteWithCount);
+                    topTasteWithCount,
+                    recentWhyNotes,
+                    likeWhyChipCounts,
+                    noWhyChipCounts);
+        }
+
+        private static void countChipsInNote(
+                String whyNote, List<String> chips, Map<String, Integer> counts) {
+            String lower = whyNote.toLowerCase(Locale.ROOT);
+            for (String chip : chips) {
+                if (lower.contains(chip.toLowerCase(Locale.ROOT))) {
+                    counts.merge(chip, 1, Integer::sum);
+                }
+            }
         }
 
         private static Texture toSessionTexture(FoodTexture texture) {

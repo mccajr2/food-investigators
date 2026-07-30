@@ -67,7 +67,8 @@ class InsightsApiIntegrationTest {
                 .andExpect(jsonPath("$.ready").value(false))
                 .andExpect(jsonPath("$.snackCount").value(1))
                 .andExpect(jsonPath("$.likedLike").value(1))
-                .andExpect(jsonPath("$.tips.length()").value(0));
+                .andExpect(jsonPath("$.tips.length()").value(0))
+                .andExpect(jsonPath("$.recentWhyNotes.length()").value(0));
 
         planAndComplete(token, day(0), APPLES, STRAWBERRIES, "like", "soft");
 
@@ -75,7 +76,8 @@ class InsightsApiIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.completedSessionCount").value(1))
                 .andExpect(jsonPath("$.ready").value(false))
-                .andExpect(jsonPath("$.tips.length()").value(0));
+                .andExpect(jsonPath("$.tips.length()").value(0))
+                .andExpect(jsonPath("$.recentWhyNotes.length()").value(0));
     }
 
     @Test
@@ -116,6 +118,7 @@ class InsightsApiIntegrationTest {
                         .andExpect(jsonPath("$.topLikedTextures", hasItem("crunchy")))
                         .andExpect(jsonPath("$.topLikedTextures", hasItem("soft")))
                         .andExpect(jsonPath("$.topLikedTastes").isEmpty())
+                        .andExpect(jsonPath("$.recentWhyNotes").isArray())
                         .andExpect(jsonPath("$.tips.length()").value(3))
                         .andReturn();
 
@@ -208,6 +211,38 @@ class InsightsApiIntegrationTest {
                 .andExpect(jsonPath("$.topLikedTastes[0]").value("salty"));
     }
 
+    @Test
+    void recentWhyNotesAndWhyLikeTipFromCompletedSessions() throws Exception {
+        String token = register("insights-why-" + System.nanoTime() + "@example.com");
+
+        planAndCompleteWithWhy(
+                token, day(0), APPLES, STRAWBERRIES, "like", "tasty, crunchy");
+        planAndCompleteWithWhy(
+                token, day(1), STRAWBERRIES, BLUEBERRIES, "like", "crunchy — peel");
+        planAndCompleteWithWhy(token, day(2), BLUEBERRIES, APPLES, "so_so", "not sure");
+
+        mockMvc.perform(get("/api/insights").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.ready").value(true))
+                .andExpect(jsonPath("$.recentWhyNotes.length()").value(3))
+                .andExpect(jsonPath("$.recentWhyNotes[0].whyNote").value("not sure"))
+                .andExpect(jsonPath("$.recentWhyNotes[0].foodName").value("Blueberries"))
+                .andExpect(jsonPath("$.recentWhyNotes[0].liked").value("so_so"))
+                .andExpect(jsonPath("$.recentWhyNotes[1].whyNote").value("crunchy — peel"))
+                .andExpect(jsonPath("$.tips[*].id", hasItem("lean_into_why_like")));
+
+        mockMvc.perform(
+                        post("/api/insights/tips/lean_into_why_like/dismiss")
+                                .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("ok"));
+
+        mockMvc.perform(get("/api/insights").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.tips[*].id", not(hasItem("lean_into_why_like"))))
+                .andExpect(jsonPath("$.recentWhyNotes.length()").value(3));
+    }
+
     private void planAndComplete(
             String token,
             String scheduledOn,
@@ -216,7 +251,19 @@ class InsightsApiIntegrationTest {
             String liked1,
             String texture1)
             throws Exception {
-        planAndCompleteWithTastes(token, scheduledOn, food1, food2, liked1, texture1, null);
+        planAndCompleteWithTastes(token, scheduledOn, food1, food2, liked1, texture1, null, null);
+    }
+
+    private void planAndCompleteWithWhy(
+            String token,
+            String scheduledOn,
+            String food1,
+            String food2,
+            String liked1,
+            String whyNote)
+            throws Exception {
+        planAndCompleteWithTastes(
+                token, scheduledOn, food1, food2, liked1, "soft", null, whyNote);
     }
 
     private void planAndCompleteWithTastes(
@@ -227,7 +274,7 @@ class InsightsApiIntegrationTest {
             String liked1,
             String tastesJson)
             throws Exception {
-        planAndCompleteWithTastes(token, scheduledOn, food1, food2, liked1, "soft", tastesJson);
+        planAndCompleteWithTastes(token, scheduledOn, food1, food2, liked1, "soft", tastesJson, null);
     }
 
     private void planAndCompleteWithTastes(
@@ -238,6 +285,20 @@ class InsightsApiIntegrationTest {
             String liked1,
             String texture1,
             String tastesJson)
+            throws Exception {
+        planAndCompleteWithTastes(
+                token, scheduledOn, food1, food2, liked1, texture1, tastesJson, null);
+    }
+
+    private void planAndCompleteWithTastes(
+            String token,
+            String scheduledOn,
+            String food1,
+            String food2,
+            String liked1,
+            String texture1,
+            String tastesJson,
+            String whyNote)
             throws Exception {
         MvcResult created =
                 mockMvc.perform(
@@ -259,6 +320,10 @@ class InsightsApiIntegrationTest {
 
         String food1Tastes =
                 tastesJson == null ? "" : ",\"tastes\":" + tastesJson;
+        String food1Why =
+                whyNote == null
+                        ? ""
+                        : ",\"whyNote\":\"" + whyNote.replace("\"", "\\\"") + "\"";
         mockMvc.perform(
                         post("/api/sessions/" + sessionId + "/complete")
                                 .header("Authorization", "Bearer " + token)
@@ -267,12 +332,13 @@ class InsightsApiIntegrationTest {
                                         """
                                         {
                                           "foods":[
-                                            {"position":1,"liked":"%s","texture":"%s"%s,"ateEnough":true},
+                                            {"position":1,"liked":"%s","texture":"%s"%s%s,"ateEnough":true},
                                             {"position":2,"liked":"like","texture":"soft","ateEnough":true}
                                           ]
                                         }
                                         """
-                                                .formatted(liked1, texture1, food1Tastes)))
+                                                .formatted(
+                                                        liked1, texture1, food1Tastes, food1Why)))
                 .andExpect(status().isOk());
     }
 

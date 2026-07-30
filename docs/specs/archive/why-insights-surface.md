@@ -1,11 +1,12 @@
 # Spec: why-insights-surface
 
-Status: draft  
+Status: done  
 Created: 2026-07-30  
 Parent: [docs/roadmap.md](../../roadmap.md)  
 Added: 2026-07-30 · re-rank split  
 Specced: 2026-07-30  
-Depends on: [why-outcome-depth](../archive/why-outcome-depth.md) (chip-encoded `whyNote`)
+Depends on: [why-outcome-depth](why-outcome-depth.md) (chip-encoded `whyNote`)
+Completed: 2026-07-30
 
 ## Problem
 
@@ -55,31 +56,31 @@ signal on the Insights screen.
 
 ## Acceptance criteria
 
-- [ ] OpenAPI `InsightsResponse` includes `recentWhyNotes` (array of
+- [x] OpenAPI `InsightsResponse` includes `recentWhyNotes` (array of
       `scheduledOn`, `foodName`, `liked`, `whyNote`); web + mobile clients
       updated in the same change.
-- [ ] When Insights is ready, API returns up to 5 recent non-blank why notes
+- [x] When Insights is ready, API returns up to 5 recent non-blank why notes
       (newest first) from completed sessions.
-- [ ] Web Insights shows a “Recent whys” section listing those snippets (food,
+- [x] Web Insights shows a “Recent whys” section listing those snippets (food,
       date, liked, why text); empty state when the list is empty.
-- [ ] When a like chip label appears in ≥2 like `whyNote`s, a dismissible
+- [x] When a like chip label appears in ≥2 like `whyNote`s, a dismissible
       `lean_into_why_like` tip is eligible (message names the chip).
-- [ ] When a no chip label appears in ≥2 dislike `whyNote`s, a dismissible
+- [x] When a no chip label appears in ≥2 dislike `whyNote`s, a dismissible
       `notice_why_dislike` tip is eligible (message names the chip).
-- [ ] Why tip ids are dismissible and listed in known tip ids (unknown id still
-      404 on dismiss).
-- [ ] No Run / History / PDF changes; no NLP beyond substring chip matching.
-- [ ] Unit tests for calculator (snippets order/limit; tip thresholds/ties);
+- [x] Why tip ids are dismissible and listed in known tip ids (unknown id still
+      rejected on dismiss).
+- [x] No Run / History / PDF changes; no NLP beyond substring chip matching.
+- [x] Unit tests for calculator (snippets order/limit; tip thresholds/ties);
       web Insights component coverage for section + tip; OpenAPI contract test /
       client tests as usual for this repo.
 
 ## Tasks
 
-- [ ] Backend: Aggregate recent whys + chip counts; emit snippets + why tips.
-- [ ] Contract: OpenAPI schemas; regenerate/update as this repo expects.
-- [ ] Web: Insights client types + “Recent whys” UI (+ tip messages render).
-- [ ] Mobile: `InsightsResponse` / client parse for `recentWhyNotes`.
-- [ ] Tests: Calculator + InsightsPage + client/contract coverage above.
+- [x] Backend: Aggregate recent whys + chip counts; emit snippets + why tips.
+- [x] Contract: OpenAPI schemas; regenerate/update as this repo expects.
+- [x] Web: Insights client types + “Recent whys” UI (+ tip messages render).
+- [x] Mobile: `InsightsResponse` / client parse for `recentWhyNotes`.
+- [x] Tests: Calculator + InsightsPage + client/contract coverage above.
 
 ## Decisions (locked)
 

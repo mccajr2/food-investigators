@@ -40,7 +40,15 @@ public class InsightsService {
         List<SnackPreferenceSnapshot> snacks = foodCatalog.listActiveSnackPreferences(householdId);
         Set<String> dismissed =
                 InsightsCalculator.dismissedSet(dismissals.findByHouseholdId(householdId));
-        return InsightsCalculator.compute(completed, snacks, dismissed);
+        return InsightsCalculator.compute(
+                completed,
+                snacks,
+                dismissed,
+                foodId ->
+                        foodCatalog
+                                .findVisible(householdId, foodId)
+                                .map(food -> food.name())
+                                .orElse("Unknown food"));
     }
 
     @Transactional

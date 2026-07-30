@@ -263,6 +263,127 @@ class InsightsCalculatorTest {
                 .contains("safe foods");
     }
 
+    @Test
+    void recentWhyNotesEmptyWhenNotReady() {
+        TastingSession one = completedNightWithWhy(LocalDate.of(2026, 7, 10), Liked.like, "tasty");
+
+        InsightsResponse response =
+                InsightsCalculator.compute(
+                        List.of(one), List.of(), Set.of(), id -> "Apples");
+
+        assertThat(response.ready()).isFalse();
+        assertThat(response.recentWhyNotes()).isEmpty();
+    }
+
+    @Test
+    void recentWhyNotesNewestFirstCappedAtFive() {
+        List<TastingSession> nights =
+                List.of(
+                        completedNightWithWhy(LocalDate.of(2026, 7, 10), Liked.like, "why-10"),
+                        completedNightWithWhy(LocalDate.of(2026, 7, 11), Liked.like, "why-11"),
+                        completedNightWithWhy(LocalDate.of(2026, 7, 12), Liked.like, "why-12"),
+                        completedNightWithWhy(LocalDate.of(2026, 7, 13), Liked.no, "why-13"),
+                        completedNightWithWhy(LocalDate.of(2026, 7, 14), Liked.like, "why-14"),
+                        completedNightWithWhy(LocalDate.of(2026, 7, 15), Liked.like, "why-15"));
+
+        InsightsResponse response =
+                InsightsCalculator.compute(
+                        nights, List.of(), Set.of(), id -> id.equals(foodA) ? "Apples" : "Berries");
+
+        assertThat(response.ready()).isTrue();
+        assertThat(response.recentWhyNotes()).hasSize(5);
+        assertThat(response.recentWhyNotes().getFirst().whyNote()).isEqualTo("why-15");
+        assertThat(response.recentWhyNotes().getFirst().foodName()).isEqualTo("Apples");
+        assertThat(response.recentWhyNotes().get(4).whyNote()).isEqualTo("why-11");
+    }
+
+    @Test
+    void leanIntoWhyLikeWhenChipAppearsInAtLeastTwoLikeNotes() {
+        List<TastingSession> nights =
+                List.of(
+                        completedNightWithWhy(LocalDate.of(2026, 7, 10), Liked.like, "tasty, crunchy"),
+                        completedNightWithWhy(LocalDate.of(2026, 7, 11), Liked.like, "crunchy — peel"),
+                        completedNightWithWhy(LocalDate.of(2026, 7, 12), Liked.so_so, "not sure"));
+
+        InsightsResponse response =
+                InsightsCalculator.compute(nights, List.of(), Set.of(), id -> "Apples");
+
+        assertThat(response.tips().stream().map(InsightTip::id))
+                .contains(InsightsCalculator.TIP_LEAN_INTO_WHY_LIKE);
+        assertThat(
+                        response.tips().stream()
+                                .filter(tip -> tip.id().equals(InsightsCalculator.TIP_LEAN_INTO_WHY_LIKE))
+                                .findFirst()
+                                .orElseThrow()
+                                .message())
+                .contains("crunchy");
+    }
+
+    @Test
+    void noticeWhyDislikeWhenChipAppearsInAtLeastTwoNoNotes() {
+        List<TastingSession> nights =
+                List.of(
+                        completedNightWithWhy(LocalDate.of(2026, 7, 10), Liked.no, "yucky smell"),
+                        completedNightWithWhy(LocalDate.of(2026, 7, 11), Liked.no, "yucky smell — strong"),
+                        completedNightWithWhy(LocalDate.of(2026, 7, 12), Liked.like, "tasty"));
+
+        InsightsResponse response =
+                InsightsCalculator.compute(nights, List.of(), Set.of(), id -> "Apples");
+
+        assertThat(response.tips().stream().map(InsightTip::id))
+                .contains(InsightsCalculator.TIP_NOTICE_WHY_DISLIKE);
+        assertThat(
+                        response.tips().stream()
+                                .filter(tip -> tip.id().equals(InsightsCalculator.TIP_NOTICE_WHY_DISLIKE))
+                                .findFirst()
+                                .orElseThrow()
+                                .message())
+                .contains("yucky smell");
+    }
+
+    @Test
+    void whyLikeTipTieBreaksByChipListOrder() {
+        List<TastingSession> nights =
+                List.of(
+                        completedNightWithWhy(LocalDate.of(2026, 7, 10), Liked.like, "tasty and soft"),
+                        completedNightWithWhy(LocalDate.of(2026, 7, 11), Liked.like, "tasty, soft"),
+                        completedNightWithWhy(LocalDate.of(2026, 7, 12), Liked.like, "warm"));
+
+        InsightsResponse response =
+                InsightsCalculator.compute(
+                        nights,
+                        List.of(),
+                        Set.of(
+                                InsightsCalculator.TIP_CELEBRATE_ATE_ENOUGH,
+                                InsightsCalculator.TIP_MIX_FAMILIARITY),
+                        id -> "Apples");
+
+        assertThat(
+                        response.tips().stream()
+                                .filter(tip -> tip.id().equals(InsightsCalculator.TIP_LEAN_INTO_WHY_LIKE))
+                                .findFirst()
+                                .orElseThrow()
+                                .message())
+                .contains("tasty");
+    }
+
+    private TastingSession completedNightWithWhy(LocalDate day, Liked liked, String whyNote) {
+        TastingSession session = TastingSession.planned(householdId, day, now);
+        session.replaceFoods(
+                List.of(
+                        TastingSessionFood.of(foodA, Familiarity.safe, null, 1),
+                        TastingSessionFood.of(foodB, Familiarity.safe, null, 2)),
+                now);
+        session.getFoods()
+                .get(0)
+                .recordOutcome(liked, null, null, null, null, whyNote, null, true);
+        session.getFoods()
+                .get(1)
+                .recordOutcome(Liked.so_so, null, null, null, null, null, null, true);
+        session.complete(now);
+        return session;
+    }
+
     private TastingSession completedNight(
             LocalDate day,
             Familiarity familiarity,

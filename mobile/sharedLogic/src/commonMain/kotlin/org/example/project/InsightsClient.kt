@@ -19,6 +19,14 @@ data class InsightTip(
 )
 
 @Serializable
+data class RecentWhyNote(
+    val scheduledOn: String,
+    val foodName: String,
+    val liked: String? = null,
+    val whyNote: String,
+)
+
+@Serializable
 data class InsightsResponse(
     val completedSessionCount: Int,
     val ready: Boolean,
@@ -35,6 +43,7 @@ data class InsightsResponse(
     val familiarityTrulyNew: Int,
     val snackCount: Int,
     val hasParentNotes: Boolean,
+    val recentWhyNotes: List<RecentWhyNote> = emptyList(),
     val tips: List<InsightTip> = emptyList(),
 )
 
