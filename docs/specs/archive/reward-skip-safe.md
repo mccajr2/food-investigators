@@ -1,10 +1,11 @@
 # Spec: reward-skip-safe
 
-Status: draft  
+Status: done  
 Created: 2026-07-28  
 Parent: [docs/roadmap.md](../../roadmap.md)  
 Added: 2026-07-28 · enhancement  
-Specced: 2026-07-29
+Specced: 2026-07-29  
+Completed: 2026-07-30
 
 ## Problem
 
@@ -31,46 +32,54 @@ otherwise the carrot loses meaning while the habit is still forming.
 - **Eligibility:** A session food is reward-eligible only when
   `ateEnough === true` **and** `familiarity !== "safe"`.
   Stretch = `familiar` | `truly_new` | `retrying` (existing ladder values).
-- **Phases unchanged:** `initialRewardPhase` still returns `encourage` when
-  zero eligible, `pickGame` when one, `pick` when two — only the eligible set
-  shrinks.
+- **Phases:** `initialRewardPhase` returns `encourage` when zero eligible,
+  `pickGame` when one, `pick` when two — only the eligible set shrinks.
+- **Encourage copy:** Branch on tone — `tryAgain` when nobody ate enough
+  (keep game-forward try-again copy); `habit` when something was ate-enough
+  but only safe qualified (warm habit close, **no** game mention).
 - **Mixed night (safe + stretch):** Games only if the stretch food is
   ate-enough. Safe alone never unlocks or themes a game.
 - **Two stretch:** Parent discretion via ate-enough on either/both (unchanged
   pick flow).
-- **Two safe:** Always encourage — no game pick (habit nights keep the calm
-  finish without the carrot).
-- **Layers:** Web only (`rewardFoods` + tests; Run wiring already uses
-  `initialRewardPhase`). No OpenAPI / backend / iOS.
+- **Two safe:** Always encourage — habit tone if any ate-enough, else
+  tryAgain.
+- **Layers:** Web only (`rewardFoods` + `RewardFlow` + tests). No OpenAPI /
+  backend / iOS.
 
 ## Acceptance criteria
 
-- [ ] `eligibleRewardFoods` excludes any food with familiarity `safe`, even if
+- [x] `eligibleRewardFoods` excludes any food with familiarity `safe`, even if
       `ateEnough` is true.
-- [ ] Session with two `safe` foods (any ate-enough combination) → initial
+- [x] Session with two `safe` foods (any ate-enough combination) → initial
       reward phase is `encourage` (no pick / pickGame / play).
-- [ ] Session with one `safe` + one stretch: only the stretch food ate-enough →
+- [x] Session with one `safe` + one stretch: only the stretch food ate-enough →
       opens toward a game (`pickGame` / play) themed on that stretch food.
-- [ ] Same mixed session: only the safe food ate-enough (stretch not) →
+- [x] Same mixed session: only the safe food ate-enough (stretch not) →
       `encourage`, no game.
-- [ ] Two stretch foods: ate-enough on either or both still offers games as
+- [x] Two stretch foods: ate-enough on either or both still offers games as
       today (single → `pickGame`; both → `pick`).
-- [ ] Zero ate-enough (any familiarity mix) still → `encourage`.
-- [ ] No OpenAPI / backend / iOS changes.
-- [ ] Unit tests cover the cases above (extend `rewardFoods.test.ts`; Run page
+- [x] Zero ate-enough (any familiarity mix) still → `encourage` with
+      `tryAgain` tone (game-forward copy OK).
+- [x] Ate-enough but only safe qualified → `encourage` with `habit` tone
+      (no game mention; not “eating enough is hard”).
+- [x] No OpenAPI / backend / iOS changes.
+- [x] Unit tests cover the cases above (extend `rewardFoods.test.ts`; Run page
       only if wiring diverges from `initialRewardPhase`).
 
 ## Tasks
 
-- [ ] Web: Tighten `eligibleRewardFoods` (and any related copy if it implies
+- [x] Web: Tighten `eligibleRewardFoods` (and any related copy if it implies
       safe foods unlock games).
-- [ ] Tests: `rewardFoods` coverage for two-safe, mixed (stretch only / safe
+- [x] Tests: `rewardFoods` coverage for two-safe, mixed (stretch only / safe
       only), two-stretch, and zero ate-enough.
+- [x] Web: Branch encourage copy (`tryAgain` vs `habit`) + tests.
 
 ## Decisions (locked)
 
 - Safe foods never unlock or theme reward games.
 - Encourage remains the no-game path (do not skip the reward step entirely).
+- Encourage copy branches: `habit` when any ate-enough but no stretch
+  eligible; `tryAgain` when nobody ate enough.
 - Web-only; no contract change.
 
 ## Open questions

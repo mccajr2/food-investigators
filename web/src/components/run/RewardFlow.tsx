@@ -68,6 +68,7 @@ export function RewardFlow({
   }, [phase, onChooseGame])
 
   if (phase.kind === "encourage") {
+    const isHabit = phase.tone === "habit"
     return (
       <div
         className="run-enter flex h-full flex-col items-center justify-center gap-6 p-6 text-center"
@@ -75,11 +76,12 @@ export function RewardFlow({
       >
         <BrandLogo variant="full" className="max-w-[14rem] sm:max-w-xs" />
         <h2 className="run-prompt text-3xl leading-tight md:text-4xl">
-          Nice try tonight
+          {isHabit ? "Nice night" : "Nice try tonight"}
         </h2>
         <p className="max-w-md text-lg text-muted-foreground">
-          Eating enough can be hard. You can try again another night — we will
-          be ready with a game when you do.
+          {isHabit
+            ? "Showing up for tasting keeps the habit going. See you next time."
+            : "Eating enough can be hard. You can try again another night — we will be ready with a game when you do."}
         </p>
         <Button
           type="button"

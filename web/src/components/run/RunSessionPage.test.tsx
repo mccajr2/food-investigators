@@ -225,7 +225,8 @@ describe("RunSessionPage", () => {
       foods: sampleSession.foods.map((food, index) => ({
         ...food,
         liked: index === 0 ? "like" : null,
-        ateEnough: index === 0,
+        // Stretch food (Strawberries) ate enough — safe alone does not unlock.
+        ateEnough: index === 1,
       })),
     }
     const complete = vi.fn().mockResolvedValue(completed)
@@ -256,11 +257,11 @@ describe("RunSessionPage", () => {
 
     await user.click(screen.getByRole("option", { name: "Like" }))
     await skipOptionalStepsAfterLiked(user)
-    await user.click(screen.getByRole("option", { name: "Yes" }))
+    await user.click(screen.getByRole("option", { name: "No" }))
 
     expect(screen.getByText("Food 2 of 2")).toBeInTheDocument()
     await skipAllOptionalSteps(user)
-    await user.click(screen.getByRole("option", { name: "No" }))
+    await user.click(screen.getByRole("option", { name: "Yes" }))
 
     await waitFor(() => {
       expect(complete).toHaveBeenCalledWith(sampleSession.id, {
@@ -268,12 +269,12 @@ describe("RunSessionPage", () => {
           expect.objectContaining({
             position: 1,
             liked: "like",
-            ateEnough: true,
+            ateEnough: false,
           }),
           expect.objectContaining({
             position: 2,
             liked: null,
-            ateEnough: false,
+            ateEnough: true,
           }),
         ],
       })
@@ -286,9 +287,9 @@ describe("RunSessionPage", () => {
 
     await user.click(screen.getByRole("button", { name: "Catch" }))
     expect(
-      await screen.findByLabelText("Catch game: Apples"),
+      await screen.findByLabelText("Catch game: Strawberries"),
     ).toBeInTheDocument()
-    expect(screen.getByText(/Theme: Apples/)).toBeInTheDocument()
+    expect(screen.getByText(/Theme: Strawberries/)).toBeInTheDocument()
 
     await user.click(screen.getByRole("button", { name: "Done" }))
     expect(onComplete).not.toHaveBeenCalled()
@@ -297,12 +298,20 @@ describe("RunSessionPage", () => {
     expect(onComplete).toHaveBeenCalledWith(completed)
   })
 
-  it("shows food pick then game pick then Catch when both foods ate enough", async () => {
+  it("shows food pick then game pick then Catch when both stretch foods ate enough", async () => {
     const user = userEvent.setup()
-    const completed: SessionResponse = {
+    const twoStretch = {
       ...sampleSession,
+      foods: sampleSession.foods.map((food) =>
+        food.familiarity === "safe"
+          ? { ...food, familiarity: "familiar" as const }
+          : food,
+      ),
+    }
+    const completed: SessionResponse = {
+      ...twoStretch,
       status: "completed",
-      foods: sampleSession.foods.map((food) => ({
+      foods: twoStretch.foods.map((food) => ({
         ...food,
         ateEnough: true,
       })),
@@ -311,7 +320,7 @@ describe("RunSessionPage", () => {
 
     render(
       <RunSessionPage
-        session={sampleSession}
+        session={twoStretch}
         sessionsClient={mockSessionsClient({
           complete: vi.fn().mockResolvedValue(completed),
         })}
@@ -356,14 +365,14 @@ describe("RunSessionPage", () => {
     expect(onComplete).toHaveBeenCalledWith(completed)
   })
 
-  it("starts Cross from game pick when one food ate enough", async () => {
+  it("starts Cross from game pick when one stretch food ate enough", async () => {
     const user = userEvent.setup()
     const completed: SessionResponse = {
       ...sampleSession,
       status: "completed",
       foods: sampleSession.foods.map((food, index) => ({
         ...food,
-        ateEnough: index === 0,
+        ateEnough: index === 1,
       })),
     }
     const onComplete = vi.fn()
@@ -380,16 +389,16 @@ describe("RunSessionPage", () => {
     )
 
     await skipAllOptionalSteps(user)
-    await user.click(screen.getByRole("option", { name: "Yes" }))
-    await skipAllOptionalSteps(user)
     await user.click(screen.getByRole("option", { name: "No" }))
+    await skipAllOptionalSteps(user)
+    await user.click(screen.getByRole("option", { name: "Yes" }))
 
     expect(await screen.findByLabelText("Pick game")).toBeInTheDocument()
     await user.click(screen.getByRole("button", { name: "Cross" }))
     expect(
-      await screen.findByLabelText("Cross game: Apples"),
+      await screen.findByLabelText("Cross game: Strawberries"),
     ).toBeInTheDocument()
-    expect(screen.getByText(/Theme: Apples/)).toBeInTheDocument()
+    expect(screen.getByText(/Theme: Strawberries/)).toBeInTheDocument()
 
     await user.click(screen.getByRole("button", { name: "Done" }))
     expect(await screen.findByLabelText("Parent notes")).toBeInTheDocument()
@@ -404,7 +413,7 @@ describe("RunSessionPage", () => {
       status: "completed",
       foods: sampleSession.foods.map((food, index) => ({
         ...food,
-        ateEnough: index === 0,
+        ateEnough: index === 1,
       })),
     }
     const onComplete = vi.fn()
@@ -421,14 +430,14 @@ describe("RunSessionPage", () => {
     )
 
     await skipAllOptionalSteps(user)
-    await user.click(screen.getByRole("option", { name: "Yes" }))
-    await skipAllOptionalSteps(user)
     await user.click(screen.getByRole("option", { name: "No" }))
+    await skipAllOptionalSteps(user)
+    await user.click(screen.getByRole("option", { name: "Yes" }))
 
     expect(await screen.findByLabelText("Pick game")).toBeInTheDocument()
     await user.click(screen.getByRole("button", { name: "Match" }))
     expect(
-      await screen.findByLabelText("Match game: Apples"),
+      await screen.findByLabelText("Match game: Strawberries"),
     ).toBeInTheDocument()
 
     await user.click(screen.getByRole("button", { name: "Done" }))
@@ -445,7 +454,7 @@ describe("RunSessionPage", () => {
       status: "completed",
       foods: sampleSession.foods.map((food, index) => ({
         ...food,
-        ateEnough: index === 0,
+        ateEnough: index === 1,
       })),
     }
     const onComplete = vi.fn()
@@ -462,9 +471,9 @@ describe("RunSessionPage", () => {
     )
 
     await skipAllOptionalSteps(user)
-    await user.click(screen.getByRole("option", { name: "Yes" }))
-    await skipAllOptionalSteps(user)
     await user.click(screen.getByRole("option", { name: "No" }))
+    await skipAllOptionalSteps(user)
+    await user.click(screen.getByRole("option", { name: "Yes" }))
 
     expect(await screen.findByLabelText("Pick game")).toBeInTheDocument()
     await user.click(screen.getByRole("button", { name: "Surprise" }))
@@ -473,7 +482,7 @@ describe("RunSessionPage", () => {
 
     await user.click(screen.getByRole("button", { name: "Let's go" }))
     expect(
-      await screen.findByLabelText("Catch game: Apples"),
+      await screen.findByLabelText("Catch game: Strawberries"),
     ).toBeInTheDocument()
 
     randomSpy.mockRestore()
@@ -527,7 +536,7 @@ describe("RunSessionPage", () => {
     expect(onComplete).toHaveBeenCalledWith(completed)
   })
 
-  it("saves parent notes after reward before returning to Plan", async () => {
+  it("shows habit encouragement when only a safe food ate enough", async () => {
     const user = userEvent.setup()
     const completed: SessionResponse = {
       ...sampleSession,
@@ -535,6 +544,42 @@ describe("RunSessionPage", () => {
       foods: sampleSession.foods.map((food, index) => ({
         ...food,
         ateEnough: index === 0,
+      })),
+    }
+
+    render(
+      <RunSessionPage
+        session={sampleSession}
+        sessionsClient={mockSessionsClient({
+          complete: vi.fn().mockResolvedValue(completed),
+        })}
+        onComplete={vi.fn()}
+        onExit={vi.fn()}
+      />,
+    )
+
+    await skipAllOptionalSteps(user)
+    await user.click(screen.getByRole("option", { name: "Yes" }))
+    await skipAllOptionalSteps(user)
+    await user.click(screen.getByRole("option", { name: "No" }))
+
+    expect(await screen.findByLabelText("Encouragement")).toBeInTheDocument()
+    expect(screen.getByText("Nice night")).toBeInTheDocument()
+    expect(
+      screen.getByText(/showing up for tasting keeps the habit going/i),
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/game/i)).not.toBeInTheDocument()
+    expect(screen.queryByLabelText("Pick game")).not.toBeInTheDocument()
+  })
+
+  it("saves parent notes after reward before returning to Plan", async () => {
+    const user = userEvent.setup()
+    const completed: SessionResponse = {
+      ...sampleSession,
+      status: "completed",
+      foods: sampleSession.foods.map((food, index) => ({
+        ...food,
+        ateEnough: index === 1,
       })),
     }
     const withNote: SessionResponse = {
@@ -557,9 +602,9 @@ describe("RunSessionPage", () => {
     )
 
     await skipAllOptionalSteps(user)
-    await user.click(screen.getByRole("option", { name: "Yes" }))
-    await skipAllOptionalSteps(user)
     await user.click(screen.getByRole("option", { name: "No" }))
+    await skipAllOptionalSteps(user)
+    await user.click(screen.getByRole("option", { name: "Yes" }))
 
     expect(await screen.findByLabelText("Pick game")).toBeInTheDocument()
     await user.click(screen.getByRole("button", { name: "Catch" }))
@@ -582,10 +627,18 @@ describe("RunSessionPage", () => {
 
   it("supports typing mic answers when speech is unavailable", async () => {
     const user = userEvent.setup()
-    const complete = vi.fn().mockResolvedValue({
+    const twoStretch = {
       ...sampleSession,
+      foods: sampleSession.foods.map((food) =>
+        food.familiarity === "safe"
+          ? { ...food, familiarity: "familiar" as const }
+          : food,
+      ),
+    }
+    const complete = vi.fn().mockResolvedValue({
+      ...twoStretch,
       status: "completed",
-      foods: sampleSession.foods.map((food) => ({
+      foods: twoStretch.foods.map((food) => ({
         ...food,
         ateEnough: true,
       })),
@@ -593,7 +646,7 @@ describe("RunSessionPage", () => {
 
     render(
       <RunSessionPage
-        session={sampleSession}
+        session={twoStretch}
         sessionsClient={mockSessionsClient({ complete })}
         onComplete={vi.fn()}
         onExit={vi.fn()}
