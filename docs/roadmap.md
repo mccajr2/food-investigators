@@ -44,7 +44,7 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | run-sense-survey | planned | 2026-07-28 · enhancement | Reframe run survey around senses: taste, texture (touch), smell, look (sight) |
+| 1 | food-illustrations-ai | planned | 2026-07-30 · re-rank split | Kid-clear food art: heroes + online on-demand AI for catalog (after why chips) |
 | 2 | child-display-name | planned | 2026-07-28 · enhancement | Optional child’s first name at signup / settings (single-child profile) |
 | 3 | signup-starter-snacks | planned | 2026-07-23 · enhancement | Optional signup intake: liked tasting foods + snacks (else catalog defaults) |
 | 4 | suggestion-pacing-evidence | planned | 2026-07-25 · re-rank split | Science-backed pacing / preference guidance for suggestions |
@@ -54,8 +54,9 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 | 8 | beta-backend-hosting | planned | 2026-07-29 · enhancement | Neon Postgres + Render backend + UptimeRobot keep-alive for beta |
 | 9 | beta-web-hosting | planned | 2026-07-29 · enhancement | Render web front pointed at prod API |
 | 10 | ci-cd-production | planned | 2026-07-29 · enhancement | After tests on `main`, auto-deploy backend + web to Render |
-| 11 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
-| 12 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
+| 11 | run-outcome-contract | planned | 2026-07-30 · enhancement | Harden run/outcome contract (document or promote encodings; deprecate unused fields) before native Run |
+| 12 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
+| 13 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
 
 Status values: `parking` · `planned` · `active` · `done` · `cancelled`  
 Added: `YYYY-MM-DD · initial` | `enhancement` | `re-rank split`
@@ -87,7 +88,7 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Branch | Spec |
 |----|--------|------|
-| — | — | _(none)_ |
+| why-chip-illustrations | `why-chip-illustrations` | [active](specs/active/why-chip-illustrations.md) |
 
 ## Done
 
@@ -181,3 +182,4 @@ Only notable events (first carve-up, major re-rank, cancelled theme) — not eve
 | 2026-07-30 | why-outcome-depth shipped (liked-specific why chips + optional note → `whyNote`). Next up: `why-insights-surface`. |
 | 2026-07-30 | Specced `why-insights-surface` (recent why snippets + chip-count tips on Insights; OpenAPI). Next up after ship: `run-sense-survey`. |
 | 2026-07-30 | why-insights-surface shipped (Insights recent whys + chip-count tips). Next up: `run-sense-survey`. |
+| 2026-07-30 | Split `ritual-illustrations` → active `why-chip-illustrations` (offline AI-assisted chip art) + planned `food-illustrations-ai` (heroes + online on-demand food art). |
