@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest"
 import type { SessionResponse } from "@/api/types"
 import {
   eligibleRewardFoods,
+  encourageTone,
   gameLabel,
   initialRewardPhase,
   phaseAfterFoodPick,
@@ -43,15 +44,97 @@ const baseSession: SessionResponse = {
 describe("rewardFoods", () => {
   it("encourage when zero ate enough", () => {
     expect(eligibleRewardFoods(baseSession)).toHaveLength(0)
-    expect(initialRewardPhase(baseSession)).toEqual({ kind: "encourage" })
+    expect(encourageTone(baseSession)).toBe("tryAgain")
+    expect(initialRewardPhase(baseSession)).toEqual({
+      kind: "encourage",
+      tone: "tryAgain",
+    })
   })
 
-  it("pickGame when exactly one ate enough", () => {
+  it("encourage when both foods are safe regardless of ate-enough", () => {
+    const bothSafe = (
+      ateFirst: boolean,
+      ateSecond: boolean,
+    ): SessionResponse => ({
+      ...baseSession,
+      foods: [
+        {
+          ...baseSession.foods[0],
+          familiarity: "safe",
+          ateEnough: ateFirst,
+        },
+        {
+          ...baseSession.foods[1],
+          familiarity: "safe",
+          ateEnough: ateSecond,
+        },
+      ],
+    })
+
+    expect(initialRewardPhase(bothSafe(false, false))).toEqual({
+      kind: "encourage",
+      tone: "tryAgain",
+    })
+    for (const session of [
+      bothSafe(true, false),
+      bothSafe(false, true),
+      bothSafe(true, true),
+    ]) {
+      expect(eligibleRewardFoods(session)).toHaveLength(0)
+      expect(encourageTone(session)).toBe("habit")
+      expect(initialRewardPhase(session)).toEqual({
+        kind: "encourage",
+        tone: "habit",
+      })
+    }
+  })
+
+  it("mixed night: habit encourage when only the safe food ate enough", () => {
     const session: SessionResponse = {
       ...baseSession,
       foods: [
         { ...baseSession.foods[0], ateEnough: true },
         { ...baseSession.foods[1], ateEnough: false },
+      ],
+    }
+    expect(eligibleRewardFoods(session)).toHaveLength(0)
+    expect(initialRewardPhase(session)).toEqual({
+      kind: "encourage",
+      tone: "habit",
+    })
+  })
+
+  it("mixed night: pickGame themed on stretch when only stretch ate enough", () => {
+    const session: SessionResponse = {
+      ...baseSession,
+      foods: [
+        { ...baseSession.foods[0], ateEnough: false },
+        { ...baseSession.foods[1], ateEnough: true },
+      ],
+    }
+    const eligible = eligibleRewardFoods(session)
+    expect(eligible).toHaveLength(1)
+    expect(eligible[0]?.familiarity).toBe("truly_new")
+    expect(initialRewardPhase(session)).toEqual({
+      kind: "pickGame",
+      food: eligible[0],
+    })
+  })
+
+  it("two stretch foods: pickGame when only one ate enough", () => {
+    const session: SessionResponse = {
+      ...baseSession,
+      foods: [
+        {
+          ...baseSession.foods[0],
+          familiarity: "familiar_but_new",
+          ateEnough: false,
+        },
+        {
+          ...baseSession.foods[1],
+          familiarity: "retrying",
+          ateEnough: true,
+        },
       ],
     }
     const eligible = eligibleRewardFoods(session)
@@ -62,11 +145,15 @@ describe("rewardFoods", () => {
     })
   })
 
-  it("pick food when two ate enough, then pickGame after food choice", () => {
+  it("two stretch foods: pick when both ate enough, then pickGame after food choice", () => {
     const session: SessionResponse = {
       ...baseSession,
       foods: [
-        { ...baseSession.foods[0], ateEnough: true },
+        {
+          ...baseSession.foods[0],
+          familiarity: "retrying",
+          ateEnough: true,
+        },
         { ...baseSession.foods[1], ateEnough: true },
       ],
     }
@@ -82,6 +169,28 @@ describe("rewardFoods", () => {
         food: phase.foods[1],
       })
     }
+  })
+
+  it("familiar_but_new and retrying count as stretch (not safe)", () => {
+    const session: SessionResponse = {
+      ...baseSession,
+      foods: [
+        {
+          ...baseSession.foods[0],
+          familiarity: "familiar_but_new",
+          ateEnough: true,
+        },
+        {
+          ...baseSession.foods[1],
+          familiarity: "retrying",
+          ateEnough: false,
+        },
+      ],
+    }
+    expect(eligibleRewardFoods(session)).toHaveLength(1)
+    expect(eligibleRewardFoods(session)[0]?.familiarity).toBe(
+      "familiar_but_new",
+    )
   })
 
   it("phaseForGame builds catch, cross, and match phases", () => {

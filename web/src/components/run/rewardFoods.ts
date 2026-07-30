@@ -1,11 +1,16 @@
 import type { SessionFoodResponse, SessionResponse } from "@/api/types"
 
-/** Foods marked ate enough — candidates for reward game theme. */
+/**
+ * Foods that unlock / theme a reward game: ate enough of a stretch food.
+ * Safe foods never qualify — habit nights stay on encourage only.
+ */
 export function eligibleRewardFoods(
   session: SessionResponse,
 ): SessionFoodResponse[] {
   return [...session.foods]
-    .filter((food) => food.ateEnough === true)
+    .filter(
+      (food) => food.ateEnough === true && food.familiarity !== "safe",
+    )
     .sort((a, b) => a.position - b.position)
 }
 
@@ -17,8 +22,10 @@ export const REWARD_GAME_KINDS: readonly RewardGameKind[] = [
   "match",
 ] as const
 
+export type EncourageTone = "tryAgain" | "habit"
+
 export type RewardPhase =
-  | { kind: "encourage" }
+  | { kind: "encourage"; tone: EncourageTone }
   | { kind: "pick"; foods: SessionFoodResponse[] }
   | { kind: "pickGame"; food: SessionFoodResponse }
   | {
@@ -30,10 +37,16 @@ export type RewardPhase =
   | { kind: "cross"; food: SessionFoodResponse }
   | { kind: "match"; food: SessionFoodResponse }
 
+/** No-game close: habit when something was ate-enough (safe-only); else try-again. */
+export function encourageTone(session: SessionResponse): EncourageTone {
+  const anyAteEnough = session.foods.some((food) => food.ateEnough === true)
+  return anyAteEnough ? "habit" : "tryAgain"
+}
+
 export function initialRewardPhase(session: SessionResponse): RewardPhase {
   const eligible = eligibleRewardFoods(session)
   if (eligible.length === 0) {
-    return { kind: "encourage" }
+    return { kind: "encourage", tone: encourageTone(session) }
   }
   if (eligible.length === 1) {
     return { kind: "pickGame", food: eligible[0] }

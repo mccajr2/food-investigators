@@ -25,7 +25,7 @@ describe("RewardFlow surprise reveal", () => {
   it("shows a fuller brand logo on encourage and which-game beats", () => {
     const { rerender } = render(
       <RewardFlow
-        phase={{ kind: "encourage" }}
+        phase={{ kind: "encourage", tone: "tryAgain" }}
         onPick={vi.fn()}
         onChooseGame={vi.fn()}
         onFinished={vi.fn()}
@@ -50,6 +50,36 @@ describe("RewardFlow surprise reveal", () => {
       "data-brand-logo",
       "full",
     )
+  })
+
+  it("shows try-again copy when encourage tone is tryAgain", () => {
+    render(
+      <RewardFlow
+        phase={{ kind: "encourage", tone: "tryAgain" }}
+        onPick={vi.fn()}
+        onChooseGame={vi.fn()}
+        onFinished={vi.fn()}
+      />,
+    )
+    expect(screen.getByText("Nice try tonight")).toBeInTheDocument()
+    expect(screen.getByText(/eating enough can be hard/i)).toBeInTheDocument()
+    expect(screen.getByText(/ready with a game/i)).toBeInTheDocument()
+  })
+
+  it("shows habit copy without game mention when encourage tone is habit", () => {
+    render(
+      <RewardFlow
+        phase={{ kind: "encourage", tone: "habit" }}
+        onPick={vi.fn()}
+        onChooseGame={vi.fn()}
+        onFinished={vi.fn()}
+      />,
+    )
+    expect(screen.getByText("Nice night")).toBeInTheDocument()
+    expect(
+      screen.getByText(/showing up for tasting keeps the habit going/i),
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/game/i)).not.toBeInTheDocument()
   })
 
   it("offers Catch, Cross, Match, and Surprise on which-game", () => {

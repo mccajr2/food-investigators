@@ -1,7 +1,7 @@
 # Product roadmap
 
 Status: active  
-Updated: 2026-07-29
+Updated: 2026-07-30
 
 Living backlog for this product repo. **One roadmap ↔ many specs** (1:1 by
 kebab-case id). `/roadmap` updates and re-ranks; `/spec <id>` fleshes out the
@@ -44,20 +44,19 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | reward-skip-safe | planned | 2026-07-28 · enhancement | Do not offer reward mini-games when both foods were `safe` |
-| 2 | why-outcome-depth | planned | 2026-07-28 · enhancement | Strengthen why capture for like *and* dislike; surface usefully in Insights/History |
-| 3 | run-sense-survey | planned | 2026-07-28 · enhancement | Reframe run survey around senses: taste, texture (touch), smell, look (sight) |
-| 4 | child-display-name | planned | 2026-07-28 · enhancement | Optional child’s first name at signup / settings (single-child profile) |
-| 5 | signup-starter-snacks | planned | 2026-07-23 · enhancement | Optional signup intake: liked tasting foods + snacks (else catalog defaults) |
-| 6 | suggestion-pacing-evidence | planned | 2026-07-25 · re-rank split | Science-backed pacing / preference guidance for suggestions |
-| 7 | disliked-prep-rotation | planned | 2026-07-28 · enhancement | Suggest distinct preps of a disliked food (~3 over weeks), then longer rest |
-| 8 | milestone-badges | planned | 2026-07-28 · enhancement | Celebration badges (e.g. first liked new food; 5/10/25 new foods) |
-| 9 | welcome-orientation | planned | 2026-07-29 · enhancement | Dismissible welcome: why Food Investigators + Plan/Run/Insights lay of the land + pacing |
-| 10 | beta-backend-hosting | planned | 2026-07-29 · enhancement | Neon Postgres + Render backend + UptimeRobot keep-alive for beta |
-| 11 | beta-web-hosting | planned | 2026-07-29 · enhancement | Render web front pointed at prod API |
-| 12 | ci-cd-production | planned | 2026-07-29 · enhancement | After tests on `main`, auto-deploy backend + web to Render |
-| 13 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
-| 14 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
+| 1 | why-outcome-depth | planned | 2026-07-28 · enhancement | Strengthen why capture for like *and* dislike; surface usefully in Insights/History |
+| 2 | run-sense-survey | planned | 2026-07-28 · enhancement | Reframe run survey around senses: taste, texture (touch), smell, look (sight) |
+| 3 | child-display-name | planned | 2026-07-28 · enhancement | Optional child’s first name at signup / settings (single-child profile) |
+| 4 | signup-starter-snacks | planned | 2026-07-23 · enhancement | Optional signup intake: liked tasting foods + snacks (else catalog defaults) |
+| 5 | suggestion-pacing-evidence | planned | 2026-07-25 · re-rank split | Science-backed pacing / preference guidance for suggestions |
+| 6 | disliked-prep-rotation | planned | 2026-07-28 · enhancement | Suggest distinct preps of a disliked food (~3 over weeks), then longer rest |
+| 7 | milestone-badges | planned | 2026-07-28 · enhancement | Celebration badges (e.g. first liked new food; 5/10/25 new foods) |
+| 8 | welcome-orientation | planned | 2026-07-29 · enhancement | Dismissible welcome: why Food Investigators + Plan/Run/Insights lay of the land + pacing |
+| 9 | beta-backend-hosting | planned | 2026-07-29 · enhancement | Neon Postgres + Render backend + UptimeRobot keep-alive for beta |
+| 10 | beta-web-hosting | planned | 2026-07-29 · enhancement | Render web front pointed at prod API |
+| 11 | ci-cd-production | planned | 2026-07-29 · enhancement | After tests on `main`, auto-deploy backend + web to Render |
+| 12 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
+| 13 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
 
 Status values: `parking` · `planned` · `active` · `done` · `cancelled`  
 Added: `YYYY-MM-DD · initial` | `enhancement` | `re-rank split`
@@ -94,6 +93,7 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Completed | Spec |
 |----|-----------|------|
+| reward-skip-safe | 2026-07-30 | [archive](specs/archive/reward-skip-safe.md) |
 | early-run-date-snap | 2026-07-29 | [archive](specs/archive/early-run-date-snap.md) |
 | plan-occupied-dates | 2026-07-29 | [archive](specs/archive/plan-occupied-dates.md) |
 | suggested-next-session | 2026-07-28 | [archive](specs/archive/suggested-next-session.md) |
@@ -173,3 +173,5 @@ Only notable events (first carve-up, major re-rank, cancelled theme) — not eve
 | 2026-07-29 | Re-rank for beta friend: ritual polish (incl. `early-run-date-snap`) → `welcome-orientation` → Render/Neon hosting + CI/CD; park `log-past-session` / `product-tour`. Next up: `early-run-date-snap`. |
 | 2026-07-29 | Specced `early-run-date-snap` (confirm at Run start; update to today via existing API). Next up after ship: `reward-skip-safe`. |
 | 2026-07-29 | early-run-date-snap shipped (Plan Run confirm + snap to today; calendar zone for past-date checks). Next up: `reward-skip-safe`. |
+| 2026-07-29 | Specced `reward-skip-safe` (games only for non-safe ate-enough; encourage when none). Next up after ship: `why-outcome-depth`. |
+| 2026-07-30 | reward-skip-safe shipped (stretch-only game unlock; habit vs try-again encourage copy). Next up: `why-outcome-depth`. |
