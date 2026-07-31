@@ -44,7 +44,7 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | why-chip-sticker-art | planned | 2026-07-31 · enhancement | Redo why chips with same PNG sticker pipeline as hero foods |
+| 1 | why-chip-sticker-art | active | 2026-07-31 · enhancement | Redo why chips with same PNG sticker pipeline as hero foods |
 | 2 | on-demand-food-illustrations | planned | 2026-07-30 · re-rank split | Online on-demand AI food art for non-hero / custom foods |
 | 3 | child-display-name | planned | 2026-07-28 · enhancement | Optional child’s first name at signup / settings (single-child profile) |
 | 4 | signup-starter-snacks | planned | 2026-07-23 · enhancement | Optional signup intake: liked tasting foods + snacks (else catalog defaults) |
@@ -89,7 +89,7 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Branch | Spec |
 |----|--------|------|
-| — | — | — |
+| why-chip-sticker-art | why-chip-sticker-art | [active](specs/active/why-chip-sticker-art.md) |
 
 ## Done
 
