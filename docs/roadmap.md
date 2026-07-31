@@ -44,7 +44,7 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | non-hero-food-illustrations | planned | 2026-07-31 · re-rank split | Offline PNG stickers for the 16 remaining starter foods |
+| 1 | non-hero-food-illustrations | active | 2026-07-31 · re-rank split | Offline PNG stickers for the 16 remaining starter foods |
 | 2 | food-illustration-object-store | planned | 2026-07-31 · re-rank split | Shared object store + iconUrl so households reuse illustrations |
 | 3 | on-demand-food-illustrations | planned | 2026-07-30 · re-rank split | Online AI art for custom foods into the shared store |
 | 4 | child-display-name | planned | 2026-07-28 · enhancement | Optional child’s first name at signup / settings (single-child profile) |
@@ -90,7 +90,7 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Branch | Spec |
 |----|--------|------|
-| — | — | — |
+| non-hero-food-illustrations | non-hero-food-illustrations | [active](specs/active/non-hero-food-illustrations.md) |
 
 ## Done
 
