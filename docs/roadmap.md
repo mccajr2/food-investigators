@@ -1,7 +1,7 @@
 # Product roadmap
 
 Status: active  
-Updated: 2026-07-30
+Updated: 2026-07-31
 
 Living backlog for this product repo. **One roadmap ↔ many specs** (1:1 by
 kebab-case id). `/roadmap` updates and re-ranks; `/spec <id>` fleshes out the
@@ -44,7 +44,7 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | hero-food-illustrations | active | 2026-07-30 · re-rank split | Kid-clear offline hero FoodIcon art (match why-chip world) |
+| 1 | why-chip-sticker-art | planned | 2026-07-31 · enhancement | Redo why chips with same PNG sticker pipeline as hero foods |
 | 2 | on-demand-food-illustrations | planned | 2026-07-30 · re-rank split | Online on-demand AI food art for non-hero / custom foods |
 | 3 | child-display-name | planned | 2026-07-28 · enhancement | Optional child’s first name at signup / settings (single-child profile) |
 | 4 | signup-starter-snacks | planned | 2026-07-23 · enhancement | Optional signup intake: liked tasting foods + snacks (else catalog defaults) |
@@ -89,12 +89,13 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Branch | Spec |
 |----|--------|------|
-| hero-food-illustrations | hero-food-illustrations | [active](specs/active/hero-food-illustrations.md) |
+| — | — | — |
 
 ## Done
 
 | Id | Completed | Spec |
 |----|-----------|------|
+| hero-food-illustrations | 2026-07-31 | [archive](specs/archive/hero-food-illustrations.md) |
 | so-so-why-detail | 2026-07-30 | [archive](specs/archive/so-so-why-detail.md) |
 | run-ux-polish | 2026-07-30 | [archive](specs/archive/run-ux-polish.md) |
 | why-chip-illustrations | 2026-07-30 | [archive](specs/archive/why-chip-illustrations.md) |
@@ -199,3 +200,5 @@ Only notable events (first carve-up, major re-rank, cancelled theme) — not eve
 | 2026-07-30 | so-so-why-detail shipped (mixed good/bad so-so chips; middling fillers removed). Next up: `food-illustrations-ai`. |
 | 2026-07-30 | Split `food-illustrations-ai` → `hero-food-illustrations` (Next up, offline heroes) + planned `on-demand-food-illustrations` (online AI). |
 | 2026-07-30 | Specced `hero-food-illustrations`: top-10 heroes as human-polished static SVGs (iOS-portable); on-demand AI stays planned. |
+| 2026-07-31 | Added `why-chip-sticker-art` (rank 2 / next after heroes): redo why chips with the same PNG sticker pipeline as hero foods. |
+| 2026-07-31 | hero-food-illustrations shipped (10 PNG hero stickers + FoodIcon wiring). Next up: `why-chip-sticker-art`. |

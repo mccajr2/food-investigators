@@ -1,7 +1,8 @@
 # Spec: hero-food-illustrations
 
-Status: active  
+Status: archived  
 Created: 2026-07-30  
+Completed: 2026-07-31  
 Parent: [docs/roadmap.md](../../roadmap.md)  
 Added: 2026-07-30 · re-rank split (from `food-illustrations-ai`)  
 Branch: `hero-food-illustrations`
@@ -34,8 +35,8 @@ for the PoC.
 
 1. Generate concepts (prefer raster sketches OK).
 2. Human pick / simplify / brand-fit / crop to 64×64-readable silhouettes.
-3. Commit **static SVG files** (one per hero `iconKey`) under e.g.
-   `web/src/assets/foods/<iconKey>.svg`.
+3. Commit **static PNG masters** (one per hero `iconKey`, ~256×256) under
+   `web/src/assets/foods/<iconKey>.png` (iOS-portable; derive 1x/2x/3x later).
 4. Thin `FoodIcon` path: hero keys load the static file; non-hero starters keep
    existing inline components; custom keys unchanged.
 
@@ -62,28 +63,29 @@ No contract changes. Native clients do not consume these files yet.
 
 ## Acceptance criteria
 
-- [ ] Every `HERO_FOOD_ICON_KEYS` entry renders from a committed static SVG file
-      (not the old inline hero component paths).
-- [ ] Non-hero starter keys and custom-food fallbacks behave as today.
-- [ ] Art shares one locked food-icon brief aligned with why-chip palette /
+- [x] Every `HERO_FOOD_ICON_KEYS` entry renders from a committed static asset
+      file (PNG preferred; not the old inline hero component paths).
+- [x] Non-hero starter keys and custom-food fallbacks behave as today.
+- [x] Art shares one locked food-icon brief aligned with why-chip palette /
       picture-book style; no emoji / photoreal / purple-glow drift.
-- [ ] At chip/tile size, a 5–6 year old can recognize each hero food without
+- [x] At chip/tile size, a 5–6 year old can recognize each hero food without
       relying on the text label (spot-check in review; tests assert file + render).
-- [ ] No new `iconKey`s, OpenAPI, backend, or iOS project changes.
-- [ ] Tests: each hero key resolves to a non-empty asset and renders in
+- [x] No new `iconKey`s, OpenAPI, backend, or iOS project changes.
+- [x] Tests: each hero key resolves to a non-empty asset and renders in
       `FoodIcon`; existing Foods/Run smoke that shows a hero icon still passes;
       art brief lists all ten hero keys.
 
 ## Tasks
 
-- [ ] Docs: add `docs/design/food-icon-art-brief.md` (style, palette, size,
+- [x] Docs: add `docs/design/food-icon-art-brief.md` (style, palette, size,
       offline prompt stem, human-polish checklist).
-- [ ] Web: produce human-polished static SVGs for all 10 heroes; map in
-      `FoodIcon` (remove inline hero implementations once mapped).
-- [ ] Web: keep non-hero inline icons + `generatedFoodIcon` path unchanged.
-- [ ] Tests: hero asset coverage + `FoodIcon` render; brief lists every hero key.
-- [ ] Docs: on ship, archive this spec; Next up stays
-      `on-demand-food-illustrations` (or re-rank if needed).
+- [x] Web: produce human-polished static assets for all 10 heroes; map in
+      `FoodIcon` (remove inline hero implementations once mapped). All ten
+      locked as ~256px PNG masters.
+- [x] Web: keep non-hero inline icons + `generatedFoodIcon` path unchanged.
+- [x] Tests: hero asset coverage + `FoodIcon` render; brief lists every hero key.
+- [x] Docs: on ship, archive this spec; Next up is
+      `why-chip-sticker-art` (then `on-demand-food-illustrations`).
 
 ## Open questions
 
