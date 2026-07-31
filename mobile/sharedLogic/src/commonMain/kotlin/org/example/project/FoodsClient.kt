@@ -21,6 +21,7 @@ data class FoodResponse(
     val id: String,
     val name: String,
     val iconKey: String,
+    val iconUrl: String? = null,
     val householdId: String? = null,
     val system: Boolean,
     val sessionEligible: Boolean = true,

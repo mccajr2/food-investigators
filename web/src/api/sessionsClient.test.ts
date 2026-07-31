@@ -171,6 +171,70 @@ describe("SessionsClient", () => {
     expect(new Headers(init.headers).get("Authorization")).toBe("Bearer tok")
   })
 
+  it("parses optional iconUrl on session and suggestion foods", async () => {
+    const sessionWithUrl: SessionResponse = {
+      ...sampleSession,
+      foods: [
+        {
+          ...sampleSession.foods[0],
+          iconUrl: "https://cdn.example.com/foods/apple.png",
+        },
+        sampleSession.foods[1],
+      ],
+    }
+    const suggestion = {
+      scheduledOn: "2026-07-16",
+      foods: [
+        {
+          foodId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa04",
+          name: "Apples",
+          iconKey: "apple",
+          iconUrl: "https://cdn.example.com/foods/apple.png",
+          familiarity: "safe" as const,
+        },
+        {
+          foodId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa05",
+          name: "Strawberries",
+          iconKey: "strawberry",
+          familiarity: "familiar_but_new" as const,
+        },
+      ],
+      rationale: "A calm next night from foods that often work for you.",
+      source: "heuristic" as const,
+    }
+    const fetchFn = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(sessionWithUrl), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(suggestion), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+      )
+    const client = new SessionsClient(
+      "http://localhost:8080",
+      fetchFn,
+      memoryStore(),
+    )
+
+    const session = await client.get(sampleSession.id)
+    expect(session.foods[0]?.iconUrl).toBe(
+      "https://cdn.example.com/foods/apple.png",
+    )
+    expect(session.foods[1]?.iconUrl).toBeUndefined()
+
+    const result = await client.suggestNext()
+    expect(result.foods[0]?.iconUrl).toBe(
+      "https://cdn.example.com/foods/apple.png",
+    )
+    expect(result.foods[1]?.iconUrl).toBeUndefined()
+  })
+
   it("creates a planned session", async () => {
     const fetchFn = vi.fn().mockResolvedValue(
       new Response(JSON.stringify(sampleSession), {

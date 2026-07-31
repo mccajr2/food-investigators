@@ -186,4 +186,26 @@ describe("FoodsClient", () => {
     )
     await expect(client.list()).rejects.toThrow("Not signed in")
   })
+
+  it("parses optional iconUrl when present or absent", async () => {
+    const withUrl = {
+      ...sampleFood,
+      iconUrl: "https://cdn.example.com/foods/custom_cucumber.png",
+    }
+    const withoutUrl = { ...sampleFood, id: "dddddddd-dddd-dddd-dddd-dddddddddddd" }
+    const fetchFn = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify([withUrl, withoutUrl]), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    )
+
+    const client = new FoodsClient("http://localhost:8080", fetchFn, memoryStore())
+    const foods = await client.list()
+
+    expect(foods[0]?.iconUrl).toBe(
+      "https://cdn.example.com/foods/custom_cucumber.png",
+    )
+    expect(foods[1]?.iconUrl).toBeUndefined()
+  })
 })

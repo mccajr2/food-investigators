@@ -90,7 +90,7 @@ foods with that `iconKey` start returning `iconUrl`. This PR may include a thin
       credentials are absent.
 - [ ] Shared `food_illustrations` (or equivalent) table stores metadata keyed by
       `canonical_key` with **no** household ownership.
-- [ ] OpenAPI + web + mobile: optional `iconUrl` on `FoodResponse` (and session /
+- [x] OpenAPI + web + mobile: optional `iconUrl` on `FoodResponse` (and session /
       suggestion food schemas that already carry `iconKey`).
 - [ ] When a registry row exists for a food’s `iconKey`, list/get food responses
       include a usable `iconUrl`; otherwise null and clients behave as today.
@@ -104,7 +104,7 @@ foods with that `iconKey` start returning `iconUrl`. This PR may include a thin
 
 ## Tasks
 
-- [ ] Contract: optional `iconUrl` on food-related response schemas; regenerate /
+- [x] Contract: optional `iconUrl` on food-related response schemas; regenerate /
       hand-update OpenAPI consumers checklist.
 - [ ] Backend: Flyway `food_illustrations`; store port + config; illustration
       service; map `iconUrl` on food (and session/suggestion) responses; tests
