@@ -6,8 +6,10 @@ Locked: 2026-07-30 · so-so mixed polarity 2026-07-30
 Audience: offline AI image/SVG generation + hand polish before commit
 
 Use this brief for **every** why-chip asset in this feature. Do not invent a
-second style mid-set. Food / catalog art is **out of scope** here
-(`food-illustrations-ai`).
+second style mid-set. Why-chip art is **out of scope** here
+(`why-chip-illustrations`). Hero / catalog food art lives in
+[food-icon-art-brief](./food-icon-art-brief.md) (`hero-food-illustrations`,
+`on-demand-food-illustrations`).
 
 ## Goal
 
