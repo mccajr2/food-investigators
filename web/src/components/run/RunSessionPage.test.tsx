@@ -6,6 +6,7 @@ import type { SessionsClient } from "@/api"
 import type { SessionResponse } from "@/api/types"
 import {
   buildCompleteRequest,
+  previousRunPosition,
   runStepsForFamiliarity,
   RunSessionPage,
 } from "@/components/run/RunSessionPage"
@@ -1031,5 +1032,41 @@ describe("RunSessionPage", () => {
 
     await user.click(screen.getByRole("button", { name: "Exit" }))
     expect(onExit).toHaveBeenCalled()
+  })
+
+  it("disables Back on the first step and goes back after advancing", async () => {
+    const user = userEvent.setup()
+    render(
+      <RunSessionPage
+        session={sampleSession}
+        sessionsClient={mockSessionsClient()}
+        onComplete={vi.fn()}
+        onExit={vi.fn()}
+      />,
+    )
+
+    const back = screen.getByRole("button", { name: "Back" })
+    expect(back).toBeDisabled()
+    expect(screen.getByText("Did you like it?")).toBeInTheDocument()
+
+    await user.click(screen.getByRole("option", { name: "Like" }))
+    expect(screen.getByLabelText("Why note")).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Back" })).toBeEnabled()
+
+    await user.click(screen.getByRole("button", { name: "Back" }))
+    expect(screen.getByText("Did you like it?")).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Back" })).toBeDisabled()
+  })
+
+  it("previousRunPosition walks stretch steps and prior food", () => {
+    const fam = (index: number) =>
+      index === 0 ? ("safe" as const) : ("truly_new" as const)
+    expect(previousRunPosition(0, 0, fam)).toBeNull()
+    expect(previousRunPosition(0, 1, fam)).toEqual({ foodIndex: 0, stepIndex: 0 })
+    expect(previousRunPosition(1, 0, fam)).toEqual({
+      foodIndex: 0,
+      stepIndex: runStepsForFamiliarity("safe").length - 1,
+    })
+    expect(previousRunPosition(1, 2, fam)).toEqual({ foodIndex: 1, stepIndex: 1 })
   })
 })

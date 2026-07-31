@@ -28,6 +28,7 @@ import {
 } from "@/components/run/rewardFoods"
 import {
   canConfirmWhy,
+  decodeWhyNote,
   encodeWhyNote,
   whyChipsForLiked,
 } from "@/components/run/whyChips"
@@ -59,6 +60,22 @@ export function runStepsForFamiliarity(familiarity: Familiarity): RunStepKind[] 
     return ["liked", "why", "texture", "tastes", "ateEnough"]
   }
   return ["liked", "why", "ateEnough"]
+}
+
+/** Previous survey position, or null at the first step of food 1. */
+export function previousRunPosition(
+  foodIndex: number,
+  stepIndex: number,
+  familiarityForFood: (index: number) => Familiarity,
+): { foodIndex: number; stepIndex: number } | null {
+  if (stepIndex > 0) {
+    return { foodIndex, stepIndex: stepIndex - 1 }
+  }
+  if (foodIndex > 0) {
+    const prevSteps = runStepsForFamiliarity(familiarityForFood(foodIndex - 1))
+    return { foodIndex: foodIndex - 1, stepIndex: prevSteps.length - 1 }
+  }
+  return null
 }
 
 type FoodOutcomeDraft = {
@@ -215,6 +232,46 @@ export function RunSessionPage({
     }
     void submit(nextOutcomes)
   }
+
+  function familiarityAt(index: number): Familiarity {
+    const food =
+      session.foods.find((entry) => entry.position === index + 1) ??
+      session.foods[index]
+    return food?.familiarity ?? "safe"
+  }
+
+  function syncWhyUiForDraft(draft: FoodOutcomeDraft) {
+    const chips = whyChipsForLiked(draft.liked)
+    const restored = decodeWhyNote(draft.whyNote, chips)
+    setWhyChips(restored.chips)
+    setNoteDraft(restored.note)
+  }
+
+  function goBack() {
+    if (inReward || inParentNotes || busy || savingParentNote) {
+      return
+    }
+    const previous = previousRunPosition(foodIndex, stepIndex, familiarityAt)
+    if (!previous) {
+      return
+    }
+    setFoodIndex(previous.foodIndex)
+    setStepIndex(previous.stepIndex)
+    const draft = outcomes[previous.foodIndex]
+    const prevSteps = runStepsForFamiliarity(familiarityAt(previous.foodIndex))
+    const prevStep = prevSteps[previous.stepIndex]
+    if (prevStep === "why") {
+      syncWhyUiForDraft(draft)
+    } else {
+      setNoteDraft("")
+      setWhyChips([])
+    }
+  }
+
+  const canGoBack =
+    !inReward &&
+    !inParentNotes &&
+    previousRunPosition(foodIndex, stepIndex, familiarityAt) !== null
 
   async function submit(nextOutcomes?: [FoodOutcomeDraft, FoodOutcomeDraft]) {
     setStatus({ kind: "submitting" })
@@ -376,15 +433,27 @@ export function RunSessionPage({
             )}
           </div>
         </div>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={onExit}
-          disabled={busy || savingParentNote}
-        >
-          Exit
-        </Button>
+        <div className="flex shrink-0 items-center gap-1">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={goBack}
+            disabled={!canGoBack || busy || savingParentNote}
+            aria-label="Back"
+          >
+            Back
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={onExit}
+            disabled={busy || savingParentNote}
+          >
+            Exit
+          </Button>
+        </div>
       </header>
 
       <main className="flex-1 overflow-y-auto">

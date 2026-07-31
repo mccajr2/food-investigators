@@ -73,3 +73,27 @@ export function canConfirmWhy(
 ): boolean {
   return selectedChips.length > 0 || note.trim().length > 0
 }
+
+/** Split a stored whyNote back into chips + optional free-text note. */
+export function decodeWhyNote(
+  whyNote: string | null | undefined,
+  chipOrder: readonly string[],
+): { chips: string[]; note: string } {
+  if (!whyNote?.trim()) {
+    return { chips: [], note: "" }
+  }
+  const sep = " — "
+  const sepIdx = whyNote.indexOf(sep)
+  const chipPart = sepIdx >= 0 ? whyNote.slice(0, sepIdx) : whyNote
+  const notePart = sepIdx >= 0 ? whyNote.slice(sepIdx + sep.length) : ""
+  const chipSet = new Set(chipOrder)
+  const parts = chipPart
+    .split(", ")
+    .map((part) => part.trim())
+    .filter(Boolean)
+  const chips = parts.filter((part) => chipSet.has(part))
+  if (chips.length === 0 && sepIdx < 0) {
+    return { chips: [], note: whyNote }
+  }
+  return { chips, note: notePart }
+}
