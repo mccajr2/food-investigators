@@ -206,4 +206,5 @@ Only notable events (first carve-up, major re-rank, cancelled theme) — not eve
 | 2026-07-31 | hero-food-illustrations shipped (10 PNG hero stickers + FoodIcon wiring). Next up: `why-chip-sticker-art`. |
 | 2026-07-31 | why-chip-sticker-art shipped (14 PNG why-chip stickers matching heroes). Next up: `on-demand-food-illustrations`. |
 | 2026-07-31 | Split oversized `on-demand-food-illustrations` → `non-hero-food-illustrations` (Next up, offline 16 starters) → `food-illustration-object-store` (shared reuse) → `on-demand-food-illustrations` (customs AI). |
-| 2026-07-31 | non-hero-food-illustrations shipped (16 PNG starters; all 26 catalog foods are stickers). Next up: `food-illustration-object-store`. || 2026-07-31 | food-illustration-object-store shipped (shared `food_illustrations` + optional `iconUrl`; R2/S3 adapter). Next up: `on-demand-food-illustrations`. |
+| 2026-07-31 | non-hero-food-illustrations shipped (16 PNG starters; all 26 catalog foods are stickers). Next up: `food-illustration-object-store`. |
+| 2026-07-31 | food-illustration-object-store shipped (shared `food_illustrations` + optional `iconUrl`; R2/S3 adapter). Next up: `on-demand-food-illustrations`. |
