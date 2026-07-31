@@ -35,4 +35,17 @@ describe("why-chip art brief", () => {
       )
     }
   })
+
+  it("locks PNG sticker delivery with shared cream ground (hero-aligned)", () => {
+    const brief = readFileSync(briefPath, "utf8")
+    expect(brief).toContain("food-icon-art-brief.md")
+    expect(brief).toContain("web/src/assets/why-chips/")
+    expect(brief).toMatch(/PNG master ~256/)
+    expect(brief).toContain("#F7F2E3")
+    expect(brief).toMatch(/shared cream/i)
+    expect(brief).toMatch(/no polarity-tinted tile/i)
+    expect(brief).toMatch(/navy.*#153160/i)
+    expect(brief).not.toMatch(/Prefer \*\*SVG\*\*/)
+    expect(brief).not.toMatch(/Plain cream or softly tinted tile background/)
+  })
 })
