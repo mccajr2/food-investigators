@@ -230,7 +230,12 @@ export function CatchGame({
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
-          <FoodIcon iconKey={food.iconKey} name={food.name} className="size-12 shrink-0" />
+          <FoodIcon
+            iconKey={food.iconKey}
+            iconUrl={food.iconUrl}
+            name={food.name}
+            className="size-12 shrink-0"
+          />
           <div className="min-w-0">
             <h2 className={RUN_GAME_TITLE}>Catch</h2>
             <p className={RUN_GAME_THEME}>Theme: {themeLabel}</p>
@@ -297,6 +302,7 @@ export function CatchGame({
               >
                 <FoodIcon
                   iconKey={food.iconKey}
+                  iconUrl={food.iconUrl}
                   name={food.name}
                   className="size-full"
                 />

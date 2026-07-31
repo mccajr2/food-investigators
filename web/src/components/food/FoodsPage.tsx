@@ -528,7 +528,11 @@ function FoodSection({
                 className="flex flex-col items-center gap-2 rounded-xl border border-border bg-card p-3 text-center"
               >
                 <div className="size-20 sm:size-24">
-                  <FoodIcon iconKey={food.iconKey} name={food.name} />
+                  <FoodIcon
+                    iconKey={food.iconKey}
+                    iconUrl={food.iconUrl}
+                    name={food.name}
+                  />
                 </div>
                 <p className="text-sm font-medium leading-snug">{food.name}</p>
                 {showSnackDetails ? (

@@ -312,6 +312,7 @@ export function MatchGame({
         <div className="flex min-w-0 items-center gap-3">
           <FoodIcon
             iconKey={food.iconKey}
+            iconUrl={food.iconUrl}
             name={food.name}
             className="size-12 shrink-0"
           />
@@ -393,6 +394,9 @@ export function MatchGame({
                   {showFace ? (
                     <FoodIcon
                       iconKey={card.iconKey}
+                      iconUrl={
+                        card.iconKey === food.iconKey ? food.iconUrl : undefined
+                      }
                       name={card.iconKey}
                       className="size-10 md:size-12"
                     />

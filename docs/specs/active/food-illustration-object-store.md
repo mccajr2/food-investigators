@@ -94,12 +94,12 @@ foods with that `iconKey` start returning `iconUrl`. This PR may include a thin
       suggestion food schemas that already carry `iconKey`).
 - [x] When a registry row exists for a food’s `iconKey`, list/get food responses
       include a usable `iconUrl`; otherwise null and clients behave as today.
-- [ ] Web `FoodIcon` prefers `iconUrl` when provided; static starters and customs
+- [x] Web `FoodIcon` prefers `iconUrl` when provided; static starters and customs
       without a URL unchanged.
 - [x] Two households / two foods sharing the same `canonical_key` resolve to the
       **same** `iconUrl` (unit or integration test).
 - [x] No image-model calls; starters are not required to be uploaded to the bucket.
-- [ ] Tests: store double put→url; registry lookup; OpenAPI contract test; Foods
+- [x] Tests: store double put→url; registry lookup; OpenAPI contract test; Foods
       client tests web + mobile for `iconUrl`.
 
 ## Tasks
@@ -109,7 +109,7 @@ foods with that `iconKey` start returning `iconUrl`. This PR may include a thin
 - [x] Backend: Flyway `food_illustrations`; store port + config; illustration
       service; map `iconUrl` on food (and session/suggestion) responses; tests
       including shared-key reuse.
-- [ ] Web: types + `FoodIcon` URL path; foods client tests.
+- [x] Web: types + `FoodIcon` URL path; foods client tests.
 - [ ] Mobile: `FoodResponse` / related models + client tests for `iconUrl`.
 - [ ] Docs: env example keys for S3/R2; note unconfigured graceful null.
 - [ ] Docs: on ship, archive this spec; Next up stays
