@@ -1,7 +1,7 @@
 # Food-icon art brief (locked)
 
-Parent: [hero-food-illustrations](../specs/active/hero-food-illustrations.md)  
-Sibling world: [why-chip art brief](./why-chip-art-brief.md)  
+Parent: [hero-food-illustrations](../specs/archive/hero-food-illustrations.md)  
+Sibling world: [why-chip art brief](./why-chip-art-brief.md) (same sticker sheet)  
 Locked: 2026-07-30 · all 10 heroes PNG 2026-07-31 · shared cream ground  
 Audience: offline AI concept generation + **human polish** → PNG commit
 

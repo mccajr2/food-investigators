@@ -1,7 +1,8 @@
 # Spec: why-chip-sticker-art
 
-Status: active  
+Status: archived  
 Created: 2026-07-31  
+Completed: 2026-07-31  
 Parent: [docs/roadmap.md](../../roadmap.md)  
 Added: 2026-07-31 · enhancement  
 Branch: `why-chip-sticker-art`
@@ -64,31 +65,31 @@ pick up the new art automatically.
 
 ## Acceptance criteria
 
-- [ ] Every unique label in `allWhyChipLabels()` (14 = like ∪ no) renders from a
+- [x] Every unique label in `allWhyChipLabels()` (14 = like ∪ no) renders from a
       committed `web/src/assets/why-chips/<slug>.png` via `WhyChipIcon` (static
       `<img>`, not the old inline SVG components).
-- [ ] `so_so` chips reuse the same PNG as the matching like/no label (no extra
+- [x] `so_so` chips reuse the same PNG as the matching like/no label (no extra
       assets; no shrug / middling-only art).
-- [ ] Art follows the updated why-chip brief aligned with the food-icon sticker
+- [x] Art follows the updated why-chip brief aligned with the food-icon sticker
       profile: shared cream ground, navy outline, one shine, no ground shadow;
       like vs no polarity unmistakable at chip size without reading the label.
-- [ ] Chip label strings and `whyNote` encode/decode behavior unchanged.
-- [ ] No OpenAPI, backend, or iOS project changes.
-- [ ] Tests: each unique label has a non-empty PNG + renders static img; brief
+- [x] Chip label strings and `whyNote` encode/decode behavior unchanged.
+- [x] No OpenAPI, backend, or iOS project changes.
+- [x] Tests: each unique label has a non-empty PNG + renders static img; brief
       lists all 14; existing why-chip / Run smoke that shows chips still passes;
       stale React SVG paths gone.
 
 ## Tasks
 
-- [ ] Docs: update `docs/design/why-chip-art-brief.md` (PNG-first, shared cream,
+- [x] Docs: update `docs/design/why-chip-art-brief.md` (PNG-first, shared cream,
       hero-aligned style profile; keep motif + polarity tables; refresh prompt
       stem). Cross-link food-icon brief as the shared look.
-- [ ] Web: produce human-polished PNG masters for all 14 unique chips; map
+- [x] Web: produce human-polished PNG masters for all 14 unique chips; map
       label→URL; `WhyChipIcon` loads static assets with `rounded-2xl`; remove
       inline SVG icon components.
-- [ ] Tests: asset coverage + render for every unique label; brief inventory
+- [x] Tests: asset coverage + render for every unique label; brief inventory
       coverage; so_so reuse assertion; no regressions in `whyChips` encoding.
-- [ ] Docs: on ship, archive this spec; Next up stays
+- [x] Docs: on ship, archive this spec; Next up stays
       `on-demand-food-illustrations` (or re-rank if needed).
 
 ## Open questions

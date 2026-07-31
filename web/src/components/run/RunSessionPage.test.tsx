@@ -316,7 +316,7 @@ describe("RunSessionPage", () => {
       "tasty",
     )
     expect(
-      screen.getByRole("button", { name: "tasty" }).querySelector("svg"),
+      screen.getByRole("button", { name: "tasty" }).querySelector("img"),
     ).not.toBeNull()
     expect(screen.getByRole("button", { name: "crunchy" })).toBeInTheDocument()
     expect(
@@ -330,7 +330,7 @@ describe("RunSessionPage", () => {
       "true",
     )
     expect(
-      screen.getByRole("button", { name: "tasty" }).querySelector("svg"),
+      screen.getByRole("button", { name: "tasty" }).querySelector("img"),
     ).not.toBeNull()
     expect(screen.getByRole("button", { name: "Continue" })).toBeEnabled()
   })
@@ -390,10 +390,11 @@ describe("RunSessionPage", () => {
         const button = screen.getByRole("button", { name: chip })
         expect(button).toHaveTextContent(chip)
         expect(button.querySelector("span")).toHaveTextContent(chip)
-        expect(button.querySelector("svg")).not.toBeNull()
-        expect(button.querySelector("svg")?.getAttribute("data-why-chip")).toBe(
-          chip,
-        )
+        expect(button.querySelector("svg")).toBeNull()
+        const img = button.querySelector("img")
+        expect(img).not.toBeNull()
+        expect(img?.getAttribute("data-why-chip")).toBe(chip)
+        expect(img?.getAttribute("data-why-chip-src")).toBe("static")
       }
       expect(
         screen.queryByRole("button", { name: absent }),
