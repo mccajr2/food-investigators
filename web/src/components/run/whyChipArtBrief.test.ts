@@ -19,4 +19,20 @@ describe("why-chip art brief", () => {
       }
     }
   })
+
+  it("documents so_so as mixed polarity reuse, not middling-only art", () => {
+    const brief = readFileSync(briefPath, "utf8")
+    expect(brief).toMatch(/so_so[\s\S]*reuse/i)
+    for (const chip of [
+      "kind of tasty",
+      "weird texture",
+      "okay smell",
+      "looks okay",
+      "not sure",
+    ]) {
+      expect(brief, `stale middling row for "${chip}"`).not.toContain(
+        `| ${chip} |`,
+      )
+    }
+  })
 })

@@ -16,6 +16,49 @@ describe("whyChips", () => {
     expect(whyChipsForLiked(null)).toEqual([...WHY_CHIPS_BY_LIKED.so_so])
   })
 
+  it("so_so is curated good then bad (no middling fillers)", () => {
+    expect([...WHY_CHIPS_BY_LIKED.so_so]).toEqual([
+      "tasty",
+      "crunchy",
+      "soft",
+      "yummy smell",
+      "looks good",
+      "yucky taste",
+      "too crunchy",
+      "too soft",
+      "yucky smell",
+      "looks weird",
+    ])
+    expect(WHY_CHIPS_BY_LIKED.like).toEqual([
+      "tasty",
+      "crunchy",
+      "soft",
+      "yummy smell",
+      "looks good",
+      "warm",
+      "cold",
+    ])
+    expect(WHY_CHIPS_BY_LIKED.no).toEqual([
+      "yucky taste",
+      "too crunchy",
+      "too soft",
+      "yucky smell",
+      "looks weird",
+      "too hot",
+      "too cold",
+    ])
+  })
+
+  it("encodeWhyNote joins mixed so_so polarity in chip-set order", () => {
+    expect(
+      encodeWhyNote(
+        ["too crunchy", "yummy smell"],
+        "",
+        WHY_CHIPS_BY_LIKED.so_so,
+      ),
+    ).toBe("yummy smell, too crunchy")
+  })
+
   it("encodeWhyNote returns null when empty", () => {
     expect(encodeWhyNote([], "")).toBeNull()
     expect(encodeWhyNote([], "   ")).toBeNull()

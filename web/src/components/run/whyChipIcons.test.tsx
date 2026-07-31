@@ -11,10 +11,11 @@ import { render } from "@testing-library/react"
 describe("whyChipIcons", () => {
   it("maps and renders a non-empty icon for every why-chip string", () => {
     const labels = allWhyChipLabels()
-    const expected =
-      WHY_CHIPS_BY_LIKED.like.length +
-      WHY_CHIPS_BY_LIKED.no.length +
-      WHY_CHIPS_BY_LIKED.so_so.length
+    const expected = new Set([
+      ...WHY_CHIPS_BY_LIKED.like,
+      ...WHY_CHIPS_BY_LIKED.no,
+      ...WHY_CHIPS_BY_LIKED.so_so,
+    ]).size
     expect(labels).toHaveLength(expected)
 
     for (const chip of labels) {
@@ -25,6 +26,26 @@ describe("whyChipIcons", () => {
       expect(svg?.getAttribute("data-why-chip")).toBe(chip)
       expect(svg?.innerHTML.length, `empty svg for "${chip}"`).toBeGreaterThan(0)
       unmount()
+    }
+  })
+
+  it("does not keep middling-only so_so icons", () => {
+    for (const chip of [
+      "kind of tasty",
+      "weird texture",
+      "okay smell",
+      "looks okay",
+      "not sure",
+    ]) {
+      expect(hasWhyChipIcon(chip), `stale icon for "${chip}"`).toBe(false)
+    }
+  })
+
+  it("resolves an icon for every so_so chip (reused like/no art)", () => {
+    for (const chip of WHY_CHIPS_BY_LIKED.so_so) {
+      expect(hasWhyChipIcon(chip), `missing icon for so_so "${chip}"`).toBe(
+        true,
+      )
     }
   })
 

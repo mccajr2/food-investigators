@@ -21,11 +21,16 @@ export const WHY_CHIPS_BY_LIKED = {
     "too cold",
   ],
   so_so: [
-    "kind of tasty",
-    "weird texture",
-    "okay smell",
-    "looks okay",
-    "not sure",
+    "tasty",
+    "crunchy",
+    "soft",
+    "yummy smell",
+    "looks good",
+    "yucky taste",
+    "too crunchy",
+    "too soft",
+    "yucky smell",
+    "looks weird",
   ],
 } as const satisfies Record<Liked, readonly string[]>
 
