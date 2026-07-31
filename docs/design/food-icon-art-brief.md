@@ -1,17 +1,22 @@
 # Food-icon art brief (locked)
 
-Parent: [hero-food-illustrations](../specs/archive/hero-food-illustrations.md)  
+Parent: [non-hero-food-illustrations](../specs/archive/non-hero-food-illustrations.md)  
+Prior: [hero-food-illustrations](../specs/archive/hero-food-illustrations.md)  
 Sibling world: [why-chip art brief](./why-chip-art-brief.md) (same sticker sheet)  
-Locked: 2026-07-30 · all 10 heroes PNG 2026-07-31 · shared cream ground  
+Locked: 2026-07-30 · heroes PNG 2026-07-31 · shared cream · all 26 starters PNG 2026-07-31  
 Audience: offline AI concept generation + **human polish** → PNG commit
 
-Use this brief for **every** hero food icon. Do not invent a second style
-mid-set. Why-chip art and on-demand catalog AI are **out of scope** here.
+Use this brief for **every** starter food icon (heroes + non-heroes). Do not
+invent a second style mid-set. Why-chip art, shared object-store URLs, and
+on-demand custom AI are **out of scope** here.
 
 ## Style anchors (match these files)
 
-All ten locked PNG masters under `web/src/assets/foods/` — **pass several as
-references** when generating any new/replacement food so the set stays one world:
+Pass **several** locked PNGs under `web/src/assets/foods/` when generating so
+outline weight, shine, and cream tile match. Heroes are fully locked; add
+non-hero peers as they lock.
+
+### Hero anchors (locked)
 
 | iconKey | File |
 |---------|------|
@@ -45,7 +50,7 @@ Foods tiles (~40–56px). Text labels stay as backup.
 | Shadow | **None** under the food | Soft oval / drop shadow on the tile |
 | Detail | Sparse, **large** marks that survive 48px | Dense seeds, crumbs, noodle tangles |
 | Color | **Food-true first**, brand neighborhood second | Exact-hex paint-by-numbers; purple glow |
-| Ground | Flat shared cream `#F7F2E3` for **every** hero | Pink vs yellow mix; one-off tinted outliers |
+| Ground | Flat shared cream `#F7F2E3` for **every** starter | Pink vs yellow mix; one-off tinted outliers |
 | Delivery | **PNG master ~256×256** | Geometric SVG rebuild that loses the vibe |
 
 **Food identity:** everyday version of the food (instant ramen ≠ restaurant bowl;
@@ -53,12 +58,29 @@ cheese pizza ≠ loaded specialty). Raspberry must read as bumpy drupelets (not 
 smooth strawberry). Chicken tenders need breading texture (not corn-on-the-cob
 rows) **and** brand shine.
 
+## Sibling distinctness (required)
+
+Close pairs must stay unmistakable at ~48px — do not ship lookalikes:
+
+| Pair | Keep distinct by |
+|------|------------------|
+| `bagel` vs `bagel_cream_cheese` | Plain bagel ring only vs bagel + visible cream cheese smear |
+| `pancakes_plain` vs `pancakes_choc_chip` | Bare stack vs clear chocolate chips |
+| `yogurt_vanilla` vs `yogurt_plain` | Vanilla tint / bean fleck cue vs plain white cup |
+| `chicken_nuggets` vs `chicken_tenders` | Small round/irregular nuggets vs long tender strips |
+| `apple` vs `applesauce` | Whole apple fruit vs cup/bowl of sauce |
+| `blueberry` vs `grape` vs `raspberry` / `strawberry` | Size, cluster, and surface (smooth berry ≠ bumpy raspberry) |
+| `broccoli` vs `spinach` | Tree florets vs leafy pile |
+| `carrot` vs `sweet_potato` vs `corn` | Orange root taper vs irregular tuber vs yellow cob/kernels |
+| `toast` vs `waffle` vs `pancakes_*` | Square toast vs grid waffle vs round pancake stack |
+| `dark_chocolate` | Flat bar / square — not a brown cookie lookalike |
+
 ## Palette (brand neighborhood)
 
 | Role | Hex | Use |
 |------|-----|-----|
 | Navy | `#153160` | Outlines (required) |
-| Cream | `#F7F2E3` | **Required shared tile ground** for every hero |
+| Cream | `#F7F2E3` | **Required shared tile ground** for every starter |
 | Lime | `#7AB953` | Leaves / fresh accents |
 | Coral | `#DE4E4B` | Berry / sauce family |
 | Amber | `#E48E26` | Banana / broth / cheese / crust family |
@@ -75,24 +97,25 @@ rows) **and** brand shine.
 
 ## Concept → lock workflow (per food)
 
-1. Generate **2 concepts** with the prompt pack + several style-anchor PNGs.
+1. Generate **2 concepts** with the prompt pack + several style-anchor PNGs
+   (include the sibling food when generating a close pair).
 2. Parent picks by **A/B order** (don’t narrate pixels that may be wrong); revise
    once if needed.
-3. Lock → resize 256, flatten shadow → cream `#F7F2E3`, commit PNG, map in
-   `heroFoodIcons`.
-4. Update this brief’s hero row if replacing art.
-5. Next hero only after lock.
+3. Lock → resize 256, flatten shadow → cream `#F7F2E3`, commit PNG, map in the
+   static food-icon registry (`heroFoodIcons` / non-hero keys).
+4. Update this brief’s inventory row when locking.
+5. Next food only after lock.
 
 ## Human-polish checklist (before commit)
 
 1. Matches style anchors (navy outline, shine, shared cream `#F7F2E3` tile).
 2. Reads at ~48px — sparse large details only.
 3. No ground shadow.
-4. Food-true everyday version; distinct from sibling foods (e.g. raspberry ≠ strawberry).
+4. Food-true everyday version; **distinct from sibling foods** (table above).
 5. Filename = `iconKey.png`, ~256px, no watermark.
 6. Kid can guess the food without the label.
 
-## Hero inventory
+## Hero inventory (locked)
 
 | iconKey | Display | Motif direction |
 |---------|---------|-----------------|
@@ -107,7 +130,28 @@ rows) **and** brand shine.
 | chicken_tenders | Chicken tenders | **Locked PNG** (texture + shine) |
 | raspberry | Raspberries | **Locked PNG** (centered stem/leaf) |
 
-Non-hero starters and `custom_*` foods are **out of scope**.
+## Non-hero inventory (16 — locked PNG)
+
+| iconKey | Display | Motif direction |
+|---------|---------|-----------------|
+| apple | Apples | **Locked PNG** |
+| bagel | Bagel | **Locked PNG** (sliced plain — no cream cheese) |
+| toast | Toast | **Locked PNG** |
+| chicken_nuggets | Chicken nuggets | **Locked PNG** |
+| applesauce | Applesauce | **Locked PNG** (clear snack cup) |
+| blueberry | Blueberries | **Locked PNG** |
+| grape | Grapes | **Locked PNG** |
+| pancakes_plain | Plain pancakes | **Locked PNG** |
+| waffle | Waffle | **Locked PNG** |
+| yogurt_vanilla | Vanilla yogurt | **Locked PNG** |
+| carrot | Carrot | **Locked PNG** |
+| corn | Corn | **Locked PNG** |
+| sweet_potato | Sweet potato | **Locked PNG** |
+| broccoli | Broccoli | **Locked PNG** |
+| dark_chocolate | Dark chocolate | **Locked PNG** |
+| spinach | Spinach | **Locked PNG** |
+
+`custom_*` foods stay emoji/initials until on-demand art.
 
 ## Offline generation prompt pack
 
@@ -115,16 +159,18 @@ Non-hero starters and `custom_*` foods are **out of scope**.
 Children's picture-book STICKER of a single food for Food Investigators.
 MUST match the same sticker sheet as the reference icons: thick navy #153160
 outline, one simple glossy highlight/shine, flat cream tile exactly #F7F2E3
-(shared by all heroes — not pink, not yellow),
+(shared by all starter foods — not pink, not yellow),
 organic (not geometric) silhouette, NOT photoreal, NOT emoji.
 NO drop shadow or oval under the food.
 Sparse large details only — must stay clear at 48px.
 Food-true everyday version first; brand colors are a neighborhood not a lock
 (coral/lime/cream/amber/navy family).
 Square icon, centered, no text, no watermark, no purple glow.
-Subject: {motif from hero inventory — keep toppings/garnish minimal}.
+Subject: {motif from hero or non-hero inventory — keep toppings/garnish minimal}.
+If this food has a sibling in the catalog, make it unmistakably different at 48px.
 ```
 
-Attach several locked `web/src/assets/foods/*.png` as references. After polish:
-commit `web/src/assets/foods/<iconKey>.png` and map in `heroFoodIcons`. Run must
-never call an AI API for these heroes.
+Attach several locked `web/src/assets/foods/*.png` as references (include the
+sibling when relevant). After polish: commit `web/src/assets/foods/<iconKey>.png`
+and map in the static food-icon registry. Run must never call an AI API for these
+starter icons.
