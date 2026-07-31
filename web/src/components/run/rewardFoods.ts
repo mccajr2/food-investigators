@@ -94,6 +94,26 @@ export function phaseForSurprise(
   }
 }
 
+/**
+ * Previous pre-play reward phase, or null when Back should be disabled
+ * (encourage / food pick as first screen / in-play games).
+ */
+export function previousRewardPhase(
+  phase: RewardPhase,
+  eligibleFoods: SessionFoodResponse[],
+): RewardPhase | null {
+  if (phase.kind === "pickGame") {
+    if (eligibleFoods.length > 1) {
+      return { kind: "pick", foods: eligibleFoods }
+    }
+    return null
+  }
+  if (phase.kind === "surpriseReveal") {
+    return { kind: "pickGame", food: phase.food }
+  }
+  return null
+}
+
 export function gameLabel(game: RewardGameKind): string {
   if (game === "catch") {
     return "Catch"

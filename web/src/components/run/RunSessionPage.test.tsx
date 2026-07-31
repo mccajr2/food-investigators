@@ -6,6 +6,7 @@ import type { SessionsClient } from "@/api"
 import type { SessionResponse } from "@/api/types"
 import {
   buildCompleteRequest,
+  previousRunPosition,
   runStepsForFamiliarity,
   RunSessionPage,
 } from "@/components/run/RunSessionPage"
@@ -267,7 +268,9 @@ describe("RunSessionPage", () => {
     expect(screen.getByRole("button", { name: "Bitter" }).className).not.toContain(
       "run-placemat--selected",
     )
-    await user.click(screen.getByRole("button", { name: "Done" }))
+    expect(screen.getByRole("button", { name: "Continue" })).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Done" })).not.toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: "Continue" }))
     await user.click(screen.getByRole("option", { name: "Yes" }))
 
     // Food 2 safe: skip to ateEnough
@@ -1031,5 +1034,158 @@ describe("RunSessionPage", () => {
 
     await user.click(screen.getByRole("button", { name: "Exit" }))
     expect(onExit).toHaveBeenCalled()
+  })
+
+  it("disables Back on the first step and goes back after advancing", async () => {
+    const user = userEvent.setup()
+    render(
+      <RunSessionPage
+        session={sampleSession}
+        sessionsClient={mockSessionsClient()}
+        onComplete={vi.fn()}
+        onExit={vi.fn()}
+      />,
+    )
+
+    const back = screen.getByRole("button", { name: "Back" })
+    expect(back).toBeDisabled()
+    expect(screen.getByText("Did you like it?")).toBeInTheDocument()
+
+    await user.click(screen.getByRole("option", { name: "Like" }))
+    expect(screen.getByLabelText("Why note")).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Back" })).toBeEnabled()
+
+    await user.click(screen.getByRole("button", { name: "Back" }))
+    expect(screen.getByText("Did you like it?")).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Back" })).toBeDisabled()
+  })
+
+  it("goes Back from which-game to food pick when multiple rewards", async () => {
+    const user = userEvent.setup()
+    const twoStretch: SessionResponse = {
+      ...sampleSession,
+      foods: [
+        {
+          ...sampleSession.foods[0],
+          familiarity: "truly_new",
+          name: "Broccoli",
+          iconKey: "broccoli",
+          variantNote: null,
+        },
+        {
+          ...sampleSession.foods[1],
+          familiarity: "familiar_but_new",
+        },
+      ],
+    }
+    const completed: SessionResponse = {
+      ...twoStretch,
+      status: "completed",
+      foods: twoStretch.foods.map((food) => ({
+        ...food,
+        liked: "like",
+        ateEnough: true,
+      })),
+    }
+    render(
+      <RunSessionPage
+        session={twoStretch}
+        sessionsClient={mockSessionsClient({
+          complete: vi.fn().mockResolvedValue(completed),
+        })}
+        onComplete={vi.fn()}
+        onExit={vi.fn()}
+      />,
+    )
+
+    await skipToAteEnough(user, true)
+    await user.click(screen.getByRole("option", { name: "Yes" }))
+    await skipToAteEnough(user, true)
+    await user.click(screen.getByRole("option", { name: "Yes" }))
+
+    expect(await screen.findByLabelText("Pick food for game")).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Back" })).toBeDisabled()
+
+    await user.click(screen.getByRole("button", { name: "Broccoli" }))
+    expect(await screen.findByLabelText("Pick game")).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Back" })).toBeEnabled()
+
+    await user.click(screen.getByRole("button", { name: "Back" }))
+    expect(await screen.findByLabelText("Pick food for game")).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Back" })).toBeDisabled()
+  })
+
+  it("restores why chips when going Back to the why step", async () => {
+    const user = userEvent.setup()
+    render(
+      <RunSessionPage
+        session={sampleSession}
+        sessionsClient={mockSessionsClient()}
+        onComplete={vi.fn()}
+        onExit={vi.fn()}
+      />,
+    )
+
+    await advanceToWhyStep(user, "Like")
+    await user.click(screen.getByRole("button", { name: "tasty" }))
+    await user.click(screen.getByRole("button", { name: "Continue" }))
+    expect(screen.getByText("Did they eat enough?")).toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "Back" }))
+    expect(screen.getByLabelText("Why note")).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "tasty" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    )
+  })
+
+  it("disables Back during Catch play", async () => {
+    const user = userEvent.setup()
+    const completed: SessionResponse = {
+      ...sampleSession,
+      status: "completed",
+      foods: sampleSession.foods.map((food, index) => ({
+        ...food,
+        ateEnough: index === 1,
+      })),
+    }
+    render(
+      <RunSessionPage
+        session={sampleSession}
+        sessionsClient={mockSessionsClient({
+          complete: vi.fn().mockResolvedValue(completed),
+        })}
+        onComplete={vi.fn()}
+        onExit={vi.fn()}
+      />,
+    )
+
+    await user.click(screen.getByRole("option", { name: "Like" }))
+    await user.click(screen.getByRole("button", { name: "Skip" }))
+    await user.click(screen.getByRole("option", { name: "No" }))
+    await skipToAteEnough(user, true)
+    await user.click(screen.getByRole("option", { name: "Yes" }))
+
+    expect(await screen.findByLabelText("Pick game")).toBeInTheDocument()
+    // Single eligible stretch → which-game is first reward screen
+    expect(screen.getByRole("button", { name: "Back" })).toBeDisabled()
+
+    await user.click(screen.getByRole("button", { name: "Catch" }))
+    expect(
+      await screen.findByLabelText("Catch game: Strawberries"),
+    ).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Back" })).toBeDisabled()
+  })
+
+  it("previousRunPosition walks stretch steps and prior food", () => {
+    const fam = (index: number) =>
+      index === 0 ? ("safe" as const) : ("truly_new" as const)
+    expect(previousRunPosition(0, 0, fam)).toBeNull()
+    expect(previousRunPosition(0, 1, fam)).toEqual({ foodIndex: 0, stepIndex: 0 })
+    expect(previousRunPosition(1, 0, fam)).toEqual({
+      foodIndex: 0,
+      stepIndex: runStepsForFamiliarity("safe").length - 1,
+    })
+    expect(previousRunPosition(1, 2, fam)).toEqual({ foodIndex: 1, stepIndex: 1 })
   })
 })
