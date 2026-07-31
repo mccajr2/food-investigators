@@ -1,7 +1,8 @@
 # Spec: non-hero-food-illustrations
 
-Status: active  
+Status: archived  
 Created: 2026-07-31  
+Completed: 2026-07-31  
 Parent: [docs/roadmap.md](../../roadmap.md)  
 Added: 2026-07-31 · re-rank split (from `on-demand-food-illustrations`)  
 Branch: `non-hero-food-illustrations`
@@ -70,28 +71,28 @@ No contract changes. Native clients do not consume these files yet.
 
 ## Acceptance criteria
 
-- [ ] Every `NON_HERO_FOOD_ICON_KEYS` entry (16) renders from a committed
+- [x] Every `NON_HERO_FOOD_ICON_KEYS` entry (16) renders from a committed
       `web/src/assets/foods/<iconKey>.png` via `FoodIcon` (static `<img>`, not
       the old inline SVG for that key).
-- [ ] All ten heroes still render from their existing PNG masters; customs still
+- [x] All ten heroes still render from their existing PNG masters; customs still
       use emoji/initials.
-- [ ] Art follows the food-icon brief (shared cream, navy outline, one shine, no
+- [x] Art follows the food-icon brief (shared cream, navy outline, one shine, no
       ground shadow); each food is kid-recognizable at tile size without the
       label; close pairs stay visually distinct.
-- [ ] No new `iconKey`s, OpenAPI, backend, or iOS project changes.
-- [ ] Tests: each non-hero key has a non-empty PNG + static render; brief lists
+- [x] No new `iconKey`s, OpenAPI, backend, or iOS project changes.
+- [x] Tests: each non-hero key has a non-empty PNG + static render; brief lists
       all 16; existing Foods/Run smoke still passes; no leftover inline SVG for
       mapped non-hero keys.
 
 ## Tasks
 
-- [ ] Docs: extend `docs/design/food-icon-art-brief.md` with the 16 non-hero
+- [x] Docs: extend `docs/design/food-icon-art-brief.md` with the 16 non-hero
       inventory rows + distinctness notes for sibling pairs; keep prompt stem.
-- [ ] Web: produce human-polished PNG masters for all 16; generalize static PNG
+- [x] Web: produce human-polished PNG masters for all 16; generalize static PNG
       map; `FoodIcon` loads them with `rounded-2xl`; remove those inline SVGs.
-- [ ] Tests: non-hero asset coverage + render; brief inventory; heroes + customs
+- [x] Tests: non-hero asset coverage + render; brief inventory; heroes + customs
       unchanged; Foods/Run smoke still green.
-- [ ] Docs: on ship, archive this spec; Next up stays
+- [x] Docs: on ship, archive this spec; Next up stays
       `food-illustration-object-store`.
 
 ## Open questions

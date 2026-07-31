@@ -248,7 +248,7 @@ describe("RunSessionPage", () => {
     expect(screen.getByRole("button", { name: "Sweet" })).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Bitter" })).toBeInTheDocument()
     expect(
-      screen.getByRole("button", { name: "Bitter" }).querySelectorAll("svg")
+      screen.getByRole("button", { name: "Bitter" }).querySelectorAll("img")
         .length,
     ).toBe(3)
 
