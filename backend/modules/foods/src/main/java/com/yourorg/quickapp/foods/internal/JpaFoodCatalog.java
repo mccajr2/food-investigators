@@ -2,8 +2,10 @@ package com.yourorg.quickapp.foods.internal;
 
 import com.yourorg.quickapp.foods.CatalogFood;
 import com.yourorg.quickapp.foods.FoodCatalog;
+import com.yourorg.quickapp.foods.FoodIllustrationStore;
 import com.yourorg.quickapp.foods.SnackPreferenceSnapshot;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -13,9 +15,11 @@ import org.springframework.transaction.annotation.Transactional;
 class JpaFoodCatalog implements FoodCatalog {
 
     private final FoodRepository foods;
+    private final FoodIllustrationStore illustrations;
 
-    JpaFoodCatalog(FoodRepository foods) {
+    JpaFoodCatalog(FoodRepository foods, FoodIllustrationStore illustrations) {
         this.foods = foods;
+        this.illustrations = illustrations;
     }
 
     @Override
@@ -39,17 +43,19 @@ class JpaFoodCatalog implements FoodCatalog {
     @Override
     @Transactional(readOnly = true)
     public List<CatalogFood> listSelectable(UUID householdId) {
-        List<CatalogFood> result = new java.util.ArrayList<>();
+        List<Food> rows = new java.util.ArrayList<>();
         foods.findByHouseholdIdIsNullOrderByNameAsc().stream()
                 .filter(food -> !food.isArchived())
                 .filter(Food::isSessionEligible)
-                .map(this::toCatalog)
-                .forEach(result::add);
+                .forEach(rows::add);
         foods.findByHouseholdIdAndArchivedAtIsNullOrderByNameAsc(householdId).stream()
                 .filter(Food::isSessionEligible)
-                .map(this::toCatalog)
-                .forEach(result::add);
-        return List.copyOf(result);
+                .forEach(rows::add);
+        Map<String, String> urls =
+                illustrations.findPublicUrls(rows.stream().map(Food::getIconKey).toList());
+        return rows.stream()
+                .map(food -> toCatalog(food, urls.get(food.getIconKey())))
+                .toList();
     }
 
     @Override
@@ -64,6 +70,11 @@ class JpaFoodCatalog implements FoodCatalog {
     }
 
     private CatalogFood toCatalog(Food food) {
-        return new CatalogFood(food.getId(), food.getName(), food.getIconKey());
+        return toCatalog(
+                food, illustrations.findPublicUrl(food.getIconKey()).orElse(null));
+    }
+
+    private static CatalogFood toCatalog(Food food, String iconUrl) {
+        return new CatalogFood(food.getId(), food.getName(), food.getIconKey(), iconUrl);
     }
 }

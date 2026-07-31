@@ -127,9 +127,17 @@ public class SessionSuggestionService {
                         scheduledOn,
                         List.of(
                                 new SuggestedSessionFood(
-                                        c1.foodId(), c1.name(), c1.iconKey(), first.familiarity()),
+                                        c1.foodId(),
+                                        c1.name(),
+                                        c1.iconKey(),
+                                        c1.iconUrl(),
+                                        first.familiarity()),
                                 new SuggestedSessionFood(
-                                        c2.foodId(), c2.name(), c2.iconKey(), second.familiarity())),
+                                        c2.foodId(),
+                                        c2.name(),
+                                        c2.iconKey(),
+                                        c2.iconUrl(),
+                                        second.familiarity())),
                         choice.rationale(),
                         source));
     }

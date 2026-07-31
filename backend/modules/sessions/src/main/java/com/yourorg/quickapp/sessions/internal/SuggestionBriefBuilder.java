@@ -28,7 +28,9 @@ final class SuggestionBriefBuilder {
         List<SuggestionCandidate> ranked = new ArrayList<>();
         for (CatalogFood food : selectable) {
             String hint = hintFor(food.id(), recentFoodIds, likedNoFoodIds);
-            ranked.add(new SuggestionCandidate(food.id(), food.name(), food.iconKey(), hint));
+            ranked.add(
+                    new SuggestionCandidate(
+                            food.id(), food.name(), food.iconKey(), food.iconUrl(), hint));
         }
 
         ranked.sort(

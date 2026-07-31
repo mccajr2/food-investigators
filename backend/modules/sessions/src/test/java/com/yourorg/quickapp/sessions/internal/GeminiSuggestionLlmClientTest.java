@@ -37,11 +37,13 @@ class GeminiSuggestionLlmClientTest {
                                                 UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa01"),
                                                 "Apples",
                                                 "apple",
+                                                null,
                                                 "not_recent"),
                                         new SuggestionCandidate(
                                                 UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa02"),
                                                 "Berries",
                                                 "blueberry",
+                                                null,
                                                 "not_recent"))));
 
         assertThat(result).isEmpty();

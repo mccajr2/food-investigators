@@ -31,6 +31,54 @@ class FoodsApiIntegrationTest {
     @Autowired
     private MockMvc mockMvc;
 
+    @Autowired
+    private FoodIllustrationStore illustrations;
+
+    @Test
+    void sharedCanonicalKeyReturnsSameIconUrlAcrossHouseholds() throws Exception {
+        String expectedUrl =
+                illustrations.store(
+                        "custom_shared_pickle",
+                        new byte[] {(byte) 0x89, 0x50, 0x4E, 0x47},
+                        "image/png");
+
+        String tokenA = register("illust-a-" + System.nanoTime() + "@example.com");
+        String tokenB = register("illust-b-" + System.nanoTime() + "@example.com");
+
+        mockMvc.perform(
+                        post("/api/foods")
+                                .header("Authorization", "Bearer " + tokenA)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                                        {"name":"Pickle A","iconKey":"custom_shared_pickle"}
+                                        """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.iconUrl").value(expectedUrl));
+
+        mockMvc.perform(
+                        post("/api/foods")
+                                .header("Authorization", "Bearer " + tokenB)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                                        {"name":"Pickle B","iconKey":"custom_shared_pickle"}
+                                        """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.iconUrl").value(expectedUrl));
+
+        mockMvc.perform(get("/api/foods").header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isOk())
+                .andExpect(
+                        jsonPath("$[?(@.iconKey == 'custom_shared_pickle')].iconUrl")
+                                .value(expectedUrl));
+        mockMvc.perform(get("/api/foods").header("Authorization", "Bearer " + tokenB))
+                .andExpect(status().isOk())
+                .andExpect(
+                        jsonPath("$[?(@.iconKey == 'custom_shared_pickle')].iconUrl")
+                                .value(expectedUrl));
+    }
+
     @Test
     void listCreateUpdateArchiveAndSystemImmutability() throws Exception {
         String token = register("foods-" + System.nanoTime() + "@example.com");

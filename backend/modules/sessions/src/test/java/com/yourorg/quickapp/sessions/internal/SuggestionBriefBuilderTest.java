@@ -27,7 +27,8 @@ class SuggestionBriefBuilderTest {
                     new CatalogFood(
                             UUID.fromString(String.format("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa%02d", i + 1)),
                             "Food " + i,
-                            "apple"));
+                            "apple",
+                            null));
         }
         TastingSession recent = completed(LocalDate.of(2026, 7, 14), selectable.get(0).id());
         InsightsResponse insights = emptyInsights(1);

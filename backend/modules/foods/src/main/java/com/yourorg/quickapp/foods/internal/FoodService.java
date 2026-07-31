@@ -3,6 +3,7 @@ package com.yourorg.quickapp.foods.internal;
 import com.yourorg.quickapp.foods.CreateFoodRequest;
 import com.yourorg.quickapp.foods.DuplicateFoodNameException;
 import com.yourorg.quickapp.foods.FoodIconKeys;
+import com.yourorg.quickapp.foods.FoodIllustrationStore;
 import com.yourorg.quickapp.foods.FoodLiked;
 import com.yourorg.quickapp.foods.FoodNotFoundException;
 import com.yourorg.quickapp.foods.FoodResponse;
@@ -15,6 +16,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,10 +27,12 @@ public class FoodService {
     private static final int TASTE_NOTE_MAX = 100;
 
     private final FoodRepository foods;
+    private final FoodIllustrationStore illustrations;
     private final Clock clock;
 
-    FoodService(FoodRepository foods, Clock clock) {
+    FoodService(FoodRepository foods, FoodIllustrationStore illustrations, Clock clock) {
         this.foods = foods;
+        this.illustrations = illustrations;
         this.clock = clock;
     }
 
@@ -41,7 +45,9 @@ public class FoodService {
             result.addAll(foods.findByHouseholdIdAndArchivedAtIsNullOrderByNameAsc(householdId));
         }
         result.sort(Comparator.comparing(Food::getName, String.CASE_INSENSITIVE_ORDER));
-        return result.stream().map(FoodService::toResponse).toList();
+        Map<String, String> urls =
+                illustrations.findPublicUrls(result.stream().map(Food::getIconKey).toList());
+        return result.stream().map(food -> toResponse(food, urls.get(food.getIconKey()))).toList();
     }
 
     @Transactional
@@ -132,11 +138,16 @@ public class FoodService {
         return trimmed;
     }
 
-    private static FoodResponse toResponse(Food food) {
+    private FoodResponse toResponse(Food food) {
+        return toResponse(food, illustrations.findPublicUrl(food.getIconKey()).orElse(null));
+    }
+
+    private static FoodResponse toResponse(Food food, String iconUrl) {
         return new FoodResponse(
                 food.getId(),
                 food.getName(),
                 food.getIconKey(),
+                iconUrl,
                 food.getHouseholdId(),
                 food.isSystem(),
                 food.isSessionEligible(),

@@ -86,19 +86,19 @@ foods with that `iconKey` start returning `iconUrl`. This PR may include a thin
 
 ## Acceptance criteria
 
-- [ ] S3-compatible store port exists with a working test/local double when cloud
+- [x] S3-compatible store port exists with a working test/local double when cloud
       credentials are absent.
-- [ ] Shared `food_illustrations` (or equivalent) table stores metadata keyed by
+- [x] Shared `food_illustrations` (or equivalent) table stores metadata keyed by
       `canonical_key` with **no** household ownership.
 - [x] OpenAPI + web + mobile: optional `iconUrl` on `FoodResponse` (and session /
       suggestion food schemas that already carry `iconKey`).
-- [ ] When a registry row exists for a food’s `iconKey`, list/get food responses
+- [x] When a registry row exists for a food’s `iconKey`, list/get food responses
       include a usable `iconUrl`; otherwise null and clients behave as today.
 - [ ] Web `FoodIcon` prefers `iconUrl` when provided; static starters and customs
       without a URL unchanged.
-- [ ] Two households / two foods sharing the same `canonical_key` resolve to the
+- [x] Two households / two foods sharing the same `canonical_key` resolve to the
       **same** `iconUrl` (unit or integration test).
-- [ ] No image-model calls; starters are not required to be uploaded to the bucket.
+- [x] No image-model calls; starters are not required to be uploaded to the bucket.
 - [ ] Tests: store double put→url; registry lookup; OpenAPI contract test; Foods
       client tests web + mobile for `iconUrl`.
 
@@ -106,7 +106,7 @@ foods with that `iconKey` start returning `iconUrl`. This PR may include a thin
 
 - [x] Contract: optional `iconUrl` on food-related response schemas; regenerate /
       hand-update OpenAPI consumers checklist.
-- [ ] Backend: Flyway `food_illustrations`; store port + config; illustration
+- [x] Backend: Flyway `food_illustrations`; store port + config; illustration
       service; map `iconUrl` on food (and session/suggestion) responses; tests
       including shared-key reuse.
 - [ ] Web: types + `FoodIcon` URL path; foods client tests.
