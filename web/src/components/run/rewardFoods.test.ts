@@ -9,6 +9,7 @@ import {
   phaseAfterFoodPick,
   phaseForGame,
   phaseForSurprise,
+  previousRewardPhase,
   REWARD_GAME_KINDS,
   rollSurpriseGame,
 } from "@/components/run/rewardFoods"
@@ -233,5 +234,42 @@ describe("rewardFoods", () => {
       food,
       game: "match",
     })
+  })
+
+  it("previousRewardPhase walks which-game back to food pick when multi eligible", () => {
+    const foods = [
+      {
+        ...baseSession.foods[0],
+        familiarity: "truly_new" as const,
+        ateEnough: true,
+      },
+      {
+        ...baseSession.foods[1],
+        familiarity: "familiar_but_new" as const,
+        ateEnough: true,
+      },
+    ]
+    expect(
+      previousRewardPhase({ kind: "pickGame", food: foods[0] }, foods),
+    ).toEqual({ kind: "pick", foods })
+    expect(previousRewardPhase({ kind: "pick", foods }, foods)).toBeNull()
+    expect(
+      previousRewardPhase(
+        { kind: "surpriseReveal", food: foods[0], game: "catch" },
+        foods,
+      ),
+    ).toEqual({ kind: "pickGame", food: foods[0] })
+    expect(
+      previousRewardPhase({ kind: "catch", food: foods[0] }, foods),
+    ).toBeNull()
+  })
+
+  it("previousRewardPhase disables Back when which-game is the first reward screen", () => {
+    const food = {
+      ...baseSession.foods[1],
+      familiarity: "truly_new" as const,
+      ateEnough: true,
+    }
+    expect(previousRewardPhase({ kind: "pickGame", food }, [food])).toBeNull()
   })
 })

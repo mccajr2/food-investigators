@@ -89,12 +89,13 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Branch | Spec |
 |----|--------|------|
-| run-ux-polish | `run-ux-polish` | [active](specs/active/run-ux-polish.md) |
+| — | — | _(none)_ |
 
 ## Done
 
 | Id | Completed | Spec |
 |----|-----------|------|
+| run-ux-polish | 2026-07-30 | [archive](specs/archive/run-ux-polish.md) |
 | why-chip-illustrations | 2026-07-30 | [archive](specs/archive/why-chip-illustrations.md) |
 | run-survey-shorten | 2026-07-30 | [archive](specs/archive/run-survey-shorten.md) |
 | why-insights-surface | 2026-07-30 | [archive](specs/archive/why-insights-surface.md) |
@@ -192,3 +193,4 @@ Only notable events (first carve-up, major re-rank, cancelled theme) — not eve
 | 2026-07-30 | Split `ritual-illustrations` → active `why-chip-illustrations` (offline AI-assisted chip art) + planned `food-illustrations-ai` (heroes + online on-demand food art). |
 | 2026-07-30 | why-chip-illustrations shipped (kid-clear why-chip cartoons + labels). Next up: `food-illustrations-ai`. |
 | 2026-07-30 | Added `run-ux-polish` (Next up) + `so-so-why-detail`: ship hanging Run Back/Continue UX; then richer so-so why chips. |
+| 2026-07-30 | run-ux-polish shipped (survey + reward-pick Back; taste Continue). Next up: `so-so-why-detail`. |

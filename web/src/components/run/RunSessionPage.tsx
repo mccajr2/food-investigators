@@ -22,8 +22,10 @@ import {
 } from "@/components/run/tasteBasics"
 import { RUN_THEME } from "@/components/run/runTheme"
 import {
+  eligibleRewardFoods,
   initialRewardPhase,
   phaseAfterFoodPick,
+  previousRewardPhase,
   type RewardPhase,
 } from "@/components/run/rewardFoods"
 import {
@@ -248,7 +250,17 @@ export function RunSessionPage({
   }
 
   function goBack() {
-    if (inReward || inParentNotes || busy || savingParentNote) {
+    if (inParentNotes || busy || savingParentNote) {
+      return
+    }
+    if (inReward && rewardPhase && completedSession) {
+      const previous = previousRewardPhase(
+        rewardPhase,
+        eligibleRewardFoods(completedSession),
+      )
+      if (previous) {
+        setRewardPhase(previous)
+      }
       return
     }
     const previous = previousRunPosition(foodIndex, stepIndex, familiarityAt)
@@ -268,10 +280,20 @@ export function RunSessionPage({
     }
   }
 
-  const canGoBack =
-    !inReward &&
-    !inParentNotes &&
-    previousRunPosition(foodIndex, stepIndex, familiarityAt) !== null
+  const canGoBack = (() => {
+    if (inParentNotes) {
+      return false
+    }
+    if (inReward && rewardPhase && completedSession) {
+      return (
+        previousRewardPhase(
+          rewardPhase,
+          eligibleRewardFoods(completedSession),
+        ) !== null
+      )
+    }
+    return previousRunPosition(foodIndex, stepIndex, familiarityAt) !== null
+  })()
 
   async function submit(nextOutcomes?: [FoodOutcomeDraft, FoodOutcomeDraft]) {
     setStatus({ kind: "submitting" })

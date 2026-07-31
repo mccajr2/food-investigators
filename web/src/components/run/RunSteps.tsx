@@ -131,7 +131,7 @@ export function TasteMultiChoiceStep<T extends string>({
       </div>
       <div className="flex flex-wrap justify-center gap-3">
         <Button type="button" size="lg" onClick={onConfirm}>
-          Done
+          Continue
         </Button>
         <Button type="button" size="lg" variant="ghost" onClick={onSkip}>
           Skip

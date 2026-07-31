@@ -1,11 +1,10 @@
 # Spec: run-ux-polish
 
-Status: in-progress  
+Status: done  
 Created: 2026-07-30  
 Parent: [docs/roadmap.md](../../roadmap.md)  
 Added: 2026-07-30 · enhancement  
-WIP on branch: survey Back + `previousRunPosition` / `decodeWhyNote` (from stash
-`run back button WIP`) — finish remaining tasks under `/implement`.
+Completed: 2026-07-30
 
 ## Problem
 
@@ -48,20 +47,20 @@ No contract changes.
 
 ## Acceptance criteria
 
-- [ ] Survey header shows **Back** next to Exit; disabled on food 1 / first step;
+- [x] Survey header shows **Back** next to Exit; disabled on food 1 / first step;
       enabled after advancing; pressing Back returns to the previous step
       (including last step of food 1 from food 2 step 0).
-- [ ] Returning to the why step restores selected chips and optional note from
+- [x] Returning to the why step restores selected chips and optional note from
       the stored draft (`decodeWhyNote`).
-- [ ] Taste basics multi-select confirm button label is **Continue** (not Done);
+- [x] Taste basics multi-select confirm button label is **Continue** (not Done);
       why confirm remains Continue; Skip unchanged.
-- [ ] On reward **which-game**, Back is enabled and returns to **food pick**.
-- [ ] On reward **food pick**, Back is enabled when a prior reward phase exists
+- [x] On reward **which-game**, Back is enabled and returns to **food pick**.
+- [x] On reward **food pick**, Back is enabled when a prior reward phase exists
       (e.g. encourage); if food pick is the first reward screen, Back is disabled
       (session stays completed — no re-entry into survey).
-- [ ] Back remains disabled during Catch / Cross / Match play and parent notes.
-- [ ] No OpenAPI / backend / iOS changes.
-- [ ] Tests: `previousRunPosition` / `decodeWhyNote`; survey Back enable/disable +
+- [x] Back remains disabled during Catch / Cross / Match play and parent notes.
+- [x] No OpenAPI / backend / iOS changes.
+- [x] Tests: `previousRunPosition` / `decodeWhyNote`; survey Back enable/disable +
       step retreat; taste confirm role name `Continue`; reward which-game Back →
       food pick.
 
@@ -69,14 +68,14 @@ No contract changes.
 
 - [x] Web: Survey Back + `previousRunPosition` + `decodeWhyNote` (+ survey Back
       tests) — **already on branch from WIP stash**
-- [ ] Web: Taste multi-select confirm label `Done` → `Continue`; update tests that
+- [x] Web: Taste multi-select confirm label `Done` → `Continue`; update tests that
       click `Done` on that step.
-- [ ] Web: Enable Back through reward food-pick / which-game phase stack (not
+- [x] Web: Enable Back through reward food-pick / which-game phase stack (not
       in-play games); wire `goBack` for `inReward` phases.
-- [ ] Tests: cover Continue label + reward which-game → food pick Back (survey
+- [x] Tests: cover Continue label + reward which-game → food pick Back (survey
       Back tests already present).
-- [ ] Docs: leave `so-so-why-detail` planned for the follow-on.
+- [x] Docs: leave `so-so-why-detail` planned for the follow-on.
 
 ## Open questions
 
-- None blocking — in-play game Back stays out; parent-notes Back deferred.
+- None — ready for `/pr`.
