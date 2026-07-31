@@ -1,7 +1,8 @@
 # Spec: food-illustration-object-store
 
-Status: active  
+Status: archived  
 Created: 2026-07-31  
+Completed: 2026-07-31  
 Parent: [docs/roadmap.md](../../roadmap.md)  
 Added: 2026-07-31 · re-rank split (from `on-demand-food-illustrations`)  
 Branch: `food-illustration-object-store`
@@ -110,9 +111,9 @@ foods with that `iconKey` start returning `iconUrl`. This PR may include a thin
       service; map `iconUrl` on food (and session/suggestion) responses; tests
       including shared-key reuse.
 - [x] Web: types + `FoodIcon` URL path; foods client tests.
-- [ ] Mobile: `FoodResponse` / related models + client tests for `iconUrl`.
-- [ ] Docs: env example keys for S3/R2; note unconfigured graceful null.
-- [ ] Docs: on ship, archive this spec; Next up stays
+- [x] Mobile: `FoodResponse` / related models + client tests for `iconUrl`.
+- [x] Docs: env example keys for S3/R2; note unconfigured graceful null.
+- [x] Docs: on ship, archive this spec; Next up stays
       `on-demand-food-illustrations`.
 
 ## Open questions

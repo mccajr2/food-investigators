@@ -30,9 +30,10 @@ app:
     # Household calendar day for Plan/Run “today” (not server UTC).
     zone: ${APP_CALENDAR_ZONE:America/New_York}
   food-illustrations:
-    # S3-compatible (R2) credentials — when unset, in-memory double; iconUrl null unless stored in tests.
+    # S3-compatible (R2) — when endpoint/bucket/keys unset, in-memory double (tests/dev).
     endpoint: ${FOOD_ILLUSTRATIONS_ENDPOINT:}
     bucket: ${FOOD_ILLUSTRATIONS_BUCKET:}
     access-key: ${FOOD_ILLUSTRATIONS_ACCESS_KEY:}
     secret-key: ${FOOD_ILLUSTRATIONS_SECRET_KEY:}
+    region: ${FOOD_ILLUSTRATIONS_REGION:auto}
     public-base-url: ${FOOD_ILLUSTRATIONS_PUBLIC_BASE_URL:http://127.0.0.1/food-illustrations}

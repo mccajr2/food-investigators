@@ -13,9 +13,11 @@ public record FoodIllustrationProperties(
         String bucket,
         String accessKey,
         String secretKey,
+        String region,
         String publicBaseUrl) {
 
     public static final String DEFAULT_PUBLIC_BASE_URL = "http://127.0.0.1/food-illustrations";
+    public static final String DEFAULT_REGION = "auto";
 
     public FoodIllustrationProperties {
         if (endpoint == null) {
@@ -30,12 +32,15 @@ public record FoodIllustrationProperties(
         if (secretKey == null) {
             secretKey = "";
         }
+        if (region == null || region.isBlank()) {
+            region = DEFAULT_REGION;
+        }
         if (publicBaseUrl == null || publicBaseUrl.isBlank()) {
             publicBaseUrl = DEFAULT_PUBLIC_BASE_URL;
         }
     }
 
-    /** True when cloud credentials are present (S3 adapter not wired until SDK is approved). */
+    /** True when S3-compatible credentials are present (uses {@code S3CompatibleObjectStore}). */
     public boolean configured() {
         return !endpoint.isBlank()
                 && !bucket.isBlank()

@@ -9,13 +9,11 @@ import org.springframework.context.annotation.Configuration;
 @EnableConfigurationProperties(FoodIllustrationProperties.class)
 class FoodsModuleConfiguration {
 
-    /**
-     * Cloud S3/R2 adapter is deferred until an AWS SDK (or equivalent) is approved in the version
-     * catalog. Unconfigured — and currently even when credentials are set — uses the in-memory
-     * double so local/dev/tests keep working.
-     */
-    @Bean
+    @Bean(destroyMethod = "close")
     ObjectStorePort objectStorePort(FoodIllustrationProperties properties) {
+        if (properties.configured()) {
+            return S3CompatibleObjectStore.create(properties);
+        }
         return new InMemoryObjectStore(properties.resolvedPublicBaseUrl());
     }
 }
