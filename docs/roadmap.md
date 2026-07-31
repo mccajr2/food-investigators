@@ -44,7 +44,7 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | so-so-why-detail | planned | 2026-07-30 · enhancement | So-so why chips capture mixed good/bad detail (Like/No stay focused) |
+| 1 | so-so-why-detail | active | 2026-07-30 · enhancement | So-so why chips capture mixed good/bad detail (Like/No stay focused) |
 | 2 | food-illustrations-ai | planned | 2026-07-30 · re-rank split | Kid-clear food art: heroes + online on-demand AI for catalog (after why chips) |
 | 3 | child-display-name | planned | 2026-07-28 · enhancement | Optional child’s first name at signup / settings (single-child profile) |
 | 4 | signup-starter-snacks | planned | 2026-07-23 · enhancement | Optional signup intake: liked tasting foods + snacks (else catalog defaults) |
@@ -89,7 +89,7 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Branch | Spec |
 |----|--------|------|
-| — | — | _(none)_ |
+| so-so-why-detail | so-so-why-detail | [active](specs/active/so-so-why-detail.md) |
 
 ## Done
 
@@ -194,3 +194,4 @@ Only notable events (first carve-up, major re-rank, cancelled theme) — not eve
 | 2026-07-30 | why-chip-illustrations shipped (kid-clear why-chip cartoons + labels). Next up: `food-illustrations-ai`. |
 | 2026-07-30 | Added `run-ux-polish` (Next up) + `so-so-why-detail`: ship hanging Run Back/Continue UX; then richer so-so why chips. |
 | 2026-07-30 | run-ux-polish shipped (survey + reward-pick Back; taste Continue). Next up: `so-so-why-detail`. |
+| 2026-07-30 | Specced `so-so-why-detail`: so-so why = curated good∪bad chips (reuse Like/No strings); no middling fillers. |
