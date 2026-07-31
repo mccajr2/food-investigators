@@ -55,7 +55,7 @@ function Face({
   cy?: number
   r?: number
   fill: string
-  mood: "happy" | "sad" | "neutral"
+  mood: "happy" | "sad"
 }) {
   const mouth =
     mood === "happy" ? (
@@ -66,17 +66,9 @@ function Face({
         strokeWidth="2.5"
         strokeLinecap="round"
       />
-    ) : mood === "sad" ? (
-      <path
-        d={`M${cx - 7} ${cy + 10}c2-4 5-5 7-5s5 1 7 5`}
-        fill="none"
-        stroke={B.navy}
-        strokeWidth="2.5"
-        strokeLinecap="round"
-      />
     ) : (
       <path
-        d={`M${cx - 6} ${cy + 6}h12`}
+        d={`M${cx - 7} ${cy + 10}c2-4 5-5 7-5s5 1 7 5`}
         fill="none"
         stroke={B.navy}
         strokeWidth="2.5"
@@ -518,124 +510,6 @@ function TooColdIcon(props: SvgProps) {
   )
 }
 
-function KindOfTastyIcon(props: SvgProps) {
-  return (
-    <Frame {...props} chip="kind of tasty" bg="#F5F0E4">
-      <Face fill={B.amber} mood="neutral" />
-      {/* tiny shrug hands */}
-      <path
-        d="M12 36c4-2 8 0 10 4M52 36c-4-2-8 0-10 4"
-        fill="none"
-        stroke={B.navy}
-        strokeWidth="2.5"
-        strokeLinecap="round"
-      />
-    </Frame>
-  )
-}
-
-function WeirdTextureIcon(props: SvgProps) {
-  return (
-    <Frame {...props} chip="weird texture" bg="#F5F0E4">
-      {/* bumpy blob */}
-      <path
-        d="M18 36c0-10 8-16 16-16 4 0 6 2 8 0 6 0 12 8 10 16-2 8-10 14-18 14s-16-6-16-14z"
-        fill={B.sky}
-        stroke={B.navy}
-        strokeWidth="2"
-      />
-      <circle cx="26" cy="30" r="4" fill={B.lime} stroke={B.navy} strokeWidth="1.5" />
-      <circle cx="38" cy="34" r="5" fill={B.amber} stroke={B.navy} strokeWidth="1.5" />
-      <circle cx="32" cy="42" r="3.5" fill={B.coral} stroke={B.navy} strokeWidth="1.5" />
-      <circle cx="24" cy="28" r="1.5" fill={B.navy} />
-      <circle cx="36" cy="32" r="1.5" fill={B.navy} />
-      <path
-        d="M28 36h8"
-        fill="none"
-        stroke={B.navy}
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-    </Frame>
-  )
-}
-
-function OkaySmellIcon(props: SvgProps) {
-  return (
-    <Frame {...props} chip="okay smell" bg="#F5F0E4">
-      <ellipse
-        cx="32"
-        cy="40"
-        rx="11"
-        ry="9"
-        fill="#F5C9A8"
-        stroke={B.navy}
-        strokeWidth="2"
-      />
-      <ellipse cx="28" cy="42" rx="2" ry="2.5" fill={B.navy} />
-      <ellipse cx="36" cy="42" rx="2" ry="2.5" fill={B.navy} />
-      {/* mild flat wisp */}
-      <path
-        d="M24 26c4-2 12-2 16 0"
-        fill="none"
-        stroke={B.sky}
-        strokeWidth="3"
-        strokeLinecap="round"
-      />
-    </Frame>
-  )
-}
-
-function LooksOkayIcon(props: SvgProps) {
-  return (
-    <Frame {...props} chip="looks okay" bg="#F5F0E4">
-      <ellipse
-        cx="32"
-        cy="32"
-        rx="18"
-        ry="12"
-        fill={B.white}
-        stroke={B.navy}
-        strokeWidth="2"
-      />
-      <circle cx="32" cy="32" r="6" fill={B.lime} />
-      <circle cx="34" cy="30" r="2" fill={B.white} />
-      <path
-        d="M22 48h20"
-        fill="none"
-        stroke={B.navy}
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-    </Frame>
-  )
-}
-
-function NotSureIcon(props: SvgProps) {
-  return (
-    <Frame {...props} chip="not sure" bg="#F5F0E4">
-      <Face fill={B.white} mood="neutral" />
-      {/* shrug arms */}
-      <path
-        d="M10 34c6-6 12-4 14 0M54 34c-6-6-12-4-14 0"
-        fill="none"
-        stroke={B.navy}
-        strokeWidth="3"
-        strokeLinecap="round"
-      />
-      <circle cx="48" cy="16" r="7" fill={B.cream} stroke={B.navy} strokeWidth="2" />
-      <circle cx="48" cy="14" r="1.5" fill={B.navy} />
-      <path
-        d="M45 19h6"
-        fill="none"
-        stroke={B.navy}
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-    </Frame>
-  )
-}
-
 const WHY_CHIP_ICONS: Record<string, (props: SvgProps) => ReactElement> = {
   tasty: TastyIcon,
   crunchy: CrunchyIcon,
@@ -651,19 +525,16 @@ const WHY_CHIP_ICONS: Record<string, (props: SvgProps) => ReactElement> = {
   "looks weird": LooksWeirdIcon,
   "too hot": TooHotIcon,
   "too cold": TooColdIcon,
-  "kind of tasty": KindOfTastyIcon,
-  "weird texture": WeirdTextureIcon,
-  "okay smell": OkaySmellIcon,
-  "looks okay": LooksOkayIcon,
-  "not sure": NotSureIcon,
 }
 
-/** Every v1 why-chip label (like / no / so_so). */
+/** Unique why-chip labels across like / no / so_so (so_so reuses like∪no strings). */
 export function allWhyChipLabels(): string[] {
   return [
-    ...WHY_CHIPS_BY_LIKED.like,
-    ...WHY_CHIPS_BY_LIKED.no,
-    ...WHY_CHIPS_BY_LIKED.so_so,
+    ...new Set([
+      ...WHY_CHIPS_BY_LIKED.like,
+      ...WHY_CHIPS_BY_LIKED.no,
+      ...WHY_CHIPS_BY_LIKED.so_so,
+    ]),
   ]
 }
 

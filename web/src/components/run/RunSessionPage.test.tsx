@@ -369,7 +369,8 @@ describe("RunSessionPage", () => {
     {
       liked: "So-so" as const,
       chips: WHY_CHIPS_BY_LIKED.so_so,
-      absent: "tasty",
+      // temperature + middling stay off the mixed so-so board
+      absent: "warm",
     },
   ])(
     "shows icon + visible text label for every $liked why chip",
@@ -399,6 +400,66 @@ describe("RunSessionPage", () => {
       ).not.toBeInTheDocument()
     },
   )
+
+  it("shows mixed good/bad so-so chips and persists mix in chip order", async () => {
+    const user = userEvent.setup()
+    const complete = vi.fn().mockResolvedValue({
+      ...sampleSession,
+      status: "completed",
+      foods: sampleSession.foods.map((food) => ({
+        ...food,
+        ateEnough: false,
+      })),
+    })
+
+    render(
+      <RunSessionPage
+        session={sampleSession}
+        sessionsClient={mockSessionsClient({ complete })}
+        onComplete={vi.fn()}
+        onExit={vi.fn()}
+      />,
+    )
+
+    await advanceToWhyStep(user, "So-so")
+
+    expect(screen.getByText("Why was it so-so?")).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "yummy smell" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "too crunchy" })).toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: "kind of tasty" }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: "not sure" }),
+    ).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "too crunchy" }))
+    await user.click(screen.getByRole("button", { name: "yummy smell" }))
+    await user.click(screen.getByRole("button", { name: "Continue" }))
+    await user.click(screen.getByRole("option", { name: "No" }))
+
+    await skipToAteEnough(user, true)
+    await user.click(screen.getByRole("option", { name: "No" }))
+
+    await waitFor(() => {
+      expect(complete).toHaveBeenCalledWith(
+        sampleSession.id,
+        expect.objectContaining({
+          foods: [
+            expect.objectContaining({
+              position: 1,
+              liked: "so_so",
+              whyNote: "yummy smell, too crunchy",
+            }),
+            expect.objectContaining({
+              position: 2,
+              whyNote: null,
+            }),
+          ],
+        }),
+      )
+    })
+  })
 
   it("persists chips and optional note into whyNote on complete", async () => {
     const user = userEvent.setup()

@@ -1,7 +1,8 @@
 # Why-chip art brief (locked)
 
-Parent: [why-chip-illustrations](../specs/active/why-chip-illustrations.md)  
-Locked: 2026-07-30  
+Parent: [why-chip-illustrations](../specs/archive/why-chip-illustrations.md)
+(so-so set update: [so-so-why-detail](../specs/archive/so-so-why-detail.md))  
+Locked: 2026-07-30 · so-so mixed polarity 2026-07-30  
 Audience: offline AI image/SVG generation + hand polish before commit
 
 Use this brief for **every** why-chip asset in this feature. Do not invent a
@@ -53,17 +54,19 @@ in-family with these hues.
 
 ## Polarity (kid-obvious without reading)
 
-Like / no / so_so variants for the **same sense** must not be identical art with
-only the label different.
+Like / no variants for the **same sense** must not be identical art with only
+the label different. So-so does **not** use a third “shrug / middling” art
+style — it reuses like (good) and no (bad) chips; overall liked = so-so already
+covers middling.
 
 | Polarity | Visual cues |
 |----------|-------------|
 | **like** | Smile / open happy face, lime accents, “just right” amount |
 | **no** | Frown / X / push-away, coral accents, “too much” or “yucky” exaggeration |
-| **so_so** | Neutral / shrug / tilted head, muted accents, neither celebration nor alarm |
+| **so_so** | No separate motifs — same art as the like / no string being shown |
 
 Shared base motifs are allowed (e.g. same cracker for crunch) **only** when
-polarity cues above are unmistakable at chip size.
+like vs no polarity cues above are unmistakable at chip size.
 
 ## Chip inventory (must all get art)
 
@@ -95,17 +98,28 @@ Copy is locked in `web/src/components/run/whyChips.ts` — do not rename here.
 
 ### so_so
 
-| Chip | Motif direction |
-|------|-----------------|
-| kind of tasty | Small shrug smile — neither wow nor yuck |
-| weird texture | Ambiguous touch (bumpy/odd), neutral face |
-| okay smell | Flat / mild wisps, neutral |
-| looks okay | Flat look, neutral |
-| not sure | Shrug / question posture (no “?” letterforms required if pose reads) |
+Curated mix of existing labels (good then bad). **Reuse** the like / no
+illustrations — do not generate shrug / neutral middling-only assets.
+
+| Chip | Art source |
+|------|------------|
+| tasty | same as **like** |
+| crunchy | same as **like** |
+| soft | same as **like** |
+| yummy smell | same as **like** |
+| looks good | same as **like** |
+| yucky taste | same as **no** |
+| too crunchy | same as **no** |
+| too soft | same as **no** |
+| yucky smell | same as **no** |
+| looks weird | same as **no** |
+
+Temperature chips (warm / cold / too hot / too cold) stay on like / no only.
 
 ## Offline generation prompt pack
 
-Reuse this stem for every chip; only swap the **Subject** line.
+Reuse this stem for every **like** / **no** chip; only swap the **Subject**
+line. So-so needs no new generation.
 
 ```text
 Children's picture-book sticker illustration for a food-tasting app chip.
@@ -114,8 +128,8 @@ Brand colors only: navy #153160, cream #F7F2E3, lime #7AB953, coral #DE4E4B,
 amber #E48E26, sky #5BB0D7, white #FFFEF8.
 Square 64x64, single focal subject, no text, no watermark, no photorealism,
 no emoji style, no purple gradients.
-Polarity: {like | no | so_so} using smile/lime vs frown/coral vs neutral/muted.
-Subject: {chip motif from tables above}.
+Polarity: {like | no} using smile/lime vs frown/coral.
+Subject: {chip motif from like / no tables above}.
 Plain cream or softly tinted tile background.
 ```
 

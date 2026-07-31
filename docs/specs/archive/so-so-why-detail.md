@@ -1,10 +1,10 @@
 # Spec: so-so-why-detail
 
-Status: active  
+Status: done  
 Created: 2026-07-30  
 Parent: [docs/roadmap.md](../../roadmap.md)  
 Added: 2026-07-30 · enhancement  
-Branch: `so-so-why-detail`
+Completed: 2026-07-30
 
 ## Problem
 
@@ -52,30 +52,30 @@ Encode / multi-select / `whyNote` behavior unchanged. No OpenAPI or backend.
 
 ## Acceptance criteria
 
-- [ ] `WHY_CHIPS_BY_LIKED.so_so` is exactly the 10 locked strings above (good then
+- [x] `WHY_CHIPS_BY_LIKED.so_so` is exactly the 10 locked strings above (good then
       bad), in that order.
-- [ ] Like / No chip arrays are unchanged.
-- [ ] Every so-so chip renders its existing illustration + label on the Run why
+- [x] Like / No chip arrays are unchanged.
+- [x] Every so-so chip renders its existing illustration + label on the Run why
       step (no new art required; no middling-only icons remain required for the
       active catalog).
-- [ ] Parent can multi-select a mix (e.g. “yummy smell” + “too crunchy”) and
+- [x] Parent can multi-select a mix (e.g. “yummy smell” + “too crunchy”) and
       `encodeWhyNote` still joins in chip-set order.
-- [ ] Art brief so-so section matches the mixed-polarity approach (no middling
+- [x] Art brief so-so section matches the mixed-polarity approach (no middling
       chip table as the active so-so set).
-- [ ] No OpenAPI, backend, Insights calculator, or iOS changes.
-- [ ] Tests: `whyChipsForLiked("so_so")` / icon coverage for the new set; Run why
+- [x] No OpenAPI, backend, Insights calculator, or iOS changes.
+- [x] Tests: `whyChipsForLiked("so_so")` / icon coverage for the new set; Run why
       step still shows icon + label for a so-so chip; remove assertions tied to
       old middling strings.
 
 ## Tasks
 
-- [ ] Web: replace `so_so` array in `whyChips.ts`; update unit tests.
-- [ ] Web: prune middling-only entries from `whyChipIcons` (+ tests / art-brief
+- [x] Web: replace `so_so` array in `whyChips.ts`; update unit tests.
+- [x] Web: prune middling-only entries from `whyChipIcons` (+ tests / art-brief
       coverage that iterates active chips).
-- [ ] Docs: update `docs/design/why-chip-art-brief.md` so-so guidance + table.
-- [ ] Tests: RunSessionPage / whyChipIcons coverage for new so-so set.
-- [ ] Docs: on ship, archive this spec and advance roadmap Next up.
+- [x] Docs: update `docs/design/why-chip-art-brief.md` so-so guidance + table.
+- [x] Tests: RunSessionPage / whyChipIcons coverage for new so-so set.
+- [x] Docs: on ship, archive this spec and advance roadmap Next up.
 
 ## Open questions
 
-- None — ready for `/implement` after approval.
+- None — shipped.
