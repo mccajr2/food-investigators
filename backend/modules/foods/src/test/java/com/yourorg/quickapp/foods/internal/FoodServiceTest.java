@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import com.yourorg.quickapp.foods.CreateFoodRequest;
 import com.yourorg.quickapp.foods.DuplicateFoodNameException;
+import com.yourorg.quickapp.foods.FoodIllustrationStore;
 import com.yourorg.quickapp.foods.FoodLiked;
 import com.yourorg.quickapp.foods.FoodNotFoundException;
 import com.yourorg.quickapp.foods.FoodResponse;
@@ -20,6 +21,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,13 +37,42 @@ class FoodServiceTest {
     @Mock
     private FoodRepository foods;
 
+    @Mock
+    private FoodIllustrationStore illustrations;
+
     private FoodService service;
     private final Instant now = Instant.parse("2026-07-14T00:00:00Z");
     private final UUID householdId = UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
 
     @BeforeEach
     void setUp() {
-        service = new FoodService(foods, Clock.fixed(now, ZoneOffset.UTC));
+        service = new FoodService(foods, illustrations, Clock.fixed(now, ZoneOffset.UTC));
+        org.mockito.Mockito.lenient()
+                .when(illustrations.findPublicUrl(any()))
+                .thenReturn(Optional.empty());
+        org.mockito.Mockito.lenient()
+                .when(illustrations.findPublicUrls(any()))
+                .thenReturn(Map.of());
+    }
+
+    @Test
+    void listIncludesIconUrlWhenIllustrationExists() {
+        Food mine = Food.household(householdId, "Cucumber", "custom_cucumber", now);
+        when(foods.findByHouseholdIdIsNullOrderByNameAsc()).thenReturn(List.of());
+        when(foods.findByHouseholdIdAndArchivedAtIsNullOrderByNameAsc(householdId))
+                .thenReturn(List.of(mine));
+        when(illustrations.findPublicUrls(any()))
+                .thenReturn(
+                        Map.of(
+                                "custom_cucumber",
+                                "http://127.0.0.1/food-illustrations/illustrations/custom_cucumber.png"));
+
+        List<FoodResponse> listed = service.list(householdId, false);
+
+        assertThat(listed).hasSize(1);
+        assertThat(listed.get(0).iconUrl())
+                .isEqualTo(
+                        "http://127.0.0.1/food-illustrations/illustrations/custom_cucumber.png");
     }
 
     @Test

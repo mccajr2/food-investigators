@@ -957,6 +957,15 @@ components:
           example: Apples
         iconKey:
           $ref: "#/components/schemas/FoodIconKey"
+        iconUrl:
+          type: string
+          format: uri
+          nullable: true
+          description: >
+            Public URL for a shared illustration in object storage when one
+            exists for this food's iconKey. Null when none is stored (clients
+            fall back to bundled starter art or generated custom icons).
+          example: https://cdn.example.com/foods/custom_cucumber.png
         householdId:
           type: string
           format: uuid
@@ -1229,6 +1238,13 @@ components:
           example: Apples
         iconKey:
           $ref: "#/components/schemas/FoodIconKey"
+        iconUrl:
+          type: string
+          format: uri
+          nullable: true
+          description: >
+            Public URL for a shared illustration when one exists for this
+            food's iconKey; null otherwise.
         familiarity:
           $ref: "#/components/schemas/Familiarity"
         variantNote:
@@ -1339,6 +1355,13 @@ components:
         iconKey:
           type: string
           example: apple
+        iconUrl:
+          type: string
+          format: uri
+          nullable: true
+          description: >
+            Public URL for a shared illustration when one exists for this
+            food's iconKey; null otherwise.
         familiarity:
           $ref: "#/components/schemas/Familiarity"
     SessionSuggestionResponse:

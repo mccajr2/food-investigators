@@ -13,6 +13,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 
@@ -52,7 +53,42 @@ class FoodsClientTest {
             assertEquals("Extra apple mash", foods[0].name)
             assertFalse(foods[0].system)
             assertEquals(true, foods[0].sessionEligible)
+            assertNull(foods[0].iconUrl)
             assertEquals("Bearer tok", sawAuth)
+        }
+
+    @Test
+    fun listParsesIconUrlWhenPresent() =
+        runTest {
+            val store = InMemoryTokenStore()
+            store.saveToken("tok", rememberMe = true)
+            val engine =
+                MockEngine { request ->
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        content =
+                            """
+                            [{"id":"cccccccc-cccc-cccc-cccc-cccccccccccc",
+                              "name":"Cucumber",
+                              "iconKey":"custom_cucumber",
+                              "iconUrl":"https://cdn.example.com/foods/custom_cucumber.png",
+                              "householdId":"22222222-2222-2222-2222-222222222222",
+                              "system":false,
+                              "sessionEligible":true,
+                              "archivedAt":null}]
+                            """.trimIndent(),
+                        status = HttpStatusCode.OK,
+                        headers = headersOf(HttpHeaders.ContentType, "application/json"),
+                    )
+                }
+
+            val client = FoodsClient("http://localhost:8080", httpClient(engine), store)
+            val foods = client.list()
+
+            assertEquals(
+                "https://cdn.example.com/foods/custom_cucumber.png",
+                foods[0].iconUrl,
+            )
         }
 
     @Test

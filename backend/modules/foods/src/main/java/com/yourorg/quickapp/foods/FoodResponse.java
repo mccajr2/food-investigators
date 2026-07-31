@@ -7,6 +7,7 @@ public record FoodResponse(
         UUID id,
         String name,
         String iconKey,
+        String iconUrl,
         UUID householdId,
         boolean system,
         boolean sessionEligible,

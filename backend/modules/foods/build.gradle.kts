@@ -8,5 +8,7 @@ dependencies {
     implementation(libs.spring.boot.starter.data.jpa)
     implementation(libs.spring.boot.starter.security)
     implementation(libs.spring.boot.starter.validation)
+    implementation(libs.aws.s3)
+    implementation(libs.aws.url.connection.client)
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }

@@ -106,4 +106,39 @@ describe("FoodIcon", () => {
     expect(container.querySelector("[data-food-icon-src='static']")).toBeNull()
     unmount()
   })
+
+  it("prefers remote iconUrl over static and generated art", () => {
+    const remoteUrl = "https://cdn.example.com/foods/custom_cucumber.png"
+    const custom = render(
+      <FoodIcon
+        iconKey="custom_cucumber"
+        iconUrl={remoteUrl}
+        name="Cucumber"
+      />,
+    )
+    const customImg = custom.container.querySelector("img")
+    expect(customImg?.getAttribute("data-food-icon-src")).toBe("remote")
+    expect(customImg?.getAttribute("src")).toBe(remoteUrl)
+    expect(custom.container.textContent).not.toContain("🥒")
+    custom.unmount()
+
+    const starter = render(
+      <FoodIcon iconKey="apple" iconUrl={remoteUrl} />,
+    )
+    const starterImg = starter.container.querySelector("img")
+    expect(starterImg?.getAttribute("data-food-icon-src")).toBe("remote")
+    expect(starterImg?.getAttribute("src")).toBe(remoteUrl)
+    expect(starterImg?.getAttribute("src")).not.toBe(HERO_FOOD_ICON_URLS.apple)
+    starter.unmount()
+  })
+
+  it("ignores blank iconUrl and falls back to local art", () => {
+    const { container, unmount } = render(
+      <FoodIcon iconKey="apple" iconUrl="   " />,
+    )
+    expect(container.querySelector("img")?.getAttribute("data-food-icon-src")).toBe(
+      "static",
+    )
+    unmount()
+  })
 })

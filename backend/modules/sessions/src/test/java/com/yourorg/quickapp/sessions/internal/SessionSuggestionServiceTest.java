@@ -62,9 +62,9 @@ class SessionSuggestionServiceTest {
         when(foodCatalog.listSelectable(householdId))
                 .thenReturn(
                         List.of(
-                                new CatalogFood(foodA, "Apples", "apple"),
-                                new CatalogFood(foodB, "Strawberries", "strawberry"),
-                                new CatalogFood(foodC, "Blueberries", "blueberry")));
+                                new CatalogFood(foodA, "Apples", "apple", null),
+                                new CatalogFood(foodB, "Strawberries", "strawberry", null),
+                                new CatalogFood(foodC, "Blueberries", "blueberry", null)));
     }
 
     @Test
@@ -142,7 +142,7 @@ class SessionSuggestionServiceTest {
     @Test
     void throwsWhenFewerThanTwoSelectableFoods() {
         when(foodCatalog.listSelectable(householdId))
-                .thenReturn(List.of(new CatalogFood(foodA, "Apples", "apple")));
+                .thenReturn(List.of(new CatalogFood(foodA, "Apples", "apple", null)));
         when(sessions.findByHouseholdIdAndStatusOrderByScheduledOnDescUpdatedAtDesc(
                         eq(householdId), eq(SessionStatus.completed)))
                 .thenReturn(List.of());

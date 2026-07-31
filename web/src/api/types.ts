@@ -65,6 +65,8 @@ export type FoodResponse = {
   id: string
   name: string
   iconKey: FoodIconKey | string
+  /** Shared object-store illustration URL when present; omit/null uses local art. */
+  iconUrl?: string | null
   householdId: string | null
   system: boolean
   sessionEligible: boolean
@@ -148,6 +150,8 @@ export type SessionFoodResponse = {
   foodId: string
   name: string
   iconKey: FoodIconKey | string
+  /** Shared object-store illustration URL when present; omit/null uses local art. */
+  iconUrl?: string | null
   familiarity: Familiarity
   variantNote?: string | null
   position: 1 | 2
@@ -177,6 +181,8 @@ export type SuggestedSessionFood = {
   foodId: string
   name: string
   iconKey: FoodIconKey | string
+  /** Shared object-store illustration URL when present; omit/null uses local art. */
+  iconUrl?: string | null
   familiarity: Familiarity
 }
 

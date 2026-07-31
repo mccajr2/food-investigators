@@ -7,6 +7,7 @@ public record SessionFoodResponse(
         UUID foodId,
         String name,
         String iconKey,
+        String iconUrl,
         Familiarity familiarity,
         String variantNote,
         int position,

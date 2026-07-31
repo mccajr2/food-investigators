@@ -804,7 +804,7 @@ class SessionServiceTest {
 
     private void stubSelectable(UUID foodId, String name, String iconKey) {
         when(foodCatalog.findSelectable(householdId, foodId))
-                .thenReturn(Optional.of(new CatalogFood(foodId, name, iconKey)));
+                .thenReturn(Optional.of(new CatalogFood(foodId, name, iconKey, null)));
     }
 
     private TastingSession completedSession() {
@@ -821,7 +821,7 @@ class SessionServiceTest {
 
     private void stubVisible(UUID foodId, String name, String iconKey) {
         when(foodCatalog.findVisible(householdId, foodId))
-                .thenReturn(Optional.of(new CatalogFood(foodId, name, iconKey)));
+                .thenReturn(Optional.of(new CatalogFood(foodId, name, iconKey, null)));
     }
 
     private static String pdfText(byte[] pdf) throws Exception {

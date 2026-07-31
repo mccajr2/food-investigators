@@ -43,6 +43,7 @@ data class SessionFoodResponse(
     val foodId: String,
     val name: String,
     val iconKey: String,
+    val iconUrl: String? = null,
     val familiarity: String,
     val variantNote: String? = null,
     val position: Int,
@@ -95,6 +96,7 @@ data class SuggestedSessionFood(
     val foodId: String,
     val name: String,
     val iconKey: String,
+    val iconUrl: String? = null,
     val familiarity: String,
 )
 

@@ -344,11 +344,13 @@ public class SessionService {
                                                                     new CatalogFood(
                                                                             row.getFoodId(),
                                                                             "Unknown food",
-                                                                            "custom_unknown"));
+                                                                            "custom_unknown",
+                                                                            null));
                                     return new SessionFoodResponse(
                                             catalog.id(),
                                             catalog.name(),
                                             catalog.iconKey(),
+                                            catalog.iconUrl(),
                                             row.getFamiliarity(),
                                             row.getVariantNote(),
                                             row.getPosition(),

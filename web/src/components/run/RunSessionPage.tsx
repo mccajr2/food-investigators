@@ -429,6 +429,7 @@ export function RunSessionPage({
           {!inReward && !inParentNotes && currentFood ? (
             <FoodIcon
               iconKey={currentFood.iconKey}
+              iconUrl={currentFood.iconUrl}
               name={currentFood.name}
               className="size-10 shrink-0"
             />

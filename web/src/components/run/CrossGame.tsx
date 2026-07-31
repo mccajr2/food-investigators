@@ -457,6 +457,7 @@ export function CrossGame({
         <div className="flex min-w-0 items-center gap-3">
           <FoodIcon
             iconKey={food.iconKey}
+            iconUrl={food.iconUrl}
             name={food.name}
             className="size-12 shrink-0"
           />
@@ -584,6 +585,7 @@ export function CrossGame({
                           >
                             <FoodIcon
                               iconKey={food.iconKey}
+                              iconUrl={food.iconUrl}
                               name={food.name}
                               className="size-full"
                             />

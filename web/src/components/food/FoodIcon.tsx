@@ -52,9 +52,32 @@ export const FOOD_ICON_LABELS: Record<FoodIconKey, string> = {
 
 type FoodIconProps = {
   iconKey: string
+  /** Shared object-store URL when present — preferred over bundled/generated art. */
+  iconUrl?: string | null
   /** Used when rendering a generated/custom icon. */
   name?: string
   className?: string
+}
+
+function RemoteFoodIcon({
+  iconKey,
+  iconUrl,
+  className,
+}: {
+  iconKey: string
+  iconUrl: string
+  className?: string
+}) {
+  return (
+    <img
+      src={iconUrl}
+      alt=""
+      aria-hidden
+      data-food-icon={iconKey}
+      data-food-icon-src="remote"
+      className={cn("h-full w-full rounded-2xl object-contain", className)}
+    />
+  )
 }
 
 function StaticFoodIcon({
@@ -79,7 +102,14 @@ function StaticFoodIcon({
   )
 }
 
-export function FoodIcon({ iconKey, name, className }: FoodIconProps) {
+export function FoodIcon({ iconKey, iconUrl, name, className }: FoodIconProps) {
+  const remote = iconUrl?.trim()
+  if (remote) {
+    return (
+      <RemoteFoodIcon iconKey={iconKey} iconUrl={remote} className={className} />
+    )
+  }
+
   if (isStaticFoodIconKey(iconKey)) {
     return <StaticFoodIcon iconKey={iconKey} className={className} />
   }

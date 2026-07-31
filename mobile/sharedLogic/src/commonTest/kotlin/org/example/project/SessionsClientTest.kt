@@ -12,6 +12,7 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNull
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 
@@ -102,11 +103,53 @@ class SessionsClientTest {
             assertEquals(2, suggestion.foods.size)
             assertEquals("Apples", suggestion.foods[0].name)
             assertEquals("familiar_but_new", suggestion.foods[1].familiarity)
+            assertNull(suggestion.foods[0].iconUrl)
             assertEquals(
                 "A calm next night from foods that often work for you.",
                 suggestion.rationale,
             )
             assertEquals("Bearer tok", sawAuth)
+        }
+
+    @Test
+    fun suggestNextParsesIconUrlWhenPresent() =
+        runTest {
+            val store = InMemoryTokenStore()
+            store.saveToken("tok", rememberMe = true)
+            val engine =
+                MockEngine { request ->
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        content =
+                            """
+                            {"scheduledOn":"2026-07-16",
+                             "foods":[
+                               {"foodId":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa04",
+                                "name":"Apples",
+                                "iconKey":"apple",
+                                "iconUrl":"https://cdn.example.com/foods/apple.png",
+                                "familiarity":"safe"},
+                               {"foodId":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa05",
+                                "name":"Strawberries",
+                                "iconKey":"strawberry",
+                                "familiarity":"familiar_but_new"}
+                             ],
+                             "rationale":"A calm next night from foods that often work for you.",
+                             "source":"heuristic"}
+                            """.trimIndent(),
+                        status = HttpStatusCode.OK,
+                        headers = headersOf(HttpHeaders.ContentType, "application/json"),
+                    )
+                }
+
+            val client = SessionsClient("http://localhost:8080", httpClient(engine), store)
+            val suggestion = client.suggestNext()
+
+            assertEquals(
+                "https://cdn.example.com/foods/apple.png",
+                suggestion.foods[0].iconUrl,
+            )
+            assertNull(suggestion.foods[1].iconUrl)
         }
 
     @Test

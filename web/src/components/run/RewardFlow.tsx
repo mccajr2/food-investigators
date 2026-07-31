@@ -117,6 +117,7 @@ export function RewardFlow({
               >
                 <FoodIcon
                   iconKey={food.iconKey}
+                  iconUrl={food.iconUrl}
                   name={food.name}
                   className="size-14"
                 />
@@ -142,6 +143,7 @@ export function RewardFlow({
         <div className="flex flex-col items-center gap-2 text-center">
           <FoodIcon
             iconKey={phase.food.iconKey}
+            iconUrl={phase.food.iconUrl}
             name={phase.food.name}
             className="size-14"
           />
