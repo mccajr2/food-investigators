@@ -16,9 +16,11 @@ import {
 } from "@/components/run/rewardFoods"
 import { RunGameSymbol } from "@/components/run/RunGameSymbol"
 import { Button } from "@/components/ui/button"
+import { encourageBody, encourageHeadline } from "@/lib/childDisplayName"
 
 type RewardFlowProps = {
   phase: RewardPhase
+  childDisplayName?: string | null
   onPick: (food: SessionFoodResponse) => void
   onChooseGame: (phase: RewardPhase) => void
   onFinished: () => void
@@ -53,6 +55,7 @@ const GAME_OPTIONS: {
 
 export function RewardFlow({
   phase,
+  childDisplayName = null,
   onPick,
   onChooseGame,
   onFinished,
@@ -68,7 +71,6 @@ export function RewardFlow({
   }, [phase, onChooseGame])
 
   if (phase.kind === "encourage") {
-    const isHabit = phase.tone === "habit"
     return (
       <div
         className="run-enter flex h-full flex-col items-center justify-center gap-6 p-6 text-center"
@@ -76,12 +78,10 @@ export function RewardFlow({
       >
         <BrandLogo variant="full" className="max-w-[14rem] sm:max-w-xs" />
         <h2 className="run-prompt text-3xl leading-tight md:text-4xl">
-          {isHabit ? "Nice night" : "Nice try tonight"}
+          {encourageHeadline(phase.tone, childDisplayName)}
         </h2>
         <p className="max-w-md text-lg text-muted-foreground">
-          {isHabit
-            ? "Showing up for tasting keeps the habit going. See you next time."
-            : "Eating enough can be hard. You can try again another night — we will be ready with a game when you do."}
+          {encourageBody(phase.tone, childDisplayName)}
         </p>
         <Button
           type="button"

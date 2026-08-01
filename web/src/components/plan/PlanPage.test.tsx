@@ -121,11 +121,13 @@ function mockFoodsClient(overrides: Partial<FoodsClient> = {}): FoodsClient {
 function renderPlan(
   sessionsClient: SessionsClient,
   foodsClient: FoodsClient = mockFoodsClient(),
+  childDisplayName: string | null = null,
 ) {
   return render(
     <PlanPage
       sessionsClient={sessionsClient}
       foodsClient={foodsClient}
+      childDisplayName={childDisplayName}
       todayIso={TODAY}
     />,
   );
@@ -182,6 +184,19 @@ describe("PlanPage", () => {
       await screen.findByRole("heading", { name: "Plan" }),
     ).toBeInTheDocument();
     expect(screen.getByText(/No planned nights yet/)).toBeInTheDocument();
+  });
+
+  it("personalizes empty hint when childDisplayName is set", async () => {
+    renderPlan(mockSessionsClient(), mockFoodsClient(), "Alex");
+
+    expect(
+      await screen.findByText(
+        "No planned nights for Alex yet. Plan one to get started.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Schedule Alex's tasting nights/),
+    ).toBeInTheDocument();
   });
 
   it("disables days before today on the calendar", async () => {

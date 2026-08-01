@@ -22,6 +22,11 @@ public class AuthExceptionHandler {
                 .body(Map.of("message", "Invalid email or password"));
     }
 
+    @ExceptionHandler(InvalidChildDisplayNameException.class)
+    ResponseEntity<Map<String, String>> invalidChildDisplayName(InvalidChildDisplayNameException ex) {
+        return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     ResponseEntity<Map<String, String>> validation(MethodArgumentNotValidException ex) {
         return ResponseEntity.badRequest().body(Map.of("message", "Invalid request"));

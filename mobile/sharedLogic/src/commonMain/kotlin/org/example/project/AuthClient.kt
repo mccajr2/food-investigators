@@ -4,6 +4,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.request.header
+import io.ktor.client.request.patch
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
@@ -14,12 +15,16 @@ import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
 
 @Serializable
 data class UserResponse(
     val id: String,
     val email: String,
     val householdId: String,
+    val childDisplayName: String? = null,
 )
 
 @Serializable
@@ -33,6 +38,7 @@ data class RegisterRequest(
     val email: String,
     val password: String,
     val rememberMe: Boolean = true,
+    val childDisplayName: String? = null,
 )
 
 @Serializable
@@ -40,6 +46,11 @@ data class LoginRequest(
     val email: String,
     val password: String,
     val rememberMe: Boolean = true,
+)
+
+@Serializable
+data class UpdateMeRequest(
+    val childDisplayName: String? = null,
 )
 
 @Serializable
@@ -60,11 +71,13 @@ class AuthClient(
         email: String,
         password: String,
         rememberMe: Boolean = true,
+        childDisplayName: String? = null,
     ): AuthResponse {
+        val trimmed = childDisplayName?.trim()?.takeIf { it.isNotEmpty() }
         val response =
             httpClient.post("$baseUrl/api/auth/register") {
                 contentType(ContentType.Application.Json)
-                setBody(RegisterRequest(email, password, rememberMe))
+                setBody(RegisterRequest(email, password, rememberMe, trimmed))
             }
         return storeAuth(response, rememberMe)
     }
@@ -99,6 +112,31 @@ class AuthClient(
         val response =
             httpClient.get("$baseUrl/api/auth/me") {
                 header(HttpHeaders.Authorization, "Bearer $token")
+            }
+        if (!response.status.isSuccess()) {
+            if (response.status.value == 401) {
+                tokens.clearToken()
+            }
+            throw AuthException(readError(response))
+        }
+        return response.body()
+    }
+
+    suspend fun updateMe(childDisplayName: String?): UserResponse {
+        val token = tokens.getToken() ?: throw AuthException("Not signed in")
+        // Always include the key (including JSON null) so clear is explicit — matches web.
+        val body =
+            buildJsonObject {
+                put(
+                    "childDisplayName",
+                    childDisplayName?.let { JsonPrimitive(it) } ?: JsonNull,
+                )
+            }
+        val response =
+            httpClient.patch("$baseUrl/api/auth/me") {
+                header(HttpHeaders.Authorization, "Bearer $token")
+                contentType(ContentType.Application.Json)
+                setBody(body)
             }
         if (!response.status.isSuccess()) {
             if (response.status.value == 401) {

@@ -19,6 +19,15 @@ export default defineConfig({
       "/api": {
         target: "http://localhost:8080",
         changeOrigin: true,
+        // Ensure Bearer tokens survive the proxy for PATCH/POST (some setups drop them).
+        configure: (proxy) => {
+          proxy.on("proxyReq", (proxyReq, req) => {
+            const authorization = req.headers.authorization
+            if (authorization) {
+              proxyReq.setHeader("Authorization", authorization)
+            }
+          })
+        },
       },
     },
   },

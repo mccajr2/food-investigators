@@ -1,15 +1,16 @@
 openapi: 3.0.3
 info:
   title: Quickapp API
-  version: 0.9.0
+  version: 0.10.0
   description: >
     Contract-first API for Food Investigators. Documents family-account auth
-    (email/password register and login, Bearer session tokens, /api/auth/me),
-    the household food catalog (system starters + custom foods, archive, optional
-    snack foods excluded from tasting sessions), tasting sessions (create, list
-    upcoming, history of completed, download history PDF, get, update, cancel,
-    complete with run outcomes, optional parent notes on completed sessions),
-    and household Insights (aggregates + dismissible tips).
+    (email/password register and login, Bearer session tokens, GET/PATCH
+    /api/auth/me with optional household childDisplayName), the household food
+    catalog (system starters + custom foods, archive, optional snack foods
+    excluded from tasting sessions), tasting sessions (create, list upcoming,
+    history of completed, download history PDF, get, update, cancel, complete
+    with run outcomes, optional parent notes on completed sessions), and
+    household Insights (aggregates + dismissible tips).
 servers:
   - url: http://localhost:8080
     description: Local development
@@ -28,6 +29,7 @@ paths:
               email: parent@example.com
               password: password1
               rememberMe: true
+              childDisplayName: Alex
       responses:
         "201":
           description: Account created
@@ -102,7 +104,7 @@ paths:
   /api/auth/me:
     get:
       operationId: me
-      summary: Return the current parent and household ids
+      summary: Return the current parent, household id, and optional child display name
       security:
         - bearerAuth: []
       responses:
@@ -112,6 +114,43 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/UserResponse"
+        "401":
+          description: Missing or invalid session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+    patch:
+      operationId: updateMe
+      summary: Update household profile fields for the signed-in parent
+      description: >
+        Sets the household's optional child display first name (trim; blank or
+        null clears to null; max 40 characters; rejects control characters).
+        Display-only for parent UI — not used on therapist PDF / History headers
+        or Suggest briefs.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateMeRequest"
+            example:
+              childDisplayName: Alex
+      responses:
+        "200":
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        "400":
+          description: Invalid request (e.g. name too long or control characters)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
         "401":
           description: Missing or invalid session
           content:
@@ -875,6 +914,16 @@ components:
             When true (default), session lasts 30 days and clients may persist the
             token. When false, session lasts 12 hours and clients must not persist
             across process death.
+        childDisplayName:
+          type: string
+          maxLength: 40
+          nullable: true
+          description: >
+            Optional child's first name for parent-facing Plan/Run/celebration
+            copy. Trimmed on save; omit, blank, or null leaves the household
+            name unset. Rejects control characters. Not shown on therapist PDF
+            or History shareables.
+          example: Alex
     LoginRequest:
       type: object
       required:
@@ -922,6 +971,26 @@ components:
         householdId:
           type: string
           format: uuid
+        childDisplayName:
+          type: string
+          maxLength: 40
+          nullable: true
+          description: >
+            Optional household child display first name when set; null when
+            unset. Single-child beta field on the household (multi-child may
+            later migrate this).
+          example: Alex
+    UpdateMeRequest:
+      type: object
+      properties:
+        childDisplayName:
+          type: string
+          maxLength: 40
+          nullable: true
+          description: >
+            Optional child's first name. Trimmed on save; blank or null clears
+            the stored name. Rejects control characters.
+          example: Alex
     ErrorMessage:
       type: object
       required:

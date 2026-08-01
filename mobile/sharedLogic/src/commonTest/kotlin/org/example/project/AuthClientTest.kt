@@ -7,14 +7,19 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.content.OutgoingContent
+import io.ktor.http.content.TextContent
 import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 
 class AuthClientTest {
 
@@ -27,7 +32,44 @@ class AuthClientTest {
             val auth = client.register("parent@example.com", "password1", rememberMe = true)
 
             assertEquals("parent@example.com", auth.user.email)
+            assertNull(auth.user.childDisplayName)
             assertEquals("tok-123", store.getToken())
+        }
+
+    @Test
+    fun registerSendsOptionalChildDisplayName() =
+        runTest {
+            var requestBody: String? = null
+            val engine =
+                MockEngine { request ->
+                    assertEquals("/api/auth/register", request.url.encodedPath)
+                    requestBody = outgoingBodyText(request.body)
+                    respond(
+                        content =
+                            """
+                            {"token":"tok-name",
+                             "user":{"id":"11111111-1111-1111-1111-111111111111",
+                                     "email":"parent@example.com",
+                                     "householdId":"22222222-2222-2222-2222-222222222222",
+                                     "childDisplayName":"Alex"}}
+                            """.trimIndent(),
+                        status = HttpStatusCode.Created,
+                        headers = headersOf(HttpHeaders.ContentType, "application/json"),
+                    )
+                }
+
+            val client = AuthClient("http://localhost:8080", httpClient(engine), InMemoryTokenStore())
+            val auth =
+                client.register(
+                    "parent@example.com",
+                    "password1",
+                    rememberMe = true,
+                    childDisplayName = "  Alex  ",
+                )
+
+            assertEquals("Alex", auth.user.childDisplayName)
+            val json = Json.parseToJsonElement(requestBody!!).jsonObject
+            assertEquals("Alex", json["childDisplayName"]!!.jsonPrimitive.content)
         }
 
     @Test
@@ -45,7 +87,8 @@ class AuthClientTest {
                                 """
                                 {"id":"11111111-1111-1111-1111-111111111111",
                                  "email":"parent@example.com",
-                                 "householdId":"22222222-2222-2222-2222-222222222222"}
+                                 "householdId":"22222222-2222-2222-2222-222222222222",
+                                 "childDisplayName":"Sam"}
                                 """.trimIndent(),
                             status = HttpStatusCode.OK,
                             headers = headersOf(HttpHeaders.ContentType, "application/json"),
@@ -59,7 +102,40 @@ class AuthClientTest {
             val me = client.me()
 
             assertEquals("parent@example.com", me.email)
+            assertEquals("Sam", me.childDisplayName)
             assertEquals("Bearer existing", sawAuthHeader)
+        }
+
+    @Test
+    fun updateMeClearsChildDisplayName() =
+        runTest {
+            val store = InMemoryTokenStore()
+            store.saveToken("existing", rememberMe = true)
+            var requestBody: String? = null
+            val engine =
+                MockEngine { request ->
+                    assertEquals(HttpMethod.Patch, request.method)
+                    assertEquals("/api/auth/me", request.url.encodedPath)
+                    assertEquals("Bearer existing", request.headers[HttpHeaders.Authorization])
+                    requestBody = outgoingBodyText(request.body)
+                    respond(
+                        content =
+                            """
+                            {"id":"11111111-1111-1111-1111-111111111111",
+                             "email":"parent@example.com",
+                             "householdId":"22222222-2222-2222-2222-222222222222",
+                             "childDisplayName":null}
+                            """.trimIndent(),
+                        status = HttpStatusCode.OK,
+                        headers = headersOf(HttpHeaders.ContentType, "application/json"),
+                    )
+                }
+
+            val client = AuthClient("http://localhost:8080", httpClient(engine), store)
+            val updated = client.updateMe(null)
+
+            assertNull(updated.childDisplayName)
+            assertTrue(requestBody!!.contains("\"childDisplayName\":null"))
         }
 
     @Test
@@ -119,6 +195,13 @@ class AuthClientTest {
 
             client.logout()
             assertNull(store.getToken())
+        }
+
+    private fun outgoingBodyText(body: OutgoingContent): String =
+        when (body) {
+            is TextContent -> body.text
+            is OutgoingContent.ByteArrayContent -> body.bytes().decodeToString()
+            else -> error("Unexpected body type: ${body::class.simpleName}")
         }
 
     private fun mockHttpClient(): HttpClient {
