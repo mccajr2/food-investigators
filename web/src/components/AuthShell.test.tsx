@@ -74,6 +74,7 @@ function mockClient(
     login: vi.fn(),
     logout: vi.fn(),
     me: vi.fn(),
+    updateMe: vi.fn(),
     ...overrides,
   } as AuthClient
 }
@@ -118,6 +119,7 @@ describe("AuthShell", () => {
         id: "11111111-1111-1111-1111-111111111111",
         email: "parent@example.com",
         householdId: "22222222-2222-2222-2222-222222222222",
+        childDisplayName: null,
       },
     })
 
@@ -163,6 +165,7 @@ describe("AuthShell", () => {
         id: "11111111-1111-1111-1111-111111111111",
         email: "new@example.com",
         householdId: "22222222-2222-2222-2222-222222222222",
+        childDisplayName: null,
       },
     })
 
@@ -181,7 +184,108 @@ describe("AuthShell", () => {
     await user.click(screen.getByRole("button", { name: "Create account" }))
 
     expect(await screen.findByText("Signed in as new@example.com")).toBeInTheDocument()
-    expect(register).toHaveBeenCalledWith("new@example.com", "password1", false)
+    expect(register).toHaveBeenCalledWith(
+      "new@example.com",
+      "password1",
+      false,
+      null,
+    )
+  })
+
+  it("registers with optional child first name", async () => {
+    const user = userEvent.setup()
+    const register = vi.fn().mockResolvedValue({
+      token: "tok",
+      user: {
+        id: "11111111-1111-1111-1111-111111111111",
+        email: "new@example.com",
+        householdId: "22222222-2222-2222-2222-222222222222",
+        childDisplayName: "Alex",
+      },
+    })
+
+    renderShell({ register })
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("tab", { name: "Create account" }),
+      ).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByRole("tab", { name: "Create account" }))
+    await user.type(screen.getByLabelText("Email"), "new@example.com")
+    await user.type(screen.getByLabelText("Password"), "password1")
+    await user.type(screen.getByLabelText("Child's first name"), "Alex")
+    await user.click(screen.getByRole("button", { name: "Create account" }))
+
+    expect(await screen.findByText("Signed in as new@example.com")).toBeInTheDocument()
+    expect(register).toHaveBeenCalledWith(
+      "new@example.com",
+      "password1",
+      true,
+      "Alex",
+    )
+    expect(screen.getByLabelText("Child's first name")).toHaveValue("Alex")
+    expect(
+      screen.getByText(/Schedule Alex's tasting nights/),
+    ).toBeInTheDocument()
+  })
+
+  it("edits and clears child display name while signed in", async () => {
+    const user = userEvent.setup()
+    const updateMe = vi
+      .fn()
+      .mockResolvedValueOnce({
+        id: "11111111-1111-1111-1111-111111111111",
+        email: "parent@example.com",
+        householdId: "22222222-2222-2222-2222-222222222222",
+        childDisplayName: "Riley",
+      })
+      .mockResolvedValueOnce({
+        id: "11111111-1111-1111-1111-111111111111",
+        email: "parent@example.com",
+        householdId: "22222222-2222-2222-2222-222222222222",
+        childDisplayName: null,
+      })
+    const login = vi.fn().mockResolvedValue({
+      token: "tok",
+      user: {
+        id: "11111111-1111-1111-1111-111111111111",
+        email: "parent@example.com",
+        householdId: "22222222-2222-2222-2222-222222222222",
+        childDisplayName: null,
+      },
+    })
+
+    renderShell({ login, updateMe })
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("Email")).toBeInTheDocument()
+    })
+    await user.type(screen.getByLabelText("Email"), "parent@example.com")
+    await user.type(screen.getByLabelText("Password"), "password1")
+    await user.click(screen.getByRole("button", { name: "Sign in" }))
+    expect(await screen.findByText("Signed in as parent@example.com")).toBeInTheDocument()
+
+    const nameField = screen.getByLabelText("Child's first name")
+    await user.clear(nameField)
+    await user.type(nameField, "Riley")
+    await user.click(screen.getByRole("button", { name: "Save name" }))
+
+    await waitFor(() => {
+      expect(updateMe).toHaveBeenCalledWith("Riley")
+    })
+    expect(
+      await screen.findByText(/Schedule Riley's tasting nights/),
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "Clear" }))
+    await waitFor(() => {
+      expect(updateMe).toHaveBeenCalledWith(null)
+    })
+    expect(
+      screen.getByText(/Schedule tasting nights with two foods/),
+    ).toBeInTheDocument()
   })
 
   it("shows API errors", async () => {
@@ -208,6 +312,7 @@ describe("AuthShell", () => {
       id: "11111111-1111-1111-1111-111111111111",
       email: "saved@example.com",
       householdId: "22222222-2222-2222-2222-222222222222",
+      childDisplayName: null,
     })
 
     const list = vi.fn().mockResolvedValue([])
@@ -241,6 +346,7 @@ describe("AuthShell", () => {
       id: "11111111-1111-1111-1111-111111111111",
       email: "saved@example.com",
       householdId: "22222222-2222-2222-2222-222222222222",
+      childDisplayName: null,
     })
     vi.spyOn(AuthClient.prototype, "getStoredToken").mockReturnValue("existing")
 

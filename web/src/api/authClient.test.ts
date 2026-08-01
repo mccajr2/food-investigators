@@ -33,6 +33,7 @@ describe("AuthClient", () => {
             id: "11111111-1111-1111-1111-111111111111",
             email: "parent@example.com",
             householdId: "22222222-2222-2222-2222-222222222222",
+            childDisplayName: null,
           },
         }),
         { status: 201, headers: { "Content-Type": "application/json" } },
@@ -48,6 +49,47 @@ describe("AuthClient", () => {
     expect(String(fetchFn.mock.calls[0]?.[0])).toBe(
       "http://localhost:8080/api/auth/register",
     )
+    const init = fetchFn.mock.calls[0]?.[1] as RequestInit
+    expect(JSON.parse(String(init.body))).toEqual({
+      email: "parent@example.com",
+      password: "password1",
+      rememberMe: true,
+    })
+  })
+
+  it("registers with optional childDisplayName when provided", async () => {
+    const store = memoryStore()
+    const fetchFn = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          token: "abc",
+          user: {
+            id: "11111111-1111-1111-1111-111111111111",
+            email: "parent@example.com",
+            householdId: "22222222-2222-2222-2222-222222222222",
+            childDisplayName: "Alex",
+          },
+        }),
+        { status: 201, headers: { "Content-Type": "application/json" } },
+      ),
+    )
+
+    const client = new AuthClient("http://localhost:8080", fetchFn, store)
+    const result = await client.register(
+      "parent@example.com",
+      "password1",
+      true,
+      "  Alex  ",
+    )
+
+    expect(result.user.childDisplayName).toBe("Alex")
+    const init = fetchFn.mock.calls[0]?.[1] as RequestInit
+    expect(JSON.parse(String(init.body))).toEqual({
+      email: "parent@example.com",
+      password: "password1",
+      rememberMe: true,
+      childDisplayName: "Alex",
+    })
   })
 
   it("logs in with session-only rememberMe false", async () => {
@@ -60,6 +102,7 @@ describe("AuthClient", () => {
             id: "11111111-1111-1111-1111-111111111111",
             email: "parent@example.com",
             householdId: "22222222-2222-2222-2222-222222222222",
+            childDisplayName: null,
           },
         }),
         { status: 200, headers: { "Content-Type": "application/json" } },
@@ -82,6 +125,7 @@ describe("AuthClient", () => {
           id: "11111111-1111-1111-1111-111111111111",
           email: "parent@example.com",
           householdId: "22222222-2222-2222-2222-222222222222",
+          childDisplayName: "Sam",
         }),
         { status: 200, headers: { "Content-Type": "application/json" } },
       ),
@@ -91,8 +135,36 @@ describe("AuthClient", () => {
     const me = await client.me()
 
     expect(me.email).toBe("parent@example.com")
+    expect(me.childDisplayName).toBe("Sam")
     const init = fetchFn.mock.calls[0]?.[1] as RequestInit
     expect(init.headers).toEqual({ Authorization: "Bearer tok" })
+  })
+
+  it("patches me to set or clear childDisplayName", async () => {
+    const store = memoryStore()
+    store.set("tok", true)
+    const fetchFn = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          id: "11111111-1111-1111-1111-111111111111",
+          email: "parent@example.com",
+          householdId: "22222222-2222-2222-2222-222222222222",
+          childDisplayName: null,
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    )
+
+    const client = new AuthClient("http://localhost:8080", fetchFn, store)
+    const updated = await client.updateMe(null)
+
+    expect(updated.childDisplayName).toBeNull()
+    expect(String(fetchFn.mock.calls[0]?.[0])).toBe(
+      "http://localhost:8080/api/auth/me",
+    )
+    const init = fetchFn.mock.calls[0]?.[1] as RequestInit
+    expect(init.method).toBe("PATCH")
+    expect(JSON.parse(String(init.body))).toEqual({ childDisplayName: null })
   })
 
   it("surfaces API error messages", async () => {

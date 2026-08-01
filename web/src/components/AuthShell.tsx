@@ -34,6 +34,8 @@ type AuthShellProps = {
   insightsClient?: InsightsClient
 }
 
+const CHILD_NAME_MAX = 40
+
 export function AuthShell({
   client: clientProp,
   foodsClient: foodsClientProp,
@@ -86,9 +88,12 @@ export function AuthShell({
   const [view, setView] = useState<SignedInView>("plan")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [childDisplayName, setChildDisplayName] = useState("")
   const [rememberMe, setRememberMe] = useState(true)
   const [user, setUser] = useState<UserResponse | null>(null)
   const [status, setStatus] = useState<Status>({ kind: "bootstrapping" })
+  const [profileNameDraft, setProfileNameDraft] = useState("")
+  const [profileStatus, setProfileStatus] = useState<Status>({ kind: "idle" })
 
   useEffect(() => {
     let cancelled = false
@@ -104,6 +109,7 @@ export function AuthShell({
         const me = await client.me()
         if (!cancelled) {
           setUser(me)
+          setProfileNameDraft(me.childDisplayName ?? "")
           setStatus({ kind: "idle" })
         }
       } catch {
@@ -126,10 +132,17 @@ export function AuthShell({
     try {
       const auth =
         mode === "register"
-          ? await client.register(email.trim(), password, rememberMe)
+          ? await client.register(
+              email.trim(),
+              password,
+              rememberMe,
+              childDisplayName.trim() || null,
+            )
           : await client.login(email.trim(), password, rememberMe)
       setUser(auth.user)
+      setProfileNameDraft(auth.user.childDisplayName ?? "")
       setPassword("")
+      setChildDisplayName("")
       setStatus({ kind: "idle" })
     } catch (error) {
       const message =
@@ -143,11 +156,41 @@ export function AuthShell({
     try {
       await client.logout()
       setUser(null)
+      setProfileNameDraft("")
       setStatus({ kind: "idle" })
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Something went wrong"
       setStatus({ kind: "error", message })
+    }
+  }
+
+  async function onSaveChildDisplayName() {
+    setProfileStatus({ kind: "loading" })
+    try {
+      const trimmed = profileNameDraft.trim()
+      const updated = await client.updateMe(trimmed.length > 0 ? trimmed : null)
+      setUser(updated)
+      setProfileNameDraft(updated.childDisplayName ?? "")
+      setProfileStatus({ kind: "idle" })
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Something went wrong"
+      setProfileStatus({ kind: "error", message })
+    }
+  }
+
+  async function onClearChildDisplayName() {
+    setProfileStatus({ kind: "loading" })
+    try {
+      const updated = await client.updateMe(null)
+      setUser(updated)
+      setProfileNameDraft("")
+      setProfileStatus({ kind: "idle" })
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Something went wrong"
+      setProfileStatus({ kind: "error", message })
     }
   }
 
@@ -194,6 +237,56 @@ export function AuthShell({
             {status.kind === "loading" ? "Signing out…" : "Sign out"}
           </Button>
         </header>
+        <section
+          aria-label="Child display name"
+          className="flex flex-col gap-2 rounded-lg border border-border bg-card/40 p-3"
+        >
+          <label
+            htmlFor="signed-in-child-display-name"
+            className="text-sm font-medium"
+          >
+            Child&apos;s first name
+          </label>
+          <div className="flex flex-wrap items-center gap-2">
+            <Input
+              id="signed-in-child-display-name"
+              aria-label="Child's first name"
+              value={profileNameDraft}
+              onChange={(event) => setProfileNameDraft(event.target.value)}
+              placeholder="Optional"
+              maxLength={CHILD_NAME_MAX}
+              disabled={profileStatus.kind === "loading"}
+              className="max-w-xs"
+            />
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => void onSaveChildDisplayName()}
+              disabled={profileStatus.kind === "loading"}
+            >
+              {profileStatus.kind === "loading" ? "Saving…" : "Save name"}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => void onClearChildDisplayName()}
+              disabled={
+                profileStatus.kind === "loading" || !user.childDisplayName
+              }
+            >
+              Clear
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Used in Plan and Run copy only — not on therapist PDF.
+          </p>
+          {profileStatus.kind === "error" ? (
+            <p role="alert" className="text-sm text-destructive">
+              {profileStatus.message}
+            </p>
+          ) : null}
+        </section>
         {status.kind === "error" ? (
           <p role="alert" className="text-sm text-destructive">
             {status.message}
@@ -245,6 +338,7 @@ export function AuthShell({
           <PlanPage
             sessionsClient={sessionsClient}
             foodsClient={foodsClient}
+            childDisplayName={user.childDisplayName}
             onUnauthorized={onSessionExpired}
           />
         ) : null}
@@ -327,6 +421,18 @@ export function AuthShell({
             minLength={8}
             disabled={status.kind === "loading"}
           />
+          {mode === "register" ? (
+            <Input
+              aria-label="Child's first name"
+              type="text"
+              autoComplete="off"
+              value={childDisplayName}
+              onChange={(event) => setChildDisplayName(event.target.value)}
+              placeholder="Child's first name (optional)"
+              maxLength={CHILD_NAME_MAX}
+              disabled={status.kind === "loading"}
+            />
+          ) : null}
 
           <label className="flex items-center gap-2 text-sm text-foreground">
             <input

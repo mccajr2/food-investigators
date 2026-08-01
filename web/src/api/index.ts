@@ -29,6 +29,7 @@ export type {
   Temperature,
   Texture,
   UpdateFoodRequest,
+  UpdateMeRequest,
   UpdateParentNoteRequest,
   UpdateSessionRequest,
   UserResponse,

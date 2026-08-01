@@ -5,6 +5,7 @@ import type {
   ErrorMessage,
   LoginRequest,
   RegisterRequest,
+  UpdateMeRequest,
   UserResponse,
 } from "@/api/types"
 
@@ -31,8 +32,13 @@ export class AuthClient {
     email: string,
     password: string,
     rememberMe: boolean = true,
+    childDisplayName?: string | null,
   ): Promise<AuthResponse> {
     const body: RegisterRequest = { email, password, rememberMe }
+    const trimmed = childDisplayName?.trim()
+    if (trimmed) {
+      body.childDisplayName = trimmed
+    }
     const response = await this.postJson("/api/auth/register", body)
     return this.storeAuth(response, rememberMe)
   }
@@ -75,6 +81,29 @@ export class AuthClient {
         this.tokens.clear()
       }
       throw new Error(await readErrorMessage(response, "Session check failed"))
+    }
+    return (await response.json()) as UserResponse
+  }
+
+  async updateMe(childDisplayName: string | null): Promise<UserResponse> {
+    const token = this.tokens.get()
+    if (!token) {
+      throw new Error("Not signed in")
+    }
+    const body: UpdateMeRequest = { childDisplayName }
+    const response = await this.fetchFn(apiUrl(this.baseUrl, "/api/auth/me"), {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    })
+    if (!response.ok) {
+      if (response.status === 401) {
+        this.tokens.clear()
+      }
+      throw new Error(await readErrorMessage(response, "Update profile failed"))
     }
     return (await response.json()) as UserResponse
   }

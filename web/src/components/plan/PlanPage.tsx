@@ -13,6 +13,7 @@ import { PlanDatePicker } from "@/components/plan/PlanDatePicker"
 import { RunSessionPage } from "@/components/run/RunSessionPage"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { planEmptyHint, planSectionBlurb } from "@/lib/childDisplayName"
 
 const FAMILIARITY_OPTIONS: { value: Familiarity; label: string }[] = [
   { value: "safe", label: "Safe" },
@@ -50,6 +51,8 @@ type Editor =
 type PlanPageProps = {
   sessionsClient?: SessionsClient
   foodsClient?: FoodsClient
+  /** Optional household child display name for Plan copy. */
+  childDisplayName?: string | null
   onUnauthorized?: () => void
   /** ISO date (YYYY-MM-DD) for the calendar min — defaults to local today. */
   todayIso?: string
@@ -150,6 +153,7 @@ function suggestionToDraft(suggestion: SessionSuggestionResponse): SuggestDraft 
 export function PlanPage({
   sessionsClient: sessionsClientProp,
   foodsClient: foodsClientProp,
+  childDisplayName = null,
   onUnauthorized,
   todayIso,
 }: PlanPageProps) {
@@ -513,6 +517,7 @@ export function PlanPage({
         <RunSessionPage
           session={runningSession}
           sessionsClient={sessionsClient}
+          childDisplayName={childDisplayName}
           onComplete={onRunComplete}
           onExit={() => setRunningSession(null)}
           onUnauthorized={onUnauthorized}
@@ -564,7 +569,7 @@ export function PlanPage({
             Plan
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Schedule tasting nights with two foods and how familiar each is.
+            {planSectionBlurb(childDisplayName)}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -735,7 +740,7 @@ export function PlanPage({
         </h3>
         {sessions.length === 0 && status.kind !== "loading" ? (
           <p className="text-sm text-muted-foreground">
-            No planned nights yet. Plan one to get started.
+            {planEmptyHint(childDisplayName)}
           </p>
         ) : (
           <ul className="flex flex-col gap-3">

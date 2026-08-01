@@ -110,7 +110,7 @@ already keeps it off therapist PDF / History shareables. Going forward:
   update; validation; unit + integration tests.
 - [x] Contract: OpenAPI `childDisplayName` on `UserResponse` / register /
       update; bump consumers checklist.
-- [ ] Web: types + auth client; register field; signed-in edit; copy helper;
+- [x] Web: types + auth client; register field; signed-in edit; copy helper;
       Plan/Run/celebration wiring; tests.
 - [ ] Mobile: sharedLogic auth models + client tests (UI optional/minimal).
 - [ ] Docs: on ship, archive this spec; Next up becomes next roadmap rank

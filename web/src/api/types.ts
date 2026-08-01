@@ -3,6 +3,8 @@ export type UserResponse = {
   id: string
   email: string
   householdId: string
+  /** Optional household child display first name; null when unset. */
+  childDisplayName: string | null
 }
 
 export type AuthResponse = {
@@ -14,12 +16,17 @@ export type RegisterRequest = {
   email: string
   password: string
   rememberMe?: boolean
+  childDisplayName?: string | null
 }
 
 export type LoginRequest = {
   email: string
   password: string
   rememberMe?: boolean
+}
+
+export type UpdateMeRequest = {
+  childDisplayName?: string | null
 }
 
 export type ErrorMessage = {

@@ -82,6 +82,20 @@ describe("RewardFlow surprise reveal", () => {
     expect(screen.queryByText(/game/i)).not.toBeInTheDocument()
   })
 
+  it("personalizes encourage copy when childDisplayName is set", () => {
+    render(
+      <RewardFlow
+        phase={{ kind: "encourage", tone: "habit" }}
+        childDisplayName="Alex"
+        onPick={vi.fn()}
+        onChooseGame={vi.fn()}
+        onFinished={vi.fn()}
+      />,
+    )
+    expect(screen.getByText("Nice night, Alex")).toBeInTheDocument()
+    expect(screen.getByText(/Alex's habit/)).toBeInTheDocument()
+  })
+
   it("offers Catch, Cross, Match, and Surprise on which-game", () => {
     render(
       <RewardFlow

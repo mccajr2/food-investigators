@@ -40,6 +40,7 @@ import {
   isSpeechRecognitionSupported,
   transcriptFromEvent,
 } from "@/lib/speechRecognition"
+import { ateEnoughPrompt } from "@/lib/childDisplayName"
 
 /** All possible kid/parent survey steps (order depends on familiarity). */
 export const RUN_STEP_KINDS = [
@@ -92,6 +93,8 @@ type FoodOutcomeDraft = {
 type RunSessionPageProps = {
   session: SessionResponse
   sessionsClient?: SessionsClient
+  /** Optional household child display name for Run / reward copy. */
+  childDisplayName?: string | null
   onComplete: (session: SessionResponse) => void
   onExit: () => void
   onUnauthorized?: () => void
@@ -180,6 +183,7 @@ type RunStatus =
 export function RunSessionPage({
   session,
   sessionsClient: sessionsClientProp,
+  childDisplayName = null,
   onComplete,
   onExit,
   onUnauthorized,
@@ -496,6 +500,7 @@ export function RunSessionPage({
         {inReward && rewardPhase ? (
           <RewardFlow
             phase={rewardPhase}
+            childDisplayName={childDisplayName}
             onPick={(food) => setRewardPhase(phaseAfterFoodPick(food))}
             onChooseGame={setRewardPhase}
             onFinished={finishReward}
@@ -582,7 +587,7 @@ export function RunSessionPage({
 
         {!inReward && !inParentNotes && step === "ateEnough" ? (
           <IconChoiceStep
-            prompt="Did they eat enough?"
+            prompt={ateEnoughPrompt(childDisplayName)}
             options={ATE_ENOUGH_OPTIONS}
             showSkip={false}
             onChoose={(value) => {
