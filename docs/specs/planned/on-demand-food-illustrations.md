@@ -1,17 +1,20 @@
 # Spec stub: on-demand-food-illustrations
 
-Status: planned  
+Status: planned (parked)  
 Parent: [docs/roadmap.md](../../roadmap.md)  
 Created: 2026-07-30  
 Added: 2026-07-30 · re-rank split (from `food-illustrations-ai`) · narrowed
-2026-07-31 · re-rank split (customs only; store + non-heroes carved out)
+2026-07-31 · re-rank split (customs only; store + non-heroes carved out)  
+Parked: 2026-07-31 · Gemini image quota blocks beta (429); live ensure not worth
+shipping until paid image quota or a deliberate offline-art batch path.
 
 Thin stub from `/roadmap`. **Not implementable yet.** Run
 `/spec on-demand-food-illustrations` to flesh out Approach, Acceptance Criteria,
 and Tasks before any code.
 
-If fleshing out reveals more than one PR-sized slice, stop and `/roadmap` **split**
-(`Added: … · re-rank split`) — do not grow this stub into a mega-spec.
+Work-in-progress branch (do **not** merge): `on-demand-food-illustrations`
+(local; Gemini ensure + poll UI + cream/initials). Prefer staying on `main`
+(emoji fallback + shared `iconUrl` store) until this is un-parked.
 
 ## Problem
 
@@ -25,14 +28,15 @@ household naming the same food can reuse an existing image.
 - Offline starter / hero PNG redraws (`non-hero-food-illustrations`,
   `hero-food-illustrations`)
 - Building the shared object-store + `iconUrl` contract
-  (`food-illustration-object-store` — prerequisite)
+  (`food-illustration-object-store` — prerequisite, **shipped**)
 - Why-chip art; runtime AI inside the Run why-chip step
 - Regenerating locked hero / non-hero static masters
+- Email/notify PoC for manual art (rejected for beta)
 
 ## Notes
 
-- Depends on `food-illustration-object-store` (shared reuse) and art direction in
-  [food-icon art brief](../../design/food-icon-art-brief.md).
+- Prerequisite shipped: [food-illustration-object-store](../archive/food-illustration-object-store.md).
+- Art direction: [food-icon art brief](../../design/food-icon-art-brief.md).
 - Scope = **customs only**; skip keys that already have static masters.
-- Confirm provider (image model), rate/cost limits, cache key (normalized name /
-  slug), and graceful emoji fallback when unconfigured / failed — at `/spec`.
+- Resume when: image model quota is usable, **or** an offline batch / admin
+  upload path is preferred over live Gemini.
