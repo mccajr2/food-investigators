@@ -1,6 +1,6 @@
 # Spec: child-display-name
 
-Status: in-progress  
+Status: done  
 Created: 2026-07-28  
 Parent: [docs/roadmap.md](../../roadmap.md)  
 Added: 2026-07-28 · enhancement  
@@ -75,7 +75,8 @@ already keeps it off therapist PDF / History shareables. Going forward:
 ### Web
 
 - Register: optional “Child’s first name” field.
-- Signed-in: edit + clear in AuthShell (or a tiny Account settings strip).
+- Signed-in: edit + clear only via a quiet **Settings** page (account chrome next
+  to email / Sign out — not a banner on Plan/Run, not a product nav tab).
 - Helper that formats copy with the name when set (e.g. “Alex’s tasting night”)
   vs generic fallback; wire into Plan heading/empty hints, Run intro/encourage
   strings, and reward celebration chrome — not therapist PDF.
@@ -87,21 +88,22 @@ already keeps it off therapist PDF / History shareables. Going forward:
 
 ## Acceptance criteria
 
-- [ ] Household may store an optional `childDisplayName` (null when unset).
-- [ ] Register with a name persists it; register without leaves null; `/me` and
+- [x] Household may store an optional `childDisplayName` (null when unset).
+- [x] Register with a name persists it; register without leaves null; `/me` and
       auth responses return the current value.
-- [ ] Authenticated parent can update or clear the name; other households cannot
+- [x] Authenticated parent can update or clear the name; other households cannot
       see or change it.
-- [ ] Invalid values (too long / blank-only after trim handled as clear) return a
+- [x] Invalid values (too long / blank-only after trim handled as clear) return a
       clear 4xx — not 500.
-- [ ] Web: optional name on Create account; signed-in edit/clear works.
-- [ ] Web: when set, at least Plan, Run, and celebration/encourage surfaces use
+- [x] Web: optional name on Create account; signed-in edit/clear via Settings
+      (not always-visible on Plan).
+- [x] Web: when set, at least Plan, Run, and celebration/encourage surfaces use
       the name; when null, existing generic copy remains.
-- [ ] Therapist PDF / History shareable header still has **no** child name.
-- [ ] Child display name is not included in Suggest/LLM request briefs or
+- [x] Therapist PDF / History shareable header still has **no** child name.
+- [x] Child display name is not included in Suggest/LLM request briefs or
       routine application log lines for auth/food/session flows touched here.
-- [ ] OpenAPI + web + mobile clients updated in the same change.
-- [ ] Tests: Flyway/service unit + auth IT; web register/settings + one copy
+- [x] OpenAPI + web + mobile clients updated in the same change.
+- [x] Tests: Flyway/service unit + auth IT; web register/settings + one copy
       helper/surface test; mobile client parse/send.
 
 ## Tasks
@@ -112,19 +114,20 @@ already keeps it off therapist PDF / History shareables. Going forward:
       update; bump consumers checklist.
 - [x] Web: types + auth client; register field; signed-in edit; copy helper;
       Plan/Run/celebration wiring; tests.
-- [ ] Mobile: sharedLogic auth models + client tests (UI optional/minimal).
-- [ ] Docs: on ship, archive this spec; Next up becomes next roadmap rank
+- [x] Mobile: sharedLogic auth models + client tests (UI optional/minimal).
+- [x] Docs: on ship, archive this spec; Next up becomes next roadmap rank
       (`signup-starter-snacks` unless re-ranked).
 
 ## Open questions
 
-- Exact max length (propose **40** graphemes/chars) — confirm at implement if
-  product wants shorter.
-- Prefer `PATCH /api/auth/me` vs dedicated `/api/household` — default **auth/me**
-  to avoid a new module surface; amend if accounts boundary feels wrong.
+- None blocking ship.
 
 ## Decisions (locked for this PR)
 
 - Single optional name on `households` for beta; multi-child migrates later.
 - Shareables (therapist PDF / History headers) stay nameless.
 - Display-only in parent UI; out of Suggest briefs and routine logs this slice.
+- Max length **40** characters; `PATCH /api/auth/me` (not a separate household
+  module).
+- Web edit/clear lives on a quiet Settings page; product tabs stay Plan /
+  History / Insights / Foods — no icon-only Home/Settings/Logout shell this PR.

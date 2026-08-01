@@ -44,18 +44,17 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | child-display-name | active | 2026-07-28 · enhancement | Optional child’s first name at signup / settings (single-child profile) |
-| 2 | signup-starter-snacks | planned | 2026-07-23 · enhancement | Optional signup intake: liked tasting foods + snacks (else catalog defaults) |
-| 3 | suggestion-pacing-evidence | planned | 2026-07-25 · re-rank split | Science-backed pacing / preference guidance for suggestions |
-| 4 | disliked-prep-rotation | planned | 2026-07-28 · enhancement | Suggest distinct preps of a disliked food (~3 over weeks), then longer rest |
-| 5 | milestone-badges | planned | 2026-07-28 · enhancement | Celebration badges (e.g. first liked new food; 5/10/25 new foods) |
-| 6 | welcome-orientation | planned | 2026-07-29 · enhancement | Dismissible welcome: why Food Investigators + Plan/Run/Insights lay of the land + pacing |
-| 7 | beta-backend-hosting | planned | 2026-07-29 · enhancement | Neon Postgres + Render backend + UptimeRobot keep-alive for beta |
-| 8 | beta-web-hosting | planned | 2026-07-29 · enhancement | Render web front pointed at prod API |
-| 9 | ci-cd-production | planned | 2026-07-29 · enhancement | After tests on `main`, auto-deploy backend + web to Render |
-| 10 | run-outcome-contract | planned | 2026-07-30 · enhancement | Harden run/outcome contract (document or promote encodings; deprecate unused fields) before native Run |
-| 11 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
-| 12 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
+| 1 | signup-starter-snacks | planned | 2026-07-23 · enhancement | Optional signup intake: liked tasting foods + snacks (else catalog defaults) |
+| 2 | suggestion-pacing-evidence | planned | 2026-07-25 · re-rank split | Science-backed pacing / preference guidance for suggestions |
+| 3 | disliked-prep-rotation | planned | 2026-07-28 · enhancement | Suggest distinct preps of a disliked food (~3 over weeks), then longer rest |
+| 4 | milestone-badges | planned | 2026-07-28 · enhancement | Celebration badges (e.g. first liked new food; 5/10/25 new foods) |
+| 5 | welcome-orientation | planned | 2026-07-29 · enhancement | Dismissible welcome: why Food Investigators + Plan/Run/Insights lay of the land + pacing |
+| 6 | beta-backend-hosting | planned | 2026-07-29 · enhancement | Neon Postgres + Render backend + UptimeRobot keep-alive for beta |
+| 7 | beta-web-hosting | planned | 2026-07-29 · enhancement | Render web front pointed at prod API |
+| 8 | ci-cd-production | planned | 2026-07-29 · enhancement | After tests on `main`, auto-deploy backend + web to Render |
+| 9 | run-outcome-contract | planned | 2026-07-30 · enhancement | Harden run/outcome contract (document or promote encodings; deprecate unused fields) before native Run |
+| 10 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
+| 11 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
 
 Status values: `parking` · `planned` · `active` · `done` · `cancelled`  
 Added: `YYYY-MM-DD · initial` | `enhancement` | `re-rank split`
@@ -88,12 +87,12 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Branch | Spec |
 |----|--------|------|
-| child-display-name | child-display-name | [active](specs/active/child-display-name.md) |
 
 ## Done
 
 | Id | Completed | Spec |
 |----|-----------|------|
+| child-display-name | 2026-07-31 | [archive](specs/archive/child-display-name.md) |
 | food-illustration-object-store | 2026-07-31 | [archive](specs/archive/food-illustration-object-store.md) |
 | non-hero-food-illustrations | 2026-07-31 | [archive](specs/archive/non-hero-food-illustrations.md) |
 | why-chip-sticker-art | 2026-07-31 | [archive](specs/archive/why-chip-sticker-art.md) |
@@ -209,3 +208,4 @@ Only notable events (first carve-up, major re-rank, cancelled theme) — not eve
 | 2026-07-31 | non-hero-food-illustrations shipped (16 PNG starters; all 26 catalog foods are stickers). Next up: `food-illustration-object-store`. |
 | 2026-07-31 | food-illustration-object-store shipped (shared `food_illustrations` + optional `iconUrl`; R2/S3 adapter). Next up: `on-demand-food-illustrations`. |
 | 2026-07-31 | Parked `on-demand-food-illustrations` (Gemini image quota / beta cost; WIP branch not merged). Next up: `child-display-name`. |
+| 2026-07-31 | child-display-name shipped (optional household child first name; Settings + Plan/Run copy; OpenAPI/web/mobile). Next up: `signup-starter-snacks`. |

@@ -19,7 +19,7 @@ import {
 import { Input } from "@/components/ui/input"
 
 type AuthMode = "sign-in" | "register"
-type SignedInView = "plan" | "history" | "foods" | "insights"
+type SignedInView = "plan" | "history" | "foods" | "insights" | "settings"
 
 type Status =
   | { kind: "idle" }
@@ -176,6 +176,15 @@ export function AuthShell({
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Something went wrong"
+      if (isSessionExpiredMessage(message)) {
+        setUser(null)
+        setProfileStatus({ kind: "idle" })
+        setStatus({
+          kind: "error",
+          message: "Session expired. Please sign in again.",
+        })
+        return
+      }
       setProfileStatus({ kind: "error", message })
     }
   }
@@ -190,6 +199,15 @@ export function AuthShell({
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Something went wrong"
+      if (isSessionExpiredMessage(message)) {
+        setUser(null)
+        setProfileStatus({ kind: "idle" })
+        setStatus({
+          kind: "error",
+          message: "Session expired. Please sign in again.",
+        })
+        return
+      }
       setProfileStatus({ kind: "error", message })
     }
   }
@@ -222,71 +240,38 @@ export function AuthShell({
     return (
       <div className="flex w-full flex-col gap-8">
         <header className="flex flex-wrap items-center justify-between gap-3">
-          <div className="min-w-0">
-            <BrandLogo variant="compact" className="shrink-0" />
-            <p role="status" className="mt-1 text-sm text-muted-foreground">
-              Signed in as {user.email}
+          <BrandLogo variant="compact" className="shrink-0" />
+          <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
+            <p
+              role="status"
+              className="max-w-[14rem] truncate text-sm text-muted-foreground sm:max-w-xs"
+              title={user.email}
+            >
+              {user.email}
             </p>
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => void onSignOut()}
-            disabled={status.kind === "loading"}
-          >
-            {status.kind === "loading" ? "Signing out…" : "Sign out"}
-          </Button>
-        </header>
-        <section
-          aria-label="Child display name"
-          className="flex flex-col gap-2 rounded-lg border border-border bg-card/40 p-3"
-        >
-          <label
-            htmlFor="signed-in-child-display-name"
-            className="text-sm font-medium"
-          >
-            Child&apos;s first name
-          </label>
-          <div className="flex flex-wrap items-center gap-2">
-            <Input
-              id="signed-in-child-display-name"
-              aria-label="Child's first name"
-              value={profileNameDraft}
-              onChange={(event) => setProfileNameDraft(event.target.value)}
-              placeholder="Optional"
-              maxLength={CHILD_NAME_MAX}
-              disabled={profileStatus.kind === "loading"}
-              className="max-w-xs"
-            />
             <Button
               type="button"
+              variant="ghost"
               size="sm"
-              onClick={() => void onSaveChildDisplayName()}
-              disabled={profileStatus.kind === "loading"}
+              onClick={() => {
+                setProfileNameDraft(user.childDisplayName ?? "")
+                setProfileStatus({ kind: "idle" })
+                setView("settings")
+              }}
             >
-              {profileStatus.kind === "loading" ? "Saving…" : "Save name"}
+              Settings
             </Button>
             <Button
               type="button"
-              size="sm"
               variant="outline"
-              onClick={() => void onClearChildDisplayName()}
-              disabled={
-                profileStatus.kind === "loading" || !user.childDisplayName
-              }
+              size="sm"
+              onClick={() => void onSignOut()}
+              disabled={status.kind === "loading"}
             >
-              Clear
+              {status.kind === "loading" ? "Signing out…" : "Sign out"}
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground">
-            Used in Plan and Run copy only — not on therapist PDF.
-          </p>
-          {profileStatus.kind === "error" ? (
-            <p role="alert" className="text-sm text-destructive">
-              {profileStatus.message}
-            </p>
-          ) : null}
-        </section>
+        </header>
         {status.kind === "error" ? (
           <p role="alert" className="text-sm text-destructive">
             {status.message}
@@ -334,6 +319,70 @@ export function AuthShell({
             Foods
           </Button>
         </nav>
+        {view === "settings" ? (
+          <section
+            aria-labelledby="settings-heading"
+            className="flex max-w-md flex-col gap-4"
+          >
+            <div>
+              <h2
+                id="settings-heading"
+                className="text-xl font-semibold tracking-tight"
+              >
+                Settings
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Optional household details for parent-facing copy.
+              </p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <label
+                htmlFor="signed-in-child-display-name"
+                className="text-sm font-medium"
+              >
+                Child&apos;s first name
+              </label>
+              <Input
+                id="signed-in-child-display-name"
+                aria-label="Child's first name"
+                value={profileNameDraft}
+                onChange={(event) => setProfileNameDraft(event.target.value)}
+                placeholder="Optional"
+                maxLength={CHILD_NAME_MAX}
+                disabled={profileStatus.kind === "loading"}
+              />
+              <p className="text-xs text-muted-foreground">
+                Used in Plan and Run when set — not on therapist PDF.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => void onSaveChildDisplayName()}
+                  disabled={profileStatus.kind === "loading"}
+                >
+                  {profileStatus.kind === "loading" ? "Saving…" : "Save"}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => void onClearChildDisplayName()}
+                  disabled={
+                    profileStatus.kind === "loading" || !user.childDisplayName
+                  }
+                >
+                  Clear
+                </Button>
+              </div>
+              {profileStatus.kind === "error" ? (
+                <p role="alert" className="text-sm text-destructive">
+                  {profileStatus.message}
+                </p>
+              ) : null}
+            </div>
+          </section>
+        ) : null}
         {view === "plan" ? (
           <PlanPage
             sessionsClient={sessionsClient}
@@ -462,5 +511,14 @@ export function AuthShell({
         </form>
       </CardContent>
     </Card>
+  )
+}
+
+function isSessionExpiredMessage(message: string): boolean {
+  const normalized = message.toLowerCase()
+  return (
+    normalized.includes("session expired") ||
+    normalized === "unauthorized" ||
+    normalized === "not signed in"
   )
 }

@@ -137,7 +137,7 @@ describe("AuthClient", () => {
     expect(me.email).toBe("parent@example.com")
     expect(me.childDisplayName).toBe("Sam")
     const init = fetchFn.mock.calls[0]?.[1] as RequestInit
-    expect(init.headers).toEqual({ Authorization: "Bearer tok" })
+    expect(new Headers(init.headers).get("Authorization")).toBe("Bearer tok")
   })
 
   it("patches me to set or clear childDisplayName", async () => {
@@ -164,7 +164,25 @@ describe("AuthClient", () => {
     )
     const init = fetchFn.mock.calls[0]?.[1] as RequestInit
     expect(init.method).toBe("PATCH")
+    expect(new Headers(init.headers).get("Authorization")).toBe("Bearer tok")
     expect(JSON.parse(String(init.body))).toEqual({ childDisplayName: null })
+  })
+
+  it("updateMe maps 401 to session expired and clears the token", async () => {
+    const store = memoryStore()
+    store.set("tok", true)
+    const fetchFn = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ message: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      }),
+    )
+
+    const client = new AuthClient("http://localhost:8080", fetchFn, store)
+    await expect(client.updateMe("Alex")).rejects.toThrow(
+      "Session expired. Please sign in again.",
+    )
+    expect(store.get()).toBeNull()
   })
 
   it("surfaces API error messages", async () => {

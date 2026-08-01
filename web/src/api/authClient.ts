@@ -69,43 +69,45 @@ export class AuthClient {
   }
 
   async me(): Promise<UserResponse> {
-    const token = this.tokens.get()
-    if (!token) {
-      throw new Error("Not signed in")
-    }
-    const response = await this.fetchFn(apiUrl(this.baseUrl, "/api/auth/me"), {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    const response = await this.authorized("/api/auth/me")
     if (!response.ok) {
-      if (response.status === 401) {
-        this.tokens.clear()
-      }
       throw new Error(await readErrorMessage(response, "Session check failed"))
     }
     return (await response.json()) as UserResponse
   }
 
   async updateMe(childDisplayName: string | null): Promise<UserResponse> {
+    const body: UpdateMeRequest = { childDisplayName }
+    const response = await this.authorized("/api/auth/me", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    })
+    if (!response.ok) {
+      throw new Error(await readErrorMessage(response, "Update profile failed"))
+    }
+    return (await response.json()) as UserResponse
+  }
+
+  private async authorized(
+    path: string,
+    init: RequestInit = {},
+  ): Promise<Response> {
     const token = this.tokens.get()
     if (!token) {
       throw new Error("Not signed in")
     }
-    const body: UpdateMeRequest = { childDisplayName }
-    const response = await this.fetchFn(apiUrl(this.baseUrl, "/api/auth/me"), {
-      method: "PATCH",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
+    const headers = new Headers(init.headers)
+    headers.set("Authorization", `Bearer ${token}`)
+    const response = await this.fetchFn(apiUrl(this.baseUrl, path), {
+      ...init,
+      headers,
     })
-    if (!response.ok) {
-      if (response.status === 401) {
-        this.tokens.clear()
-      }
-      throw new Error(await readErrorMessage(response, "Update profile failed"))
+    if (response.status === 401) {
+      this.tokens.clear()
+      throw new Error("Session expired. Please sign in again.")
     }
-    return (await response.json()) as UserResponse
+    return response
   }
 
   private async storeAuth(
