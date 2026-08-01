@@ -2,4 +2,5 @@ package com.yourorg.quickapp.accounts;
 
 import java.util.UUID;
 
-public record UserResponse(UUID id, String email, UUID householdId) {}
+public record UserResponse(
+        UUID id, String email, UUID householdId, String childDisplayName) {}

@@ -1,6 +1,7 @@
 package com.yourorg.quickapp.accounts;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -44,6 +45,7 @@ class AuthControllerIntegrationTest {
                         .andExpect(jsonPath("$.token").isString())
                         .andExpect(jsonPath("$.user.email").value(email))
                         .andExpect(jsonPath("$.user.householdId").isString())
+                        .andExpect(jsonPath("$.user.childDisplayName").isEmpty())
                         .andReturn();
 
         String registerToken = tokenFrom(registerResult);
@@ -81,6 +83,7 @@ class AuthControllerIntegrationTest {
                                                         .formatted(email)))
                         .andExpect(status().isOk())
                         .andExpect(jsonPath("$.token").isString())
+                        .andExpect(jsonPath("$.user.childDisplayName").isEmpty())
                         .andReturn();
 
         String loginToken = tokenFrom(loginResult);
@@ -88,7 +91,8 @@ class AuthControllerIntegrationTest {
         mockMvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + loginToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email").value(email))
-                .andExpect(jsonPath("$.householdId").isString());
+                .andExpect(jsonPath("$.householdId").isString())
+                .andExpect(jsonPath("$.childDisplayName").isEmpty());
 
         mockMvc.perform(get("/api/auth/me")).andExpect(status().isUnauthorized());
 
@@ -100,6 +104,64 @@ class AuthControllerIntegrationTest {
                 .andExpect(status().isNoContent());
 
         mockMvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + registerToken))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void registerAndPatchChildDisplayName() throws Exception {
+        String email = "child-name-" + System.nanoTime() + "@example.com";
+
+        MvcResult registerResult =
+                mockMvc.perform(
+                                post("/api/auth/register")
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(
+                                                """
+                                                {"email":"%s","password":"password1","childDisplayName":"  Alex  "}
+                                                """
+                                                        .formatted(email)))
+                        .andExpect(status().isCreated())
+                        .andExpect(jsonPath("$.user.childDisplayName").value("Alex"))
+                        .andReturn();
+        String token = tokenFrom(registerResult);
+
+        mockMvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.childDisplayName").value("Alex"));
+
+        mockMvc.perform(
+                        patch("/api/auth/me")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                        {"childDisplayName":"Riley"}
+                                        """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.childDisplayName").value("Riley"));
+
+        mockMvc.perform(
+                        patch("/api/auth/me")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                        {"childDisplayName":null}
+                                        """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.childDisplayName").isEmpty());
+
+        mockMvc.perform(
+                        patch("/api/auth/me")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                                        {"childDisplayName":"%s"}
+                                        """
+                                                .formatted("x".repeat(41))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Invalid request"));
+
+        mockMvc.perform(patch("/api/auth/me").contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isUnauthorized());
     }
 

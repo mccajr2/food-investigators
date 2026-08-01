@@ -2,6 +2,7 @@ package com.yourorg.quickapp.accounts.internal;
 
 import com.yourorg.quickapp.accounts.AccountPrincipal;
 import com.yourorg.quickapp.accounts.AuthResponse;
+import com.yourorg.quickapp.accounts.ChildDisplayNames;
 import com.yourorg.quickapp.accounts.DuplicateEmailException;
 import com.yourorg.quickapp.accounts.InvalidCredentialsException;
 import com.yourorg.quickapp.accounts.SessionTtlProperties;
@@ -43,14 +44,17 @@ public class AccountService {
     }
 
     @Transactional
-    public AuthResponse register(String email, String password, boolean rememberMe) {
+    public AuthResponse register(
+            String email, String password, boolean rememberMe, String childDisplayName) {
         String normalized = normalizeEmail(email);
         if (users.existsByEmailIgnoreCase(normalized)) {
             throw new DuplicateEmailException(normalized);
         }
 
         Instant now = clock.instant();
-        Household household = households.save(new Household(UUID.randomUUID(), now));
+        String displayName = ChildDisplayNames.normalize(childDisplayName);
+        Household household =
+                households.save(new Household(UUID.randomUUID(), now, displayName));
         UserAccount user =
                 users.save(
                         new UserAccount(
@@ -59,7 +63,7 @@ public class AccountService {
                                 normalized,
                                 passwordEncoder.encode(password),
                                 now));
-        return issueSession(user, rememberMe, now);
+        return issueSession(user, household, rememberMe, now);
     }
 
     @Transactional
@@ -71,7 +75,7 @@ public class AccountService {
         if (!passwordEncoder.matches(password, user.getPasswordHash())) {
             throw new InvalidCredentialsException();
         }
-        return issueSession(user, rememberMe, clock.instant());
+        return issueSession(user, requireHousehold(user), rememberMe, clock.instant());
     }
 
     @Transactional
@@ -84,7 +88,18 @@ public class AccountService {
         UserAccount user =
                 users.findById(userId)
                         .orElseThrow(() -> new IllegalStateException("Authenticated user missing"));
-        return toUserResponse(user);
+        return toUserResponse(user, requireHousehold(user));
+    }
+
+    @Transactional
+    public UserResponse updateMe(UUID userId, String childDisplayName) {
+        UserAccount user =
+                users.findById(userId)
+                        .orElseThrow(() -> new IllegalStateException("Authenticated user missing"));
+        Household household = requireHousehold(user);
+        household.setChildDisplayName(ChildDisplayNames.normalize(childDisplayName));
+        households.save(household);
+        return toUserResponse(user, household);
     }
 
     @Transactional(readOnly = true)
@@ -100,15 +115,26 @@ public class AccountService {
                                         user.getId(), user.getHouseholdId(), user.getEmail()));
     }
 
-    private AuthResponse issueSession(UserAccount user, boolean rememberMe, Instant now) {
+    private AuthResponse issueSession(
+            UserAccount user, Household household, boolean rememberMe, Instant now) {
         String token = newToken();
         Instant expiresAt = now.plus(sessionTtl.forRememberMe(rememberMe));
         sessions.save(new SessionToken(UUID.randomUUID(), user.getId(), token, expiresAt, now));
-        return new AuthResponse(token, toUserResponse(user));
+        return new AuthResponse(token, toUserResponse(user, household));
     }
 
-    private static UserResponse toUserResponse(UserAccount user) {
-        return new UserResponse(user.getId(), user.getEmail(), user.getHouseholdId());
+    private Household requireHousehold(UserAccount user) {
+        return households
+                .findById(user.getHouseholdId())
+                .orElseThrow(() -> new IllegalStateException("Authenticated household missing"));
+    }
+
+    private static UserResponse toUserResponse(UserAccount user, Household household) {
+        return new UserResponse(
+                user.getId(),
+                user.getEmail(),
+                user.getHouseholdId(),
+                household.getChildDisplayName());
     }
 
     private static String normalizeEmail(String email) {

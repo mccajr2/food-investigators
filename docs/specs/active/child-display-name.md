@@ -1,6 +1,6 @@
 # Spec: child-display-name
 
-Status: draft  
+Status: in-progress  
 Created: 2026-07-28  
 Parent: [docs/roadmap.md](../../roadmap.md)  
 Added: 2026-07-28 · enhancement  
@@ -106,8 +106,8 @@ already keeps it off therapist PDF / History shareables. Going forward:
 
 ## Tasks
 
-- [ ] Backend: Flyway `child_display_name` on `households`; register + `/me` +
-      update; validation; unit + integration tests.
+- [x] Backend: Flyway `child_display_name` on `households`; register + `/me` +
+  update; validation; unit + integration tests.
 - [ ] Contract: OpenAPI `childDisplayName` on `UserResponse` / register /
       update; bump consumers checklist.
 - [ ] Web: types + auth client; register field; signed-in edit; copy helper;

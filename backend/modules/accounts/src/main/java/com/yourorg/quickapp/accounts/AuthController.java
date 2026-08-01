@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -27,7 +28,10 @@ public class AuthController {
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
         AuthResponse response =
                 accountService.register(
-                        request.email(), request.password(), rememberMe(request.rememberMe()));
+                        request.email(),
+                        request.password(),
+                        rememberMe(request.rememberMe()),
+                        request.childDisplayName());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -38,7 +42,8 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(@RequestHeader(value = "Authorization", required = false) String authorization) {
+    public ResponseEntity<Void> logout(
+            @RequestHeader(value = "Authorization", required = false) String authorization) {
         accountService.logout(requireBearerToken(authorization));
         return ResponseEntity.noContent().build();
     }
@@ -47,6 +52,13 @@ public class AuthController {
     public UserResponse me(Authentication authentication) {
         AccountPrincipal principal = requirePrincipal(authentication);
         return accountService.me(principal.userId());
+    }
+
+    @PatchMapping("/me")
+    public UserResponse updateMe(
+            Authentication authentication, @Valid @RequestBody UpdateMeRequest request) {
+        AccountPrincipal principal = requirePrincipal(authentication);
+        return accountService.updateMe(principal.userId(), request.childDisplayName());
     }
 
     private static boolean rememberMe(Boolean value) {
