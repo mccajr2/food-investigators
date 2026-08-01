@@ -19,8 +19,14 @@ class OpenApiContractTest {
         assertThat(yaml).contains("/api/auth/login");
         assertThat(yaml).contains("/api/auth/logout");
         assertThat(yaml).contains("/api/auth/me");
+        assertThat(yaml).contains("operationId: me");
+        assertThat(yaml).contains("operationId: updateMe");
         assertThat(yaml).contains("RegisterRequest");
+        assertThat(yaml).contains("UpdateMeRequest");
+        assertThat(yaml).contains("UserResponse");
         assertThat(yaml).contains("AuthResponse");
+        assertThat(yaml).contains("childDisplayName");
+        assertThat(yaml).contains("maxLength: 40");
         assertThat(yaml).contains("bearerAuth");
 
         assertThat(yaml).doesNotContain("/api/greeting");

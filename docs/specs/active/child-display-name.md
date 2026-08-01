@@ -108,7 +108,7 @@ already keeps it off therapist PDF / History shareables. Going forward:
 
 - [x] Backend: Flyway `child_display_name` on `households`; register + `/me` +
   update; validation; unit + integration tests.
-- [ ] Contract: OpenAPI `childDisplayName` on `UserResponse` / register /
+- [x] Contract: OpenAPI `childDisplayName` on `UserResponse` / register /
       update; bump consumers checklist.
 - [ ] Web: types + auth client; register field; signed-in edit; copy helper;
       Plan/Run/celebration wiring; tests.
