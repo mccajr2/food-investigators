@@ -52,7 +52,7 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | plan-food-autocomplete | planned | 2026-08-03 · enhancement | Plan food pickers: typeahead text filter + filtered dropdown (replace long `<select>`) |
+| 1 | plan-food-autocomplete | active | 2026-08-03 · enhancement | Plan food pickers: typeahead text filter + filtered dropdown (replace long `<select>`) |
 | 2 | suggestion-adjacent-foods | planned | 2026-08-03 · re-rank split | Suggest foods/presentations adjacent to safe exposures, beyond household list |
 | 3 | suggestion-pacing-evidence | planned | 2026-07-25 · re-rank split | Science-backed pacing / preference guidance for suggestions |
 | 4 | stretch-food-targets | planned | 2026-08-03 · enhancement | Parent nominates stretch foods; Suggest proposes when ready (approve still required) |
@@ -97,6 +97,7 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Branch | Spec |
 |----|--------|------|
+| plan-food-autocomplete | `plan-food-autocomplete` | [active](specs/active/plan-food-autocomplete.md) |
 
 ## Done
 
