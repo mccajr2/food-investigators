@@ -1,6 +1,6 @@
 # Spec: household-exposure-profiles
 
-Status: in-progress  
+Status: done  
 Created: 2026-08-03  
 Parent: [docs/roadmap.md](../../roadmap.md)  
 Added: 2026-08-03 · re-rank split  
@@ -104,32 +104,32 @@ from exposures returned on foods list).
 
 ## Acceptance criteria
 
-- [ ] Flyway creates `household_food_exposures` (or equivalent) with unique
+- [x] Flyway creates `household_food_exposures` (or equivalent) with unique
       `(household_id, food_id, variant_key)` and Familiarity CHECK aligned to
       OpenAPI.
-- [ ] Authenticated household can list exposures for its visible foods; cannot
+- [x] Authenticated household can list exposures for its visible foods; cannot
       read/write another household’s rows (**401** unauthenticated, **403/404**
       cross-household as per existing foods patterns).
-- [ ] Upsert exposure: set `familiarity` for `(foodId, variantKey)`; empty
+- [x] Upsert exposure: set `familiarity` for `(foodId, variantKey)`; empty
       variant allowed; `variant_key` normalization is trim + case-fold (so
       `Bagelsaurus` and `bagelsaurus` collide).
-- [ ] Parent can clear or change a safe exposure so Plan no longer autofills
+- [x] Parent can clear or change a safe exposure so Plan no longer autofills
       `safe` for that food+variant.
-- [ ] Creating/updating a household food to `sessionEligible=false` upserts
+- [x] Creating/updating a household food to `sessionEligible=false` upserts
       exposure `(foodId, "")` → `safe`.
-- [ ] System food rows remain immutable; household can still add exposures
+- [x] System food rows remain immutable; household can still add exposures
       referencing a system `food_id`.
-- [ ] `GET /api/foods` (or documented companion endpoint) returns enough
+- [x] `GET /api/foods` (or documented companion endpoint) returns enough
       exposure data for Plan autofill without N+1 from the web client.
-- [ ] Web Plan: changing food and/or variant note autofills familiarity per
+- [x] Web Plan: changing food and/or variant note autofills familiarity per
       Approach rules; parent override still saved on the session slot.
-- [ ] Web Foods: parent can view known safes / exposures and add or edit
+- [x] Web Foods: parent can view known safes / exposures and add or edit
       familiarity for a food+variant (including system starters via overlay).
-- [ ] OpenAPI + web + mobile sharedLogic clients updated in the same change.
-- [ ] Unit + API/IT + web tests cover persistence, normalization, snack→safe,
+- [x] OpenAPI + web + mobile sharedLogic clients updated in the same change.
+- [x] Unit + API/IT + web tests cover persistence, normalization, snack→safe,
       Plan autofill defaults, and cross-household isolation.
-- [ ] `ModularityTests` pass.
-- [ ] No signup wizard, no complete-session → exposure writes, no suggestion
+- [x] `ModularityTests` pass.
+- [x] No signup wizard, no complete-session → exposure writes, no suggestion
       shortlist changes in this PR.
 
 ## Tasks
@@ -142,8 +142,8 @@ from exposures returned on foods list).
 - [x] Web Foods: list/add/edit/clear exposures (safes first-class in UI).
 - [x] Web Plan: autofill familiarity from exposures when food/variant changes;
       replace unconditional `safe` default for newly chosen foods.
-- [ ] Tests: foods unit + IT; web Plan autofill + Foods exposure UI; modularity.
-- [ ] Docs: archive prep only after ship — keep this file in `active/` until done.
+- [x] Tests: foods unit + IT; web Plan autofill + Foods exposure UI; modularity.
+- [x] Docs: archive prep only after ship — keep this file in `active/` until done.
 
 ## Open questions
 
