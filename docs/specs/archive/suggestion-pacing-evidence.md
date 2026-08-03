@@ -1,6 +1,6 @@
 # Spec: suggestion-pacing-evidence
 
-Status: draft  
+Status: done  
 Created: 2026-07-25  
 Parent: [docs/roadmap.md](../../roadmap.md)  
 Added: 2026-07-25 · re-rank split  
@@ -67,28 +67,28 @@ and risk inventing clinical-sounding claims.
 
 ## Acceptance criteria
 
-- [ ] Suggest (AI and heuristic) returns `pacingNote` (and optional `citations`)
+- [x] Suggest (AI and heuristic) returns `pacingNote` (and optional `citations`)
       matching the household’s computed `paceHint` from a curated static pack.
-- [ ] Gemini prompt includes the pack’s evidence bullets for that `paceHint` and
+- [x] Gemini prompt includes the pack’s evidence bullets for that `paceHint` and
       instructs not to invent clinical claims; invent/adjacent rules unchanged.
-- [ ] Heuristic path also populates `pacingNote` / `citations` (not AI-only).
-- [ ] Web Plan Suggest panel shows pacing note distinctly from `rationale`, plus
+- [x] Heuristic path also populates `pacingNote` / `citations` (not AI-only).
+- [x] Web Plan Suggest panel shows pacing note distinctly from `rationale`, plus
       short citations when present; Dismiss / Approve behavior unchanged.
-- [ ] OpenAPI documents the new fields; version bump; web + mobile DTOs synced.
-- [ ] Pack content is calm, parent-led, and non-diagnostic (reviewable in PR).
-- [ ] Unit + IT + ModularityTests; web component coverage for Suggest display.
-- [ ] No Insights / welcome / invent / stretch-target / native Plan UI changes.
+- [x] OpenAPI documents the new fields; version bump; web + mobile DTOs synced.
+- [x] Pack content is calm, parent-led, and non-diagnostic (reviewable in PR).
+- [x] Unit + IT + ModularityTests; web component coverage for Suggest display.
+- [x] No Insights / welcome / invent / stretch-target / native Plan UI changes.
 
 ## Tasks
 
-- [ ] Backend: curated pacing pack + select by `paceHint`; wire into Gemini
+- [x] Backend: curated pacing pack + select by `paceHint`; wire into Gemini
       prompt and heuristic Suggest response; unit tests.
-- [ ] Contract: `pacingNote` + `citations` on `SessionSuggestionResponse`;
+- [x] Contract: `pacingNote` + `citations` on `SessionSuggestionResponse`;
       version bump; web + mobile DTO sync.
-- [ ] Web: Suggest panel pacing note + citations display; component tests.
-- [ ] Backend IT: Suggest returns pack fields for pull_back / gentle_stretch /
+- [x] Web: Suggest panel pacing note + citations display; component tests.
+- [x] Backend IT: Suggest returns pack fields for pull_back / gentle_stretch /
       steady; ModularityTests.
-- [ ] Docs: archive on `/pr` after ship.
+- [x] Docs: archive on `/pr` after ship.
 
 ## Open questions
 

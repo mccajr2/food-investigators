@@ -77,7 +77,10 @@ class SessionSuggestionApiIntegrationTest {
                 .andExpect(jsonPath("$.foods[0].proposedName").value(nullValue()))
                 .andExpect(jsonPath("$.foods[1].proposedName").value(nullValue()))
                 .andExpect(jsonPath("$.foods[0].familiarity").isNotEmpty())
-                .andExpect(jsonPath("$.scheduledOn").isNotEmpty());
+                .andExpect(jsonPath("$.scheduledOn").isNotEmpty())
+                .andExpect(jsonPath("$.pacingNote").value(PacingEvidencePack.forHint("steady").pacingNote()))
+                .andExpect(jsonPath("$.citations[0].title").value(
+                        PacingEvidencePack.forHint("steady").citations().getFirst().title()));
 
         verifyNoInteractions(suggestionLlmPort);
     }
@@ -96,9 +99,66 @@ class SessionSuggestionApiIntegrationTest {
                 .andExpect(jsonPath("$.foods[0].foodId").isNotEmpty())
                 .andExpect(jsonPath("$.foods[1].foodId").isNotEmpty())
                 .andExpect(jsonPath("$.foods[0].proposedName").value(nullValue()))
-                .andExpect(jsonPath("$.foods[1].proposedName").value(nullValue()));
+                .andExpect(jsonPath("$.foods[1].proposedName").value(nullValue()))
+                .andExpect(
+                        jsonPath("$.pacingNote")
+                                .value(PacingEvidencePack.forHint("gentle_stretch").pacingNote()))
+                .andExpect(
+                        jsonPath("$.citations[0].title")
+                                .value(
+                                        PacingEvidencePack.forHint("gentle_stretch")
+                                                .citations()
+                                                .getFirst()
+                                                .title()));
 
         verify(suggestionLlmPort).propose(any());
+    }
+
+    @Test
+    void suggestReturnsPacingPackForPullBackGentleStretchAndSteady() throws Exception {
+        PacingEvidencePack.Entry steady = PacingEvidencePack.forHint("steady");
+        PacingEvidencePack.Entry gentle = PacingEvidencePack.forHint("gentle_stretch");
+        PacingEvidencePack.Entry pullBack = PacingEvidencePack.forHint("pull_back");
+
+        String steadyToken = register("suggest-pace-steady-" + System.nanoTime() + "@example.com");
+        planAndComplete(steadyToken, day(0), APPLES, STRAWBERRIES);
+        mockMvc.perform(
+                        get("/api/sessions/suggestions/next")
+                                .header("Authorization", "Bearer " + steadyToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.source").value("heuristic"))
+                .andExpect(jsonPath("$.pacingNote").value(steady.pacingNote()))
+                .andExpect(jsonPath("$.citations[0].title").value(steady.citations().getFirst().title()))
+                .andExpect(
+                        jsonPath("$.citations[0].source")
+                                .value(steady.citations().getFirst().source()));
+
+        String gentleToken = register("suggest-pace-gentle-" + System.nanoTime() + "@example.com");
+        planAndComplete(gentleToken, day(0), APPLES, STRAWBERRIES);
+        planAndComplete(gentleToken, day(1), STRAWBERRIES, BLUEBERRIES);
+        planAndComplete(gentleToken, day(2), BLUEBERRIES, APPLES);
+        mockMvc.perform(
+                        get("/api/sessions/suggestions/next")
+                                .header("Authorization", "Bearer " + gentleToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.pacingNote").value(gentle.pacingNote()))
+                .andExpect(jsonPath("$.citations[0].title").value(gentle.citations().getFirst().title()));
+
+        String pullBackToken = register("suggest-pace-pull-" + System.nanoTime() + "@example.com");
+        planAndCompleteTrulyNewRejected(pullBackToken, day(0), APPLES, STRAWBERRIES);
+        planAndCompleteTrulyNewRejected(pullBackToken, day(1), STRAWBERRIES, BLUEBERRIES);
+        planAndCompleteTrulyNewRejected(pullBackToken, day(2), BLUEBERRIES, APPLES);
+        mockMvc.perform(
+                        get("/api/sessions/suggestions/next")
+                                .header("Authorization", "Bearer " + pullBackToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.pacingNote").value(pullBack.pacingNote()))
+                .andExpect(
+                        jsonPath("$.citations[0].title")
+                                .value(pullBack.citations().getFirst().title()))
+                .andExpect(
+                        jsonPath("$.citations[0].source")
+                                .value(pullBack.citations().getFirst().source()));
     }
 
     @Test
@@ -131,7 +191,10 @@ class SessionSuggestionApiIntegrationTest {
                 .andExpect(jsonPath("$.rationale").value("Gentle stretch tonight"))
                 .andExpect(jsonPath("$.foods.length()").value(2))
                 .andExpect(jsonPath("$.foods[0].familiarity").value("safe"))
-                .andExpect(jsonPath("$.foods[1].familiarity").value("familiar_but_new"));
+                .andExpect(jsonPath("$.foods[1].familiarity").value("familiar_but_new"))
+                .andExpect(
+                        jsonPath("$.pacingNote")
+                                .value(PacingEvidencePack.forHint("gentle_stretch").pacingNote()));
     }
 
     @Test
@@ -486,6 +549,43 @@ class SessionSuggestionApiIntegrationTest {
                                         """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.familiarity").value("safe"));
+    }
+
+    /** Completes truly_new foods with liked=no to trigger slow_down / pull_back pacing. */
+    private void planAndCompleteTrulyNewRejected(
+            String token, String scheduledOn, String food1, String food2) throws Exception {
+        MvcResult created =
+                mockMvc.perform(
+                                post("/api/sessions")
+                                        .header("Authorization", "Bearer " + token)
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(
+                                                createBody(
+                                                        scheduledOn,
+                                                        food1,
+                                                        "truly_new",
+                                                        null,
+                                                        food2,
+                                                        "truly_new",
+                                                        null)))
+                        .andExpect(status().isCreated())
+                        .andReturn();
+        String sessionId = idFrom(created);
+
+        mockMvc.perform(
+                        post("/api/sessions/" + sessionId + "/complete")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                                        {
+                                          "foods":[
+                                            {"position":1,"liked":"no","ateEnough":false},
+                                            {"position":2,"liked":"no","ateEnough":false}
+                                          ]
+                                        }
+                                        """))
+                .andExpect(status().isOk());
     }
 
     private void planAndComplete(String token, String scheduledOn, String food1, String food2)

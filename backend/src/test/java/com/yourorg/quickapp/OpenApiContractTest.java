@@ -94,7 +94,10 @@ class OpenApiContractTest {
         assertThat(yaml).contains("proposedName");
         assertThat(yaml).contains("proposedVariantNote");
         assertThat(yaml).contains("optional adjacent invent food");
-        assertThat(yaml).contains("version: 0.14.0");
+        assertThat(yaml).contains("pacingNote");
+        assertThat(yaml).contains("PacingCitation");
+        assertThat(yaml).contains("calm pacing evidence");
+        assertThat(yaml).contains("version: 0.15.0");
         assertThat(yaml).contains("CreateSessionRequest");
         assertThat(yaml).contains("UpdateSessionRequest");
         assertThat(yaml).contains("CompleteSessionRequest");

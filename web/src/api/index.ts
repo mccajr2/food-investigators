@@ -29,6 +29,7 @@ export type {
   Smell,
   SuggestedSessionFood,
   SuggestionSource,
+  PacingCitation,
   TasteBasic,
   Temperature,
   Texture,

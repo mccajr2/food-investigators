@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Quickapp API
-  version: 0.14.0
+  version: 0.15.0
   description: >
     Contract-first API for Food Investigators. Documents family-account auth
     (email/password register and login, Bearer session tokens, GET/PATCH
@@ -11,9 +11,9 @@ info:
     variant including attempt hooks, optional signup bootstrap of safe
     exposures, and outcome-driven exposure upserts on session complete), tasting
     sessions (create, list upcoming, history of completed, download history PDF,
-    suggest next with optional adjacent invent food, get, update, cancel,
-    complete with run outcomes, optional parent notes on completed sessions),
-    and household Insights (aggregates + dismissible tips).
+    suggest next with optional adjacent invent food and calm pacing evidence,
+    get, update, cancel, complete with run outcomes, optional parent notes on
+    completed sessions), and household Insights (aggregates + dismissible tips).
 servers:
   - url: http://localhost:8080
     description: Local development
@@ -639,14 +639,16 @@ paths:
       description: >
         Returns a draft proposal with exactly two foods, familiarity each, a
         `scheduledOn` (next UTC calendar day without a planned or completed
-        session), optional short rationale, and `source` of `ai` or `heuristic`.
-        When AI is used and the household has at least one safe exposure, at most
-        one slot may be an invent (`foodId` null + `proposedName`); the other must
-        be a catalog safe-anchor food. Invent does not create catalog foods —
-        Approve (client) match-or-creates then uses `POST /api/sessions`. Heuristic
-        never invents. AI is used when completed-session count is Insights-ready
-        (>= 3) and Gemini is configured; otherwise or on invalid picks, heuristic
-        fallback still returns 200. Requires at least two selectable catalog foods.
+        session), optional short rationale, calm pacing evidence (`pacingNote` +
+        optional `citations` from a curated pack keyed by pace hint), and
+        `source` of `ai` or `heuristic`. When AI is used and the household has at
+        least one safe exposure, at most one slot may be an invent (`foodId` null
+        + `proposedName`); the other must be a catalog safe-anchor food. Invent
+        does not create catalog foods — Approve (client) match-or-creates then
+        uses `POST /api/sessions`. Heuristic never invents. AI is used when
+        completed-session count is Insights-ready (>= 3) and Gemini is configured;
+        otherwise or on invalid picks, heuristic fallback still returns 200.
+        Requires at least two selectable catalog foods.
       security:
         - bearerAuth: []
       responses:
@@ -669,6 +671,10 @@ paths:
                     familiarity: familiar_but_new
                 rationale: A calm next night from foods that often work for you.
                 source: heuristic
+                pacingNote: Keep a calm, balanced night — foods that often work, without rushing.
+                citations:
+                  - title: Calm tasting rhythm
+                    source: Family mealtime and exposure guidance for picky eating
         "400":
           description: >
             Fewer than two session-eligible foods available to suggest from
@@ -1748,6 +1754,35 @@ components:
           example: Keeping it gentle — lean on familiar foods for a bit.
         source:
           $ref: "#/components/schemas/SuggestionSource"
+        pacingNote:
+          type: string
+          nullable: true
+          description: >
+            Calm parent-facing "why this pace" line from the curated pacing pack
+            (distinct from `rationale`). Null only if omitted by older clients;
+            current servers always set it from the household pace hint.
+          example: Ease off brand-new foods for a bit — familiar favorites keep tasting calm.
+        citations:
+          type: array
+          description: >
+            Short plain-language citations supporting `pacingNote`. May be empty.
+            Not a clinical bibliography.
+          items:
+            $ref: "#/components/schemas/PacingCitation"
+    PacingCitation:
+      type: object
+      required:
+        - title
+        - source
+      properties:
+        title:
+          type: string
+          example: Gentle pacing after tough new tries
+          description: Short citation title shown to the parent
+        source:
+          type: string
+          example: Feeding therapy guidance on repeated calm exposure
+          description: Plain-language source label (not a DOI dump)
     InsightTip:
       type: object
       required:

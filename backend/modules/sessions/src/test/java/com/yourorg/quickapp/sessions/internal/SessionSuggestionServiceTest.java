@@ -94,6 +94,10 @@ class SessionSuggestionServiceTest {
         assertThat(response.source()).isEqualTo(SuggestionSource.heuristic);
         assertThat(response.foods()).hasSize(2);
         assertThat(response.scheduledOn()).isEqualTo(LocalDate.of(2026, 7, 15));
+        assertThat(response.pacingNote())
+                .isEqualTo(PacingEvidencePack.forHint("steady").pacingNote());
+        assertThat(response.citations())
+                .isEqualTo(PacingEvidencePack.forHint("steady").citations());
         verify(llm, never()).propose(any());
     }
 
@@ -115,6 +119,12 @@ class SessionSuggestionServiceTest {
         assertThat(response.rationale()).isEqualTo("Gentle salty stretch");
         assertThat(response.foods().get(0).foodId()).isEqualTo(foodB);
         assertThat(response.foods().get(1).familiarity()).isEqualTo(Familiarity.familiar_but_new);
+        // Ready + no truly_new history → gentle_stretch pack (not stuffed into rationale).
+        assertThat(response.pacingNote())
+                .isEqualTo(PacingEvidencePack.forHint("gentle_stretch").pacingNote());
+        assertThat(response.citations())
+                .isEqualTo(PacingEvidencePack.forHint("gentle_stretch").citations());
+        assertThat(response.rationale()).doesNotContain(response.citations().getFirst().title());
         verify(llm).propose(any());
     }
 

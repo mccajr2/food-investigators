@@ -108,7 +108,59 @@ class SessionsClientTest {
                 "A calm next night from foods that often work for you.",
                 suggestion.rationale,
             )
+            assertNull(suggestion.pacingNote)
+            assertEquals(emptyList(), suggestion.citations)
             assertEquals("Bearer tok", sawAuth)
+        }
+
+    @Test
+    fun suggestNextParsesPacingNoteAndCitations() =
+        runTest {
+            val store = InMemoryTokenStore()
+            store.saveToken("tok", rememberMe = true)
+            val engine =
+                MockEngine { request ->
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        content =
+                            """
+                            {"scheduledOn":"2026-07-16",
+                             "foods":[
+                               {"foodId":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa04",
+                                "name":"Apples",
+                                "iconKey":"apple",
+                                "familiarity":"safe"},
+                               {"foodId":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa05",
+                                "name":"Strawberries",
+                                "iconKey":"strawberry",
+                                "familiarity":"familiar_but_new"}
+                             ],
+                             "rationale":"A calm next night from foods that often work for you.",
+                             "source":"heuristic",
+                             "pacingNote":"Keep a calm, balanced night — foods that often work, without rushing.",
+                             "citations":[
+                               {"title":"Calm tasting rhythm",
+                                "source":"Family mealtime and exposure guidance for picky eating"}
+                             ]}
+                            """.trimIndent(),
+                        status = HttpStatusCode.OK,
+                        headers = headersOf(HttpHeaders.ContentType, "application/json"),
+                    )
+                }
+
+            val client = SessionsClient("http://localhost:8080", httpClient(engine), store)
+            val suggestion = client.suggestNext()
+
+            assertEquals(
+                "Keep a calm, balanced night — foods that often work, without rushing.",
+                suggestion.pacingNote,
+            )
+            assertEquals(1, suggestion.citations.size)
+            assertEquals("Calm tasting rhythm", suggestion.citations[0].title)
+            assertEquals(
+                "Family mealtime and exposure guidance for picky eating",
+                suggestion.citations[0].source,
+            )
         }
 
     @Test
