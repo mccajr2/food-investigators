@@ -50,7 +50,7 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | signup-safe-foods | planned | 2026-08-03 · re-rank split | Optional signup: ~5–10 safe exposures; may invent foods not in DB |
+| 1 | signup-safe-foods | active | 2026-08-03 · re-rank split | Signup nudge: ~5 tasting safes + optional snacks (help plan sessions); invent OK |
 | 2 | plan-food-autocomplete | planned | 2026-08-03 · enhancement | Plan food pickers: typeahead text filter + filtered dropdown (replace long `<select>`) |
 | 3 | familiarity-from-outcomes | planned | 2026-08-03 · re-rank split | After run, upsert exposure (food+variant) toward safe or → retrying |
 | 4 | suggestion-adjacent-foods | planned | 2026-08-03 · re-rank split | Suggest foods/presentations adjacent to safe exposures, beyond household list |
@@ -96,6 +96,7 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Branch | Spec |
 |----|--------|------|
+| signup-safe-foods | `signup-safe-foods` | [active](specs/active/signup-safe-foods.md) |
 
 ## Done
 
