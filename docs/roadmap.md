@@ -52,7 +52,7 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | familiarity-from-outcomes | planned | 2026-08-03 · re-rank split | After run, upsert exposure (food+variant) toward safe or → retrying |
+| 1 | familiarity-from-outcomes | active | 2026-08-03 · re-rank split | After run, upsert exposure (food+variant) toward safe or → retrying |
 | 2 | plan-food-autocomplete | planned | 2026-08-03 · enhancement | Plan food pickers: typeahead text filter + filtered dropdown (replace long `<select>`) |
 | 3 | suggestion-adjacent-foods | planned | 2026-08-03 · re-rank split | Suggest foods/presentations adjacent to safe exposures, beyond household list |
 | 4 | suggestion-pacing-evidence | planned | 2026-07-25 · re-rank split | Science-backed pacing / preference guidance for suggestions |
@@ -98,7 +98,7 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Branch | Spec |
 |----|--------|------|
-| — | — | None |
+| familiarity-from-outcomes | `familiarity-from-outcomes` | [active](specs/active/familiarity-from-outcomes.md) |
 
 ## Done
 
