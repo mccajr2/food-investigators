@@ -216,12 +216,17 @@ export type SessionResponse = {
 export type SuggestionSource = "ai" | "heuristic"
 
 export type SuggestedSessionFood = {
-  foodId: string
+  /** Catalog id; null when this slot is an invent proposal (`proposedName`). */
+  foodId: string | null
   name: string
   iconKey: FoodIconKey | string
   /** Shared object-store illustration URL when present; omit/null uses local art. */
   iconUrl?: string | null
   familiarity: Familiarity
+  /** Required when `foodId` is null — invent name; materializes on Approve. */
+  proposedName?: string | null
+  /** Optional invent presentation/brand note. */
+  proposedVariantNote?: string | null
 }
 
 /** Draft proposal from GET /api/sessions/suggestions/next — not a persisted session. */

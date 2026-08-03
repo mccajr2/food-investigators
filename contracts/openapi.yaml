@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Quickapp API
-  version: 0.13.0
+  version: 0.14.0
   description: >
     Contract-first API for Food Investigators. Documents family-account auth
     (email/password register and login, Bearer session tokens, GET/PATCH
@@ -11,8 +11,9 @@ info:
     variant including attempt hooks, optional signup bootstrap of safe
     exposures, and outcome-driven exposure upserts on session complete), tasting
     sessions (create, list upcoming, history of completed, download history PDF,
-    get, update, cancel, complete with run outcomes, optional parent notes on
-    completed sessions), and household Insights (aggregates + dismissible tips).
+    suggest next with optional adjacent invent food, get, update, cancel,
+    complete with run outcomes, optional parent notes on completed sessions),
+    and household Insights (aggregates + dismissible tips).
 servers:
   - url: http://localhost:8080
     description: Local development
@@ -636,12 +637,15 @@ paths:
       operationId: suggestNextSession
       summary: Propose the next tasting night (draft — not persisted)
       description: >
-        Returns a draft proposal with exactly two session-eligible catalog foods,
-        familiarity each, a `scheduledOn` (next UTC calendar day without a planned
-        or completed session), optional short rationale, and `source` of `ai` or
-        `heuristic`. Does not create a session — Approve uses `POST /api/sessions`.
-        AI is used when completed-session count is Insights-ready (>= 3) and Gemini
-        is configured; otherwise or on invalid/off-shortlist picks, heuristic
+        Returns a draft proposal with exactly two foods, familiarity each, a
+        `scheduledOn` (next UTC calendar day without a planned or completed
+        session), optional short rationale, and `source` of `ai` or `heuristic`.
+        When AI is used and the household has at least one safe exposure, at most
+        one slot may be an invent (`foodId` null + `proposedName`); the other must
+        be a catalog safe-anchor food. Invent does not create catalog foods —
+        Approve (client) match-or-creates then uses `POST /api/sessions`. Heuristic
+        never invents. AI is used when completed-session count is Insights-ready
+        (>= 3) and Gemini is configured; otherwise or on invalid picks, heuristic
         fallback still returns 200. Requires at least two selectable catalog foods.
       security:
         - bearerAuth: []
@@ -1667,29 +1671,56 @@ components:
     SuggestedSessionFood:
       type: object
       required:
-        - foodId
         - name
         - iconKey
         - familiarity
+      description: >
+        One food in a suggestion draft. Catalog picks set `foodId`. Invent
+        proposals set `foodId` to null with a non-blank `proposedName` (optional
+        `proposedVariantNote`); they materialize on Approve only. At most one of
+        the two foods in a draft may be invent.
       properties:
         foodId:
           type: string
           format: uuid
+          nullable: true
+          description: >
+            Catalog food id. Null when this slot is an invent proposal
+            (`proposedName` required); not persisted until Approve.
         name:
           type: string
           example: Apples
+          description: >
+            Display name. For invent slots this mirrors `proposedName`.
         iconKey:
           type: string
           example: apple
+          description: >
+            Illustration key. Invent slots may use a placeholder `custom_<slug>`
+            until the food is created on Approve.
         iconUrl:
           type: string
           format: uri
           nullable: true
           description: >
             Public URL for a shared illustration when one exists for this
-            food's iconKey; null otherwise.
+            food's iconKey; null otherwise (typical for invent placeholders).
         familiarity:
           $ref: "#/components/schemas/Familiarity"
+        proposedName:
+          type: string
+          nullable: true
+          example: Pickles
+          description: >
+            Required when `foodId` is null. Proposed adjacent food name; may
+            match an existing tasting food by case-insensitive name on Approve.
+        proposedVariantNote:
+          type: string
+          nullable: true
+          example: spears
+          description: >
+            Optional presentation/brand note for an invent slot (maps to
+            session variantNote after Approve).
     SessionSuggestionResponse:
       type: object
       required:

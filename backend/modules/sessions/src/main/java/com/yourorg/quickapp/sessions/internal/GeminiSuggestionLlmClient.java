@@ -110,14 +110,38 @@ class GeminiSuggestionLlmClient implements SuggestionLlmPort {
                 node.put("iconKey", candidate.iconKey());
                 node.put("hint", candidate.hint());
             }
+            ArrayNode safeExposures = payload.putArray("safeExposures");
+            for (var safe : brief.safeExposures()) {
+                ObjectNode node = safeExposures.addObject();
+                node.put("foodId", safe.foodId().toString());
+                node.put("foodName", safe.foodName());
+                node.put("variantKey", safe.variantKey());
+            }
+            boolean mayInvent = !brief.safeExposures().isEmpty();
+            String inventRules =
+                    mayInvent
+                            ? """
+                            You MAY invent at most ONE adjacent stretch food not on the candidate list \
+                            (use proposedName + optional proposedVariantNote, omit foodId). \
+                            The OTHER food MUST be a safe anchor: foodId from candidates that also appears \
+                            in safeExposures, with familiarity "safe". Never invent both foods. \
+                            Invented names may match an existing catalog food or be new.
+                            """
+                            : """
+                            Do NOT invent foods. Choose exactly TWO distinct foods from candidates only \
+                            (use foodId values). There are no safe exposures yet.
+                            """;
             return """
                     You help a parent plan a calm two-food tasting night for a picky eater.
-                    Choose exactly TWO distinct foods from candidates only (use foodId values).
+                    %s
                     Assign familiarity for each: safe, familiar_but_new, truly_new, or retrying.
                     Respect paceHint: pull_back = stay gentle; gentle_stretch = one mild stretch OK; steady = balanced.
-                    Reply with JSON only: {"foods":[{"foodId":"...","familiarity":"..."},{"foodId":"...","familiarity":"..."}],"rationale":"one short calm sentence"}
+                    Reply with JSON only. Catalog pick: {"foodId":"...","familiarity":"..."}. \
+                    Invent pick: {"proposedName":"...","proposedVariantNote":null,"familiarity":"..."}.
+                    Shape: {"foods":[pick1,pick2],"rationale":"one short calm sentence"}
                     Context:
                     """
+                            .formatted(inventRules)
                     + jsonMapper.writeValueAsString(payload);
         } catch (Exception ex) {
             throw new IllegalStateException("Failed to build Gemini prompt", ex);
@@ -138,10 +162,24 @@ class GeminiSuggestionLlmClient implements SuggestionLlmPort {
         }
         List<LlmFoodPick> picks = new ArrayList<>(2);
         for (JsonNode foodNode : foodsNode) {
-            UUID foodId = UUID.fromString(foodNode.path("foodId").asText());
             Familiarity familiarity =
                     Familiarity.valueOf(foodNode.path("familiarity").asText());
-            picks.add(new LlmFoodPick(foodId, familiarity));
+            String foodIdText = foodNode.path("foodId").asText(null);
+            if (foodIdText != null && !foodIdText.isBlank() && !foodIdText.equals("null")) {
+                UUID foodId = UUID.fromString(foodIdText);
+                picks.add(new LlmFoodPick(foodId, familiarity));
+                continue;
+            }
+            String proposedName = foodNode.path("proposedName").asText(null);
+            if (proposedName == null || proposedName.isBlank()) {
+                return Optional.empty();
+            }
+            String proposedVariant =
+                    foodNode.path("proposedVariantNote").isMissingNode()
+                                    || foodNode.path("proposedVariantNote").isNull()
+                            ? null
+                            : foodNode.path("proposedVariantNote").asText(null);
+            picks.add(LlmFoodPick.invent(proposedName.trim(), proposedVariant, familiarity));
         }
         String rationale = parsed.path("rationale").asText(null);
         if (rationale != null && rationale.isBlank()) {

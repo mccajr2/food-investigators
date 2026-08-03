@@ -93,11 +93,16 @@ data class SessionResponse(
 
 @Serializable
 data class SuggestedSessionFood(
-    val foodId: String,
+    /** Catalog id; null when this slot is an invent proposal (`proposedName`). */
+    val foodId: String? = null,
     val name: String,
     val iconKey: String,
     val iconUrl: String? = null,
     val familiarity: String,
+    /** Required when `foodId` is null — invent name; materializes on Approve. */
+    val proposedName: String? = null,
+    /** Optional invent presentation/brand note. */
+    val proposedVariantNote: String? = null,
 )
 
 /** Draft from GET /api/sessions/suggestions/next — not a persisted session. */

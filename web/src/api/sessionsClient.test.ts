@@ -235,6 +235,51 @@ describe("SessionsClient", () => {
     expect(result.foods[1]?.iconUrl).toBeUndefined()
   })
 
+  it("parses invent suggestion slot with null foodId", async () => {
+    const suggestion = {
+      scheduledOn: "2026-07-16",
+      foods: [
+        {
+          foodId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa04",
+          name: "Apples",
+          iconKey: "apple",
+          familiarity: "safe" as const,
+        },
+        {
+          foodId: null,
+          name: "Pickles",
+          iconKey: "custom_pickles",
+          familiarity: "truly_new" as const,
+          proposedName: "Pickles",
+          proposedVariantNote: "spears",
+        },
+      ],
+      rationale: "Salty stretch from chips territory.",
+      source: "ai" as const,
+    }
+    const fetchFn = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify(suggestion), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    )
+    const client = new SessionsClient(
+      "http://localhost:8080",
+      fetchFn,
+      memoryStore(),
+    )
+
+    const result = await client.suggestNext()
+
+    expect(result.source).toBe("ai")
+    expect(result.foods[0]?.foodId).toBe(
+      "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa04",
+    )
+    expect(result.foods[1]?.foodId).toBeNull()
+    expect(result.foods[1]?.proposedName).toBe("Pickles")
+    expect(result.foods[1]?.proposedVariantNote).toBe("spears")
+  })
+
   it("creates a planned session", async () => {
     const fetchFn = vi.fn().mockResolvedValue(
       new Response(JSON.stringify(sampleSession), {

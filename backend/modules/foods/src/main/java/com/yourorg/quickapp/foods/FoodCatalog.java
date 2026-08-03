@@ -24,4 +24,10 @@ public interface FoodCatalog {
      * Liked/texture may be null when unset.
      */
     List<SnackPreferenceSnapshot> listActiveSnackPreferences(UUID householdId);
+
+    /**
+     * Household exposure profiles with {@code familiarity=safe}, bounded for suggestion
+     * briefs. Includes food display name and normalized variant key (blank = unspecified).
+     */
+    List<SafeExposureSnapshot> listSafeExposures(UUID householdId);
 }

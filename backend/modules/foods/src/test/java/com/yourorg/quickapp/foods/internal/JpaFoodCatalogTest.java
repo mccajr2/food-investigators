@@ -5,9 +5,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import com.yourorg.quickapp.foods.CatalogFood;
+import com.yourorg.quickapp.foods.ExposureSource;
+import com.yourorg.quickapp.foods.FoodFamiliarity;
 import com.yourorg.quickapp.foods.FoodIllustrationStore;
 import com.yourorg.quickapp.foods.FoodLiked;
 import com.yourorg.quickapp.foods.FoodTexture;
+import com.yourorg.quickapp.foods.SafeExposureSnapshot;
 import com.yourorg.quickapp.foods.SnackPreferenceSnapshot;
 import java.time.Instant;
 import java.util.List;
@@ -27,6 +30,9 @@ class JpaFoodCatalogTest {
     private FoodRepository foods;
 
     @Mock
+    private HouseholdFoodExposureRepository exposures;
+
+    @Mock
     private FoodIllustrationStore illustrations;
 
     private JpaFoodCatalog catalog;
@@ -35,7 +41,7 @@ class JpaFoodCatalogTest {
 
     @BeforeEach
     void setUp() {
-        catalog = new JpaFoodCatalog(foods, illustrations);
+        catalog = new JpaFoodCatalog(foods, exposures, illustrations);
     }
 
     @Test
@@ -112,5 +118,63 @@ class JpaFoodCatalogTest {
         assertThat(catalog.listActiveSnackPreferences(householdId))
                 .containsExactly(new SnackPreferenceSnapshot(FoodLiked.like, FoodTexture.crunchy));
         assertThat(tasting.isSessionEligible()).isTrue();
+    }
+
+    @Test
+    void listSafeExposuresReturnsOnlySafeRowsBoundAndSorted() {
+        UUID appleId = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa01");
+        UUID bananaId = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa02");
+        Food apples = Food.system(appleId, "Apples", "apple", now);
+        Food bananas = Food.system(bananaId, "Bananas", "banana", now);
+        HouseholdFoodExposure bananaSafe =
+                HouseholdFoodExposure.create(
+                        householdId,
+                        bananaId,
+                        "chips",
+                        FoodFamiliarity.safe,
+                        ExposureSource.manual,
+                        now);
+        HouseholdFoodExposure appleSafe =
+                HouseholdFoodExposure.create(
+                        householdId,
+                        appleId,
+                        "",
+                        FoodFamiliarity.safe,
+                        ExposureSource.manual,
+                        now);
+        HouseholdFoodExposure appleRetry =
+                HouseholdFoodExposure.create(
+                        householdId,
+                        appleId,
+                        "sauce",
+                        FoodFamiliarity.retrying,
+                        ExposureSource.outcome,
+                        now);
+        when(exposures.findByHouseholdId(householdId))
+                .thenReturn(List.of(bananaSafe, appleSafe, appleRetry));
+        when(foods.findAllById(any())).thenReturn(List.of(apples, bananas));
+
+        assertThat(catalog.listSafeExposures(householdId))
+                .containsExactly(
+                        new SafeExposureSnapshot(appleId, "Apples", ""),
+                        new SafeExposureSnapshot(bananaId, "Bananas", "chips"));
+    }
+
+    @Test
+    void listSafeExposuresSkipsFoodsNotVisibleToHousehold() {
+        UUID otherHousehold = UUID.randomUUID();
+        Food theirs = Food.household(otherHousehold, "Secret", "custom", now);
+        HouseholdFoodExposure safe =
+                HouseholdFoodExposure.create(
+                        householdId,
+                        theirs.getId(),
+                        "",
+                        FoodFamiliarity.safe,
+                        ExposureSource.manual,
+                        now);
+        when(exposures.findByHouseholdId(householdId)).thenReturn(List.of(safe));
+        when(foods.findAllById(any())).thenReturn(List.of(theirs));
+
+        assertThat(catalog.listSafeExposures(householdId)).isEmpty();
     }
 }

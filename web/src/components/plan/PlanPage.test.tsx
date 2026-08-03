@@ -176,20 +176,50 @@ describe("PlanPage helpers", () => {
   it("requires distinct variants when both slots share a food", () => {
     expect(
       sameFoodVariantError(
-        { foodId: foods[0].id, familiarity: "safe", variantNote: "A" },
-        { foodId: foods[0].id, familiarity: "safe", variantNote: "B" },
+        {
+          foodId: foods[0].id,
+          familiarity: "safe",
+          variantNote: "A",
+          inventName: null,
+        },
+        {
+          foodId: foods[0].id,
+          familiarity: "safe",
+          variantNote: "B",
+          inventName: null,
+        },
       ),
     ).toBeNull();
     expect(
       sameFoodVariantError(
-        { foodId: foods[0].id, familiarity: "safe", variantNote: "" },
-        { foodId: foods[0].id, familiarity: "safe", variantNote: "B" },
+        {
+          foodId: foods[0].id,
+          familiarity: "safe",
+          variantNote: "",
+          inventName: null,
+        },
+        {
+          foodId: foods[0].id,
+          familiarity: "safe",
+          variantNote: "B",
+          inventName: null,
+        },
       ),
     ).toMatch(/brand\/variety/);
     expect(
       sameFoodVariantError(
-        { foodId: foods[0].id, familiarity: "safe", variantNote: "Iggy's" },
-        { foodId: foods[0].id, familiarity: "safe", variantNote: "iggy's" },
+        {
+          foodId: foods[0].id,
+          familiarity: "safe",
+          variantNote: "Iggy's",
+          inventName: null,
+        },
+        {
+          foodId: foods[0].id,
+          familiarity: "safe",
+          variantNote: "iggy's",
+          inventName: null,
+        },
       ),
     ).toMatch(/brand\/variety/);
   });
@@ -213,11 +243,17 @@ describe("PlanPage helpers", () => {
       foodId: "",
       familiarity: "truly_new" as const,
       variantNote: "",
+      inventName: null,
     };
     expect(
       applyPlanSlotChange(
         empty,
-        { foodId: catalog[0].id, familiarity: "truly_new", variantNote: "" },
+        {
+          foodId: catalog[0].id,
+          familiarity: "truly_new",
+          variantNote: "",
+          inventName: null,
+        },
         catalog,
       ).familiarity,
     ).toBe("familiar_but_new");
@@ -228,6 +264,7 @@ describe("PlanPage helpers", () => {
           foodId: catalog[0].id,
           familiarity: "truly_new",
           variantNote: "Bagelsaurus",
+          inventName: null,
         },
         catalog,
       ).familiarity,
@@ -235,7 +272,12 @@ describe("PlanPage helpers", () => {
     expect(
       applyPlanSlotChange(
         empty,
-        { foodId: catalog[1].id, familiarity: "safe", variantNote: "" },
+        {
+          foodId: catalog[1].id,
+          familiarity: "safe",
+          variantNote: "",
+          inventName: null,
+        },
         catalog,
       ).familiarity,
     ).toBe("truly_new");
@@ -246,11 +288,13 @@ describe("PlanPage helpers", () => {
           foodId: catalog[0].id,
           familiarity: "safe",
           variantNote: "Bagelsaurus",
+          inventName: null,
         },
         {
           foodId: catalog[0].id,
           familiarity: "retrying",
           variantNote: "Bagelsaurus",
+          inventName: null,
         },
         catalog,
       ).familiarity,
@@ -973,6 +1017,313 @@ describe("PlanPage", () => {
     await user.click(within(form).getByRole("button", { name: "Dismiss" }));
 
     expect(screen.queryByRole("form", { name: "Suggested next night" })).toBeNull();
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it("shows invent slot, swaps to catalog, and dismisses without invent writes", async () => {
+    const user = userEvent.setup();
+    const inventSuggestion: SessionSuggestionResponse = {
+      scheduledOn: "2026-07-16",
+      foods: [
+        {
+          foodId: foods[0].id,
+          name: "Apples",
+          iconKey: "apple",
+          familiarity: "safe",
+        },
+        {
+          foodId: null,
+          name: "Pickles",
+          iconKey: "custom_pickles",
+          familiarity: "truly_new",
+          proposedName: "Pickles",
+          proposedVariantNote: "spears",
+        },
+      ],
+      rationale: "Salty stretch from chips territory.",
+      source: "ai",
+    };
+    const create = vi.fn();
+    const foodsCreate = vi.fn();
+    const upsertExposure = vi.fn();
+    renderPlan(
+      mockSessionsClient({
+        suggestNext: vi.fn().mockResolvedValue(inventSuggestion),
+        create,
+      }),
+      mockFoodsClient({ create: foodsCreate, upsertExposure }),
+    );
+
+    await screen.findByRole("heading", { name: "Plan" });
+    await user.click(
+      screen.getByRole("button", { name: "Suggest next night" }),
+    );
+    const form = await screen.findByRole("form", {
+      name: "Suggested next night",
+    });
+    expect(within(form).getByTestId("Food 2 invent")).toHaveTextContent(
+      /Pickles/,
+    );
+    expect(
+      within(form).getByLabelText("Food 2 variant note"),
+    ).toHaveValue("spears");
+    expect(
+      within(form).queryByRole("combobox", { name: "Food 2 picker" }),
+    ).toBeNull();
+
+    await user.click(
+      within(form).getByRole("button", {
+        name: "Choose from catalog instead",
+      }),
+    );
+    expect(within(form).queryByTestId("Food 2 invent")).toBeNull();
+    await pickFood(user, form, "Food 2", "Blueberries");
+    await user.click(within(form).getByRole("button", { name: "Dismiss" }));
+
+    expect(create).not.toHaveBeenCalled();
+    expect(foodsCreate).not.toHaveBeenCalled();
+    expect(upsertExposure).not.toHaveBeenCalled();
+  });
+
+  it("approves invent by creating food, upserting exposure, then session", async () => {
+    const user = userEvent.setup();
+    const inventSuggestion: SessionSuggestionResponse = {
+      scheduledOn: "2026-07-16",
+      foods: [
+        {
+          foodId: foods[0].id,
+          name: "Apples",
+          iconKey: "apple",
+          familiarity: "safe",
+        },
+        {
+          foodId: null,
+          name: "Pickles",
+          iconKey: "custom_pickles",
+          familiarity: "truly_new",
+          proposedName: "Pickles",
+          proposedVariantNote: "spears",
+        },
+      ],
+      rationale: "Salty stretch.",
+      source: "ai",
+    };
+    const createdFood: FoodResponse = {
+      id: "cccccccc-cccc-cccc-cccc-cccccccccccc",
+      name: "Pickles",
+      iconKey: "custom_pickles",
+      householdId: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+      system: false,
+      sessionEligible: true,
+      exposures: [],
+    };
+    const foodsCreate = vi.fn().mockResolvedValue(createdFood);
+    const upsertExposure = vi.fn().mockResolvedValue({
+      foodId: createdFood.id,
+      variantKey: "spears",
+      familiarity: "truly_new",
+      source: "manual",
+    });
+    const create = vi.fn().mockResolvedValue({
+      ...sampleSession,
+      scheduledOn: "2026-07-16",
+      foods: [
+        {
+          foodId: foods[0].id,
+          name: "Apples",
+          iconKey: "apple",
+          familiarity: "safe",
+          variantNote: null,
+          position: 1,
+        },
+        {
+          foodId: createdFood.id,
+          name: "Pickles",
+          iconKey: "custom_pickles",
+          familiarity: "truly_new",
+          variantNote: "spears",
+          position: 2,
+        },
+      ],
+    });
+    renderPlan(
+      mockSessionsClient({
+        suggestNext: vi.fn().mockResolvedValue(inventSuggestion),
+        create,
+      }),
+      mockFoodsClient({ create: foodsCreate, upsertExposure }),
+    );
+
+    await screen.findByRole("heading", { name: "Plan" });
+    await user.click(
+      screen.getByRole("button", { name: "Suggest next night" }),
+    );
+    const form = await screen.findByRole("form", {
+      name: "Suggested next night",
+    });
+    await user.click(within(form).getByRole("button", { name: "Approve" }));
+
+    await waitFor(() => {
+      expect(foodsCreate).toHaveBeenCalledWith({
+        name: "Pickles",
+        iconKey: "custom_pickles",
+        sessionEligible: true,
+      });
+    });
+    expect(upsertExposure).toHaveBeenCalledWith(createdFood.id, {
+      variantKey: "spears",
+      familiarity: "truly_new",
+    });
+    expect(create).toHaveBeenCalledWith({
+      scheduledOn: "2026-07-16",
+      foods: [
+        {
+          foodId: foods[0].id,
+          familiarity: "safe",
+          variantNote: null,
+        },
+        {
+          foodId: createdFood.id,
+          familiarity: "truly_new",
+          variantNote: "spears",
+        },
+      ],
+    });
+    expect(
+      screen.queryByRole("form", { name: "Suggested next night" }),
+    ).toBeNull();
+    expect(await screen.findByText(/Pickles/)).toBeInTheDocument();
+  });
+
+  it("approves invent by matching an existing tasting food name", async () => {
+    const user = userEvent.setup();
+    const inventSuggestion: SessionSuggestionResponse = {
+      scheduledOn: "2026-07-16",
+      foods: [
+        {
+          foodId: foods[0].id,
+          name: "Apples",
+          iconKey: "apple",
+          familiarity: "safe",
+        },
+        {
+          foodId: null,
+          name: "Blueberries",
+          iconKey: "custom_blueberries",
+          familiarity: "familiar_but_new",
+          proposedName: "Blueberries",
+        },
+      ],
+      source: "ai",
+    };
+    const foodsCreate = vi.fn();
+    const upsertExposure = vi.fn().mockResolvedValue({
+      foodId: foods[2].id,
+      variantKey: "",
+      familiarity: "familiar_but_new",
+      source: "manual",
+    });
+    const create = vi.fn().mockResolvedValue({
+      ...sampleSession,
+      scheduledOn: "2026-07-16",
+      foods: [
+        sampleSession.foods[0],
+        {
+          foodId: foods[2].id,
+          name: "Blueberries",
+          iconKey: "blueberry",
+          familiarity: "familiar_but_new",
+          variantNote: null,
+          position: 2,
+        },
+      ],
+    });
+    renderPlan(
+      mockSessionsClient({
+        suggestNext: vi.fn().mockResolvedValue(inventSuggestion),
+        create,
+      }),
+      mockFoodsClient({ create: foodsCreate, upsertExposure }),
+    );
+
+    await screen.findByRole("heading", { name: "Plan" });
+    await user.click(
+      screen.getByRole("button", { name: "Suggest next night" }),
+    );
+    const form = await screen.findByRole("form", {
+      name: "Suggested next night",
+    });
+    await user.click(within(form).getByRole("button", { name: "Approve" }));
+
+    await waitFor(() => {
+      expect(create).toHaveBeenCalled();
+    });
+    expect(foodsCreate).not.toHaveBeenCalled();
+    expect(upsertExposure).toHaveBeenCalledWith(foods[2].id, {
+      variantKey: "",
+      familiarity: "familiar_but_new",
+    });
+    expect(create).toHaveBeenCalledWith({
+      scheduledOn: "2026-07-16",
+      foods: [
+        {
+          foodId: foods[0].id,
+          familiarity: "safe",
+          variantNote: null,
+        },
+        {
+          foodId: foods[2].id,
+          familiarity: "familiar_but_new",
+          variantNote: null,
+        },
+      ],
+    });
+  });
+
+  it("surfaces invent create failure without creating a session", async () => {
+    const user = userEvent.setup();
+    const inventSuggestion: SessionSuggestionResponse = {
+      scheduledOn: "2026-07-16",
+      foods: [
+        {
+          foodId: foods[0].id,
+          name: "Apples",
+          iconKey: "apple",
+          familiarity: "safe",
+        },
+        {
+          foodId: null,
+          name: "Pickles",
+          iconKey: "custom_pickles",
+          familiarity: "truly_new",
+          proposedName: "Pickles",
+        },
+      ],
+      source: "ai",
+    };
+    const create = vi.fn();
+    renderPlan(
+      mockSessionsClient({
+        suggestNext: vi.fn().mockResolvedValue(inventSuggestion),
+        create,
+      }),
+      mockFoodsClient({
+        create: vi.fn().mockRejectedValue(new Error("Could not create food")),
+      }),
+    );
+
+    await screen.findByRole("heading", { name: "Plan" });
+    await user.click(
+      screen.getByRole("button", { name: "Suggest next night" }),
+    );
+    const form = await screen.findByRole("form", {
+      name: "Suggested next night",
+    });
+    await user.click(within(form).getByRole("button", { name: "Approve" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Could not create food",
+    );
     expect(create).not.toHaveBeenCalled();
   });
 });
