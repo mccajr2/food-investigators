@@ -30,5 +30,6 @@ progress make it a reasonable next try.
 
 - Parent-nominated food+variant (invent OK); Suggest→Approve surfaces when ready.
 - Depends on exposure profiles + ideally `familiarity-from-outcomes`,
-  `suggestion-adjacent-foods`, and `suggestion-pacing-evidence` for timing.
+  `suggestion-adjacent-foods`, and `suggestion-pacing-evidence` for timing
+  (Upcoming ranks 1 → 3 → 4 → 5).
 - Keep parent-led: never force a stretch onto a night without approval.
