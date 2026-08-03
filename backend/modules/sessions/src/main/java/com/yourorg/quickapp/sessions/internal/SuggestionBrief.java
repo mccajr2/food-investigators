@@ -1,5 +1,6 @@
 package com.yourorg.quickapp.sessions.internal;
 
+import com.yourorg.quickapp.foods.SafeExposureSnapshot;
 import java.util.List;
 
 /** Bounded context for the LLM — never a full history dump. */
@@ -13,7 +14,14 @@ record SuggestionBrief(
         int familiarityTrulyNew,
         int ateEnoughYes,
         int ateEnoughNo,
-        List<SuggestionCandidate> candidates) {
+        List<SuggestionCandidate> candidates,
+        List<SafeExposureSnapshot> safeExposures) {
 
     static final int MAX_CANDIDATES = 20;
+    static final int MAX_SAFE_EXPOSURES = 20;
+
+    SuggestionBrief {
+        candidates = List.copyOf(candidates);
+        safeExposures = List.copyOf(safeExposures);
+    }
 }

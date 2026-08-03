@@ -1,6 +1,7 @@
 package com.yourorg.quickapp.sessions.internal;
 
 import com.yourorg.quickapp.foods.CatalogFood;
+import com.yourorg.quickapp.foods.SafeExposureSnapshot;
 import com.yourorg.quickapp.sessions.Familiarity;
 import com.yourorg.quickapp.sessions.InsightsResponse;
 import com.yourorg.quickapp.sessions.Liked;
@@ -21,7 +22,8 @@ final class SuggestionBriefBuilder {
     static SuggestionBrief build(
             List<TastingSession> completedNewestFirst,
             List<CatalogFood> selectable,
-            InsightsResponse insights) {
+            InsightsResponse insights,
+            List<SafeExposureSnapshot> safeExposures) {
         Set<UUID> recentFoodIds = recentFoodIds(completedNewestFirst, 3);
         Set<UUID> likedNoFoodIds = likedNoFoodIds(completedNewestFirst);
 
@@ -40,6 +42,13 @@ final class SuggestionBriefBuilder {
         List<SuggestionCandidate> shortlist =
                 ranked.stream().limit(SuggestionBrief.MAX_CANDIDATES).toList();
 
+        List<SafeExposureSnapshot> boundedSafes =
+                safeExposures == null
+                        ? List.of()
+                        : safeExposures.stream()
+                                .limit(SuggestionBrief.MAX_SAFE_EXPOSURES)
+                                .toList();
+
         String paceHint = paceHint(insights);
 
         return new SuggestionBrief(
@@ -52,7 +61,16 @@ final class SuggestionBriefBuilder {
                 insights.familiarityTrulyNew(),
                 insights.ateEnoughYes(),
                 insights.ateEnoughNo(),
-                shortlist);
+                shortlist,
+                boundedSafes);
+    }
+
+    /** Back-compat overload used by older tests — empty safe exposures. */
+    static SuggestionBrief build(
+            List<TastingSession> completedNewestFirst,
+            List<CatalogFood> selectable,
+            InsightsResponse insights) {
+        return build(completedNewestFirst, selectable, insights, List.of());
     }
 
     static String paceHint(InsightsResponse insights) {

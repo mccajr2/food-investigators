@@ -1,5 +1,6 @@
 package com.yourorg.quickapp.sessions.internal;
 
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
@@ -7,6 +8,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -19,6 +21,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,6 +43,7 @@ class SessionSuggestionApiIntegrationTest {
     private static final String APPLES = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa04";
     private static final String STRAWBERRIES = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa05";
     private static final String BLUEBERRIES = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa13";
+    private static final String BAGEL = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa08";
 
     @Autowired
     private MockMvc mockMvc;
@@ -70,6 +74,8 @@ class SessionSuggestionApiIntegrationTest {
                 .andExpect(jsonPath("$.foods.length()").value(2))
                 .andExpect(jsonPath("$.foods[0].foodId").isNotEmpty())
                 .andExpect(jsonPath("$.foods[1].foodId").isNotEmpty())
+                .andExpect(jsonPath("$.foods[0].proposedName").value(nullValue()))
+                .andExpect(jsonPath("$.foods[1].proposedName").value(nullValue()))
                 .andExpect(jsonPath("$.foods[0].familiarity").isNotEmpty())
                 .andExpect(jsonPath("$.scheduledOn").isNotEmpty());
 
@@ -86,7 +92,11 @@ class SessionSuggestionApiIntegrationTest {
         mockMvc.perform(get("/api/sessions/suggestions/next").header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.source").value("heuristic"))
-                .andExpect(jsonPath("$.foods.length()").value(2));
+                .andExpect(jsonPath("$.foods.length()").value(2))
+                .andExpect(jsonPath("$.foods[0].foodId").isNotEmpty())
+                .andExpect(jsonPath("$.foods[1].foodId").isNotEmpty())
+                .andExpect(jsonPath("$.foods[0].proposedName").value(nullValue()))
+                .andExpect(jsonPath("$.foods[1].proposedName").value(nullValue()));
 
         verify(suggestionLlmPort).propose(any());
     }
@@ -148,6 +158,258 @@ class SessionSuggestionApiIntegrationTest {
                 .andExpect(jsonPath("$.foods.length()").value(2));
     }
 
+    private static UUID safeAnchorOnShortlist(SuggestionBrief brief) {
+        java.util.Set<UUID> safeIds = new java.util.HashSet<>();
+        for (var safe : brief.safeExposures()) {
+            safeIds.add(safe.foodId());
+        }
+        return brief.candidates().stream()
+                .map(SuggestionCandidate::foodId)
+                .filter(safeIds::contains)
+                .findFirst()
+                .orElseThrow(
+                        () ->
+                                new IllegalStateException(
+                                        "Expected a shortlist food with a safe exposure"));
+    }
+
+    private static Optional<LlmSuggestionChoice> inventChoice(
+            SuggestionBrief brief, String inventName, String variant, String rationale) {
+        UUID anchor = safeAnchorOnShortlist(brief);
+        return Optional.of(
+                new LlmSuggestionChoice(
+                        List.of(
+                                new LlmFoodPick(anchor, Familiarity.safe),
+                                LlmFoodPick.invent(inventName, variant, Familiarity.truly_new)),
+                        rationale));
+    }
+
+    @Test
+    void aiInventWithSafeAnchorReturnsInventFieldsWithoutCreatingFood() throws Exception {
+        String token = register("suggest-invent-" + System.nanoTime() + "@example.com");
+        planAndComplete(token, day(0), APPLES, STRAWBERRIES);
+        planAndComplete(token, day(1), STRAWBERRIES, BLUEBERRIES);
+        planAndComplete(token, day(2), BLUEBERRIES, APPLES);
+        // Mark a not-recent food safe so it stays on the shortlist for invent anchoring.
+        upsertSafeExposure(token, BAGEL);
+
+        when(suggestionLlmPort.propose(any()))
+                .thenAnswer(
+                        invocation ->
+                                inventChoice(
+                                        invocation.getArgument(0),
+                                        "Pickles",
+                                        "spears",
+                                        "Salty stretch"));
+
+        MvcResult foodsBefore =
+                mockMvc.perform(get("/api/foods").header("Authorization", "Bearer " + token))
+                        .andExpect(status().isOk())
+                        .andReturn();
+        Assertions.assertThat(foodsBefore.getResponse().getContentAsString())
+                .doesNotContain("\"name\":\"Pickles\"");
+
+        mockMvc.perform(get("/api/sessions/suggestions/next").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.source").value("ai"))
+                .andExpect(jsonPath("$.rationale").value("Salty stretch"))
+                .andExpect(jsonPath("$.foods[0].foodId").value(BAGEL))
+                .andExpect(jsonPath("$.foods[0].familiarity").value("safe"))
+                .andExpect(jsonPath("$.foods[0].proposedName").value(nullValue()))
+                .andExpect(jsonPath("$.foods[1].foodId").value(nullValue()))
+                .andExpect(jsonPath("$.foods[1].proposedName").value("Pickles"))
+                .andExpect(jsonPath("$.foods[1].proposedVariantNote").value("spears"))
+                .andExpect(jsonPath("$.foods[1].familiarity").value("truly_new"))
+                .andExpect(jsonPath("$.foods[1].name").value("Pickles"));
+
+        MvcResult foodsAfter =
+                mockMvc.perform(get("/api/foods").header("Authorization", "Bearer " + token))
+                        .andExpect(status().isOk())
+                        .andReturn();
+        Assertions.assertThat(foodsAfter.getResponse().getContentAsString())
+                .doesNotContain("\"name\":\"Pickles\"");
+    }
+
+    @Test
+    void inventApprovePathCreatesFoodExposureThenSession() throws Exception {
+        String token = register("suggest-approve-invent-" + System.nanoTime() + "@example.com");
+        planAndComplete(token, day(0), APPLES, STRAWBERRIES);
+        planAndComplete(token, day(1), STRAWBERRIES, BLUEBERRIES);
+        planAndComplete(token, day(2), BLUEBERRIES, APPLES);
+        upsertSafeExposure(token, BAGEL);
+
+        when(suggestionLlmPort.propose(any()))
+                .thenAnswer(
+                        invocation ->
+                                inventChoice(
+                                        invocation.getArgument(0),
+                                        "Pickles",
+                                        "spears",
+                                        "Salty stretch"));
+
+        MvcResult suggestion =
+                mockMvc.perform(
+                                get("/api/sessions/suggestions/next")
+                                        .header("Authorization", "Bearer " + token))
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.foods[0].foodId").value(BAGEL))
+                        .andExpect(jsonPath("$.foods[1].foodId").value(nullValue()))
+                        .andExpect(jsonPath("$.foods[1].proposedName").value("Pickles"))
+                        .andReturn();
+        String scheduledOn =
+                jsonStringField(suggestion.getResponse().getContentAsString(), "scheduledOn");
+
+        MvcResult createdFood =
+                mockMvc.perform(
+                                post("/api/foods")
+                                        .header("Authorization", "Bearer " + token)
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(
+                                                """
+                                                {
+                                                  "name":"Pickles",
+                                                  "iconKey":"custom_pickles",
+                                                  "sessionEligible":true
+                                                }
+                                                """))
+                        .andExpect(status().isCreated())
+                        .andExpect(jsonPath("$.name").value("Pickles"))
+                        .andReturn();
+        String picklesId = idFrom(createdFood);
+
+        mockMvc.perform(
+                        put("/api/foods/" + picklesId + "/exposures")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                                        {"variantKey":"spears","familiarity":"truly_new"}
+                                        """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.foodId").value(picklesId))
+                .andExpect(jsonPath("$.variantKey").value("spears"))
+                .andExpect(jsonPath("$.familiarity").value("truly_new"))
+                .andExpect(jsonPath("$.source").value("manual"));
+
+        mockMvc.perform(
+                        post("/api/sessions")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        createBody(
+                                                scheduledOn,
+                                                BAGEL,
+                                                "safe",
+                                                null,
+                                                picklesId,
+                                                "truly_new",
+                                                "spears")))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.status").value("planned"))
+                .andExpect(jsonPath("$.scheduledOn").value(scheduledOn))
+                .andExpect(jsonPath("$.foods[0].foodId").value(BAGEL))
+                .andExpect(jsonPath("$.foods[1].foodId").value(picklesId))
+                .andExpect(jsonPath("$.foods[1].variantNote").value("spears"));
+    }
+
+    @Test
+    void inventNameMatchingCatalogBecomesCatalogPick() throws Exception {
+        String token = register("suggest-invent-match-" + System.nanoTime() + "@example.com");
+        planAndComplete(token, day(0), APPLES, STRAWBERRIES);
+        planAndComplete(token, day(1), STRAWBERRIES, BLUEBERRIES);
+        planAndComplete(token, day(2), BLUEBERRIES, APPLES);
+        upsertSafeExposure(token, BAGEL);
+
+        when(suggestionLlmPort.propose(any()))
+                .thenAnswer(
+                        invocation -> {
+                            SuggestionBrief brief = invocation.getArgument(0);
+                            UUID anchor = safeAnchorOnShortlist(brief);
+                            SuggestionCandidate match =
+                                    brief.candidates().stream()
+                                            .filter(c -> !c.foodId().equals(anchor))
+                                            .findFirst()
+                                            .orElseThrow();
+                            return Optional.of(
+                                    new LlmSuggestionChoice(
+                                            List.of(
+                                                    new LlmFoodPick(anchor, Familiarity.safe),
+                                                    LlmFoodPick.invent(
+                                                            match.name(),
+                                                            null,
+                                                            Familiarity.familiar_but_new)),
+                                            "Match catalog"));
+                        });
+
+        mockMvc.perform(get("/api/sessions/suggestions/next").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.source").value("ai"))
+                .andExpect(jsonPath("$.foods[1].foodId").isNotEmpty())
+                .andExpect(jsonPath("$.foods[1].proposedName").value(nullValue()));
+    }
+
+    @Test
+    void twoInventsFallsBackToHeuristic() throws Exception {
+        String token = register("suggest-two-invent-" + System.nanoTime() + "@example.com");
+        planAndComplete(token, day(0), APPLES, STRAWBERRIES);
+        planAndComplete(token, day(1), STRAWBERRIES, BLUEBERRIES);
+        planAndComplete(token, day(2), BLUEBERRIES, APPLES);
+        upsertSafeExposure(token, BAGEL);
+
+        when(suggestionLlmPort.propose(any()))
+                .thenReturn(
+                        Optional.of(
+                                new LlmSuggestionChoice(
+                                        List.of(
+                                                LlmFoodPick.invent(
+                                                        "Pickles", null, Familiarity.truly_new),
+                                                LlmFoodPick.invent(
+                                                        "Olives", null, Familiarity.truly_new)),
+                                        "too stretchy")));
+
+        mockMvc.perform(get("/api/sessions/suggestions/next").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.source").value("heuristic"))
+                .andExpect(jsonPath("$.foods[0].foodId").isNotEmpty())
+                .andExpect(jsonPath("$.foods[1].foodId").isNotEmpty())
+                .andExpect(jsonPath("$.foods[0].proposedName").value(nullValue()))
+                .andExpect(jsonPath("$.foods[1].proposedName").value(nullValue()));
+    }
+
+    @Test
+    void inventWithoutSafeExposuresFallsBackToHeuristic() throws Exception {
+        String token = register("suggest-no-safe-" + System.nanoTime() + "@example.com");
+        planAndCompleteSoft(token, day(0), APPLES, STRAWBERRIES);
+        planAndCompleteSoft(token, day(1), STRAWBERRIES, BLUEBERRIES);
+        planAndCompleteSoft(token, day(2), BLUEBERRIES, APPLES);
+
+        when(suggestionLlmPort.propose(any()))
+                .thenAnswer(
+                        invocation -> {
+                            SuggestionBrief brief = invocation.getArgument(0);
+                            Assertions.assertThat(brief.safeExposures()).isEmpty();
+                            SuggestionCandidate first = brief.candidates().get(0);
+                            return Optional.of(
+                                    new LlmSuggestionChoice(
+                                            List.of(
+                                                    new LlmFoodPick(
+                                                            first.foodId(), Familiarity.safe),
+                                                    LlmFoodPick.invent(
+                                                            "Pickles",
+                                                            null,
+                                                            Familiarity.truly_new)),
+                                            "invent"));
+                        });
+
+        mockMvc.perform(get("/api/sessions/suggestions/next").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.source").value("heuristic"))
+                .andExpect(jsonPath("$.foods[0].foodId").isNotEmpty())
+                .andExpect(jsonPath("$.foods[1].foodId").isNotEmpty())
+                .andExpect(jsonPath("$.foods[0].proposedName").value(nullValue()))
+                .andExpect(jsonPath("$.foods[1].proposedName").value(nullValue()));
+    }
+
     @Test
     void suggestionFoodsAreHouseholdScopedAndApproveCreatesSession() throws Exception {
         String tokenA = register("suggest-scope-a-" + System.nanoTime() + "@example.com");
@@ -179,20 +441,20 @@ class SessionSuggestionApiIntegrationTest {
                         .andExpect(jsonPath("$.foods.length()").value(2))
                         .andReturn();
         String body = suggestionResult.getResponse().getContentAsString();
-        org.assertj.core.api.Assertions.assertThat(body).doesNotContain(privateFoodId);
+        Assertions.assertThat(body).doesNotContain(privateFoodId);
 
         String scheduledOn = jsonStringField(body, "scheduledOn");
         Matcher foodIds = Pattern.compile("\"foodId\"\\s*:\\s*\"([^\"]+)\"").matcher(body);
-        org.assertj.core.api.Assertions.assertThat(foodIds.find()).isTrue();
+        Assertions.assertThat(foodIds.find()).isTrue();
         String firstFood = foodIds.group(1);
-        org.assertj.core.api.Assertions.assertThat(foodIds.find()).isTrue();
+        Assertions.assertThat(foodIds.find()).isTrue();
         String secondFood = foodIds.group(1);
 
         Matcher familiarities =
                 Pattern.compile("\"familiarity\"\\s*:\\s*\"([^\"]+)\"").matcher(body);
-        org.assertj.core.api.Assertions.assertThat(familiarities.find()).isTrue();
+        Assertions.assertThat(familiarities.find()).isTrue();
         String fam1 = familiarities.group(1);
-        org.assertj.core.api.Assertions.assertThat(familiarities.find()).isTrue();
+        Assertions.assertThat(familiarities.find()).isTrue();
         String fam2 = familiarities.group(1);
 
         mockMvc.perform(
@@ -211,6 +473,19 @@ class SessionSuggestionApiIntegrationTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.status").value("planned"))
                 .andExpect(jsonPath("$.scheduledOn").value(scheduledOn));
+    }
+
+    private void upsertSafeExposure(String token, String foodId) throws Exception {
+        mockMvc.perform(
+                        put("/api/foods/" + foodId + "/exposures")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                                        {"variantKey":"","familiarity":"safe"}
+                                        """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.familiarity").value("safe"));
     }
 
     private void planAndComplete(String token, String scheduledOn, String food1, String food2)
@@ -243,6 +518,43 @@ class SessionSuggestionApiIntegrationTest {
                                           "foods":[
                                             {"position":1,"liked":"like","texture":"soft","ateEnough":true},
                                             {"position":2,"liked":"like","texture":"soft","ateEnough":true}
+                                          ]
+                                        }
+                                        """))
+                .andExpect(status().isOk());
+    }
+
+    /** Completes without like+ateEnough so outcome hooks do not create safe exposures. */
+    private void planAndCompleteSoft(String token, String scheduledOn, String food1, String food2)
+            throws Exception {
+        MvcResult created =
+                mockMvc.perform(
+                                post("/api/sessions")
+                                        .header("Authorization", "Bearer " + token)
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(
+                                                createBody(
+                                                        scheduledOn,
+                                                        food1,
+                                                        "truly_new",
+                                                        null,
+                                                        food2,
+                                                        "truly_new",
+                                                        null)))
+                        .andExpect(status().isCreated())
+                        .andReturn();
+        String sessionId = idFrom(created);
+
+        mockMvc.perform(
+                        post("/api/sessions/" + sessionId + "/complete")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                                        {
+                                          "foods":[
+                                            {"position":1,"liked":"so_so","ateEnough":false},
+                                            {"position":2,"liked":"so_so","ateEnough":false}
                                           ]
                                         }
                                         """))

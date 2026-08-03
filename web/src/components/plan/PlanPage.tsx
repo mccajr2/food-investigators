@@ -7,6 +7,7 @@ import type {
   SessionFoodRequest,
   SessionResponse,
   SessionSuggestionResponse,
+  SuggestedSessionFood,
   SuggestionSource,
 } from "@/api/types"
 import { PlanDatePicker } from "@/components/plan/PlanDatePicker"
@@ -19,6 +20,12 @@ import {
   autofillFamiliarity,
   variantKeysForFood,
 } from "@/lib/foodExposures"
+import {
+  isInventSlot,
+  resolveSuggestSlot,
+  slotIsReady,
+  type SuggestFoodSlot,
+} from "@/lib/suggestInvent"
 
 const FAMILIARITY_OPTIONS: { value: Familiarity; label: string }[] = [
   { value: "safe", label: "Safe" },
@@ -27,11 +34,7 @@ const FAMILIARITY_OPTIONS: { value: Familiarity; label: string }[] = [
   { value: "retrying", label: "Retrying" },
 ]
 
-type FoodSlot = {
-  foodId: string
-  familiarity: Familiarity
-  variantNote: string
-}
+type FoodSlot = SuggestFoodSlot
 
 type SuggestDraft = {
   scheduledOn: string
@@ -67,6 +70,7 @@ const emptySlot = (): FoodSlot => ({
   foodId: "",
   familiarity: "truly_new",
   variantNote: "",
+  inventName: null,
 })
 
 /** Local calendar today as YYYY-MM-DD for the Plan calendar min. */
@@ -101,6 +105,39 @@ export function isEarlyRunNeeded(
   return scheduledOn > todayIso
 }
 
+function suggestedFoodToSlot(food: SuggestedSessionFood): FoodSlot {
+  if (food.foodId == null) {
+    const inventName = (food.proposedName ?? food.name).trim()
+    return {
+      foodId: "",
+      familiarity: food.familiarity,
+      variantNote: food.proposedVariantNote?.trim() ?? "",
+      inventName: inventName.length > 0 ? inventName : null,
+    }
+  }
+  return {
+    foodId: food.foodId,
+    familiarity: food.familiarity,
+    variantNote: food.proposedVariantNote?.trim() ?? "",
+    inventName: null,
+  }
+}
+
+function suggestionToDraft(suggestion: SessionSuggestionResponse): SuggestDraft {
+  const first = suggestion.foods[0]
+  const second = suggestion.foods[1]
+  if (!first || !second) {
+    throw new Error("Suggestion did not include two foods")
+  }
+  return {
+    scheduledOn: suggestion.scheduledOn,
+    slot1: suggestedFoodToSlot(first),
+    slot2: suggestedFoodToSlot(second),
+    rationale: suggestion.rationale?.trim() ? suggestion.rationale.trim() : null,
+    source: suggestion.source,
+  }
+}
+
 function sessionToUpdatePayload(
   session: SessionResponse,
   scheduledOn: string,
@@ -129,29 +166,6 @@ function sessionToUpdatePayload(
         variantNote: second.variantNote,
       },
     ],
-  }
-}
-
-function suggestionToDraft(suggestion: SessionSuggestionResponse): SuggestDraft {
-  const first = suggestion.foods[0]
-  const second = suggestion.foods[1]
-  if (!first || !second) {
-    throw new Error("Suggestion did not include two foods")
-  }
-  return {
-    scheduledOn: suggestion.scheduledOn,
-    slot1: {
-      foodId: first.foodId,
-      familiarity: first.familiarity,
-      variantNote: "",
-    },
-    slot2: {
-      foodId: second.foodId,
-      familiarity: second.familiarity,
-      variantNote: "",
-    },
-    rationale: suggestion.rationale?.trim() ? suggestion.rationale.trim() : null,
-    source: suggestion.source,
   }
 }
 
@@ -188,6 +202,9 @@ export function PlanPage({
   const suggestSameFoodSelected =
     Boolean(suggestDraft?.slot1.foodId) &&
     suggestDraft?.slot1.foodId === suggestDraft?.slot2.foodId
+  const suggestHasInvent =
+    suggestDraft != null &&
+    (isInventSlot(suggestDraft.slot1) || isInventSlot(suggestDraft.slot2))
 
   useEffect(() => {
     let cancelled = false
@@ -239,11 +256,13 @@ export function PlanPage({
       foodId: first?.foodId ?? "",
       familiarity: first?.familiarity ?? "safe",
       variantNote: first?.variantNote ?? "",
+      inventName: null,
     })
     setSlot2({
       foodId: second?.foodId ?? "",
       familiarity: second?.familiarity ?? "safe",
       variantNote: second?.variantNote ?? "",
+      inventName: null,
     })
     setEditor({ mode: "edit", session })
   }
@@ -314,8 +333,8 @@ export function PlanPage({
     }
     if (
       !suggestDraft.scheduledOn ||
-      !suggestDraft.slot1.foodId ||
-      !suggestDraft.slot2.foodId
+      !slotIsReady(suggestDraft.slot1) ||
+      !slotIsReady(suggestDraft.slot2)
     ) {
       setStatus({
         kind: "error",
@@ -330,14 +349,6 @@ export function PlanPage({
       })
       return
     }
-    const variantError = sameFoodVariantError(
-      suggestDraft.slot1,
-      suggestDraft.slot2,
-    )
-    if (variantError) {
-      setStatus({ kind: "error", message: variantError })
-      return
-    }
     if (plannedNightOccupiesDate(suggestDraft.scheduledOn)) {
       setStatus({
         kind: "error",
@@ -345,15 +356,54 @@ export function PlanPage({
       })
       return
     }
-    const foodsPair: [SessionFoodRequest, SessionFoodRequest] = [
-      toFoodRequest(suggestDraft.slot1),
-      toFoodRequest(suggestDraft.slot2),
-    ]
     setStatus({ kind: "saving" })
     try {
+      let catalog = foods
+      const resolved1 = await resolveSuggestSlot(
+        suggestDraft.slot1,
+        catalog,
+        foodsClient,
+      )
+      if (resolved1.createdFood) {
+        catalog = [...catalog, resolved1.createdFood]
+        setFoods(catalog)
+      }
+      const resolved2 = await resolveSuggestSlot(
+        suggestDraft.slot2,
+        catalog,
+        foodsClient,
+      )
+      if (resolved2.createdFood) {
+        catalog = [...catalog, resolved2.createdFood]
+        setFoods(catalog)
+      }
+
+      const resolvedSlots: [FoodSlot, FoodSlot] = [
+        {
+          foodId: resolved1.request.foodId,
+          familiarity: resolved1.request.familiarity,
+          variantNote: resolved1.request.variantNote ?? "",
+          inventName: null,
+        },
+        {
+          foodId: resolved2.request.foodId,
+          familiarity: resolved2.request.familiarity,
+          variantNote: resolved2.request.variantNote ?? "",
+          inventName: null,
+        },
+      ]
+      const variantError = sameFoodVariantError(
+        resolvedSlots[0],
+        resolvedSlots[1],
+      )
+      if (variantError) {
+        setStatus({ kind: "error", message: variantError })
+        return
+      }
+
       const created = await sessionsClient.create({
         scheduledOn: suggestDraft.scheduledOn,
-        foods: foodsPair,
+        foods: [resolved1.request, resolved2.request],
       })
       setSessions((current) =>
         [...current, created].sort((a, b) =>
@@ -624,6 +674,9 @@ export function PlanPage({
             <p className="text-xs text-muted-foreground">
               Review, swap foods if you like, then approve to add it to Upcoming.
               {suggestDraft.source === "ai" ? " Drawn with AI help." : null}
+              {suggestHasInvent
+                ? " One food is new — Approve adds it to your catalog."
+                : null}
             </p>
             {suggestDraft.rationale ? (
               <p className="mt-1 text-sm text-muted-foreground">
@@ -652,6 +705,7 @@ export function PlanPage({
             foods={selectableFoods}
             disabled={status.kind === "saving"}
             variantRequired={Boolean(suggestSameFoodSelected)}
+            allowInvent
             onChange={(slot) =>
               setSuggestDraft({ ...suggestDraft, slot1: slot })
             }
@@ -662,6 +716,7 @@ export function PlanPage({
             foods={selectableFoods}
             disabled={status.kind === "saving"}
             variantRequired={Boolean(suggestSameFoodSelected)}
+            allowInvent
             onChange={(slot) =>
               setSuggestDraft({ ...suggestDraft, slot2: slot })
             }
@@ -811,17 +866,26 @@ export function applyPlanSlotChange(
   next: FoodSlot,
   foods: FoodResponse[],
 ): FoodSlot {
+  const clearedInvent =
+    next.foodId && next.inventName
+      ? { ...next, inventName: null }
+      : next
   const foodOrVariantChanged =
-    previous.foodId !== next.foodId || previous.variantNote !== next.variantNote
+    previous.foodId !== clearedInvent.foodId ||
+    previous.variantNote !== clearedInvent.variantNote ||
+    previous.inventName !== clearedInvent.inventName
   if (!foodOrVariantChanged) {
-    return next
+    return clearedInvent
   }
-  if (!next.foodId) {
-    return { ...next, familiarity: "truly_new" }
+  if (isInventSlot(clearedInvent)) {
+    return clearedInvent
   }
-  const food = foods.find((item) => item.id === next.foodId)
-  const filled = autofillFamiliarity(food, next.variantNote)
-  return { ...next, familiarity: filled ?? "truly_new" }
+  if (!clearedInvent.foodId) {
+    return { ...clearedInvent, familiarity: "truly_new" }
+  }
+  const food = foods.find((item) => item.id === clearedInvent.foodId)
+  const filled = autofillFamiliarity(food, clearedInvent.variantNote)
+  return { ...clearedInvent, familiarity: filled ?? "truly_new" }
 }
 
 type FoodSlotFieldsProps = {
@@ -830,6 +894,8 @@ type FoodSlotFieldsProps = {
   foods: FoodResponse[]
   disabled: boolean
   variantRequired: boolean
+  /** Suggest drafts may show invent slots; Plan create/edit does not. */
+  allowInvent?: boolean
   onChange: (slot: FoodSlot) => void
 }
 
@@ -839,8 +905,10 @@ function FoodSlotFields({
   foods,
   disabled,
   variantRequired,
+  allowInvent = false,
   onChange,
 }: FoodSlotFieldsProps) {
+  const invent = allowInvent && isInventSlot(slot)
   const retrying = slot.familiarity === "retrying"
   const selectedFood = foods.find((food) => food.id === slot.foodId)
   const knownVariants = variantKeysForFood(selectedFood)
@@ -858,13 +926,47 @@ function FoodSlotFields({
   return (
     <fieldset disabled={disabled} className="flex flex-col gap-2">
       <legend className="text-sm font-medium">{label}</legend>
-      <PlanFoodCombobox
-        label={label}
-        foods={foods}
-        value={slot.foodId}
-        disabled={disabled}
-        onChange={(foodId) => commit({ ...slot, foodId })}
-      />
+      {invent ? (
+        <div
+          className="flex flex-col gap-2 rounded-md border border-dashed border-border bg-muted/30 p-3"
+          data-testid={`${label} invent`}
+        >
+          <p className="text-sm">
+            New suggestion:{" "}
+            <span className="font-medium">{slot.inventName}</span>
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Not in your catalog yet. Approve will add it, or choose an existing
+            food instead.
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="self-start"
+            onClick={() =>
+              commit({
+                ...slot,
+                foodId: "",
+                inventName: null,
+                familiarity: "truly_new",
+              })
+            }
+          >
+            Choose from catalog instead
+          </Button>
+        </div>
+      ) : (
+        <PlanFoodCombobox
+          label={label}
+          foods={foods}
+          value={slot.foodId}
+          disabled={disabled}
+          onChange={(foodId) =>
+            commit({ ...slot, foodId, inventName: null })
+          }
+        />
+      )}
       <select
         aria-label={`${label} familiarity`}
         className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
@@ -892,9 +994,9 @@ function FoodSlotFields({
         placeholder={variantPlaceholder}
         required={variantRequired}
         maxLength={200}
-        list={knownVariants.length > 0 ? variantListId : undefined}
+        list={!invent && knownVariants.length > 0 ? variantListId : undefined}
       />
-      {knownVariants.length > 0 ? (
+      {!invent && knownVariants.length > 0 ? (
         <datalist id={variantListId}>
           {knownVariants.map((key) => (
             <option key={key} value={key} />

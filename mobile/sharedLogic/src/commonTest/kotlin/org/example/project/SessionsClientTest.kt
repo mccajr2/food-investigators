@@ -153,6 +153,49 @@ class SessionsClientTest {
         }
 
     @Test
+    fun suggestNextParsesInventSlotWithNullFoodId() =
+        runTest {
+            val store = InMemoryTokenStore()
+            store.saveToken("tok", rememberMe = true)
+            val engine =
+                MockEngine { request ->
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        content =
+                            """
+                            {"scheduledOn":"2026-07-16",
+                             "foods":[
+                               {"foodId":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa04",
+                                "name":"Apples",
+                                "iconKey":"apple",
+                                "familiarity":"safe"},
+                               {"foodId":null,
+                                "name":"Pickles",
+                                "iconKey":"custom_pickles",
+                                "familiarity":"truly_new",
+                                "proposedName":"Pickles",
+                                "proposedVariantNote":"spears"}
+                             ],
+                             "rationale":"Salty stretch from chips territory.",
+                             "source":"ai"}
+                            """.trimIndent(),
+                        status = HttpStatusCode.OK,
+                        headers = headersOf(HttpHeaders.ContentType, "application/json"),
+                    )
+                }
+
+            val client = SessionsClient("http://localhost:8080", httpClient(engine), store)
+            val suggestion = client.suggestNext()
+
+            assertEquals("ai", suggestion.source)
+            assertEquals("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa04", suggestion.foods[0].foodId)
+            assertNull(suggestion.foods[1].foodId)
+            assertEquals("Pickles", suggestion.foods[1].proposedName)
+            assertEquals("spears", suggestion.foods[1].proposedVariantNote)
+            assertEquals("truly_new", suggestion.foods[1].familiarity)
+        }
+
+    @Test
     fun downloadHistoryPdfSendsBearerAndOptionalDateRange() =
         runTest {
             val store = InMemoryTokenStore()

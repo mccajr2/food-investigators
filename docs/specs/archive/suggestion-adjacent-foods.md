@@ -1,6 +1,6 @@
 # Spec: suggestion-adjacent-foods
 
-Status: in-progress  
+Status: done  
 Created: 2026-08-03  
 Parent: [docs/roadmap.md](../../roadmap.md)  
 Added: 2026-08-03 · re-rank split  
@@ -99,38 +99,38 @@ adds them programmatically. Dismissed Suggest drafts must not litter the catalog
 
 ## Acceptance criteria
 
-- [ ] When the household has ≥1 safe exposure and AI is used, Suggest **may**
+- [x] When the household has ≥1 safe exposure and AI is used, Suggest **may**
       return exactly one invent (`foodId` null + `proposedName`) and one catalog
       food with `familiarity=safe` tied to a safe exposure.
-- [ ] Suggest never invents when there are no safe exposures; never invents both
+- [x] Suggest never invents when there are no safe exposures; never invents both
       slots; heuristic path never invents.
-- [ ] Dismiss / Suggest alone does **not** create catalog foods or exposures.
-- [ ] Approve of an invent: match existing tasting food by name **or** create
+- [x] Dismiss / Suggest alone does **not** create catalog foods or exposures.
+- [x] Approve of an invent: match existing tasting food by name **or** create
       household tasting food; then create planned session with two real food ids.
-- [ ] Approve upserts an exposure for the invent `(foodId, normalized variant)`
+- [x] Approve upserts an exposure for the invent `(foodId, normalized variant)`
       into the personal pipeline (not auto-`safe` unless the draft said safe —
       invent stretch should not be marked safe by default).
-- [ ] Parent can swap invent to an existing catalog food before Approve.
-- [ ] OpenAPI documents invent fields; version bump; web + mobile clients
+- [x] Parent can swap invent to an existing catalog food before Approve.
+- [x] OpenAPI documents invent fields; version bump; web + mobile clients
       updated; web Plan Suggest/Approve E2E covered by component tests (mock
       clients).
-- [ ] Unit + IT: invent proposal validation; approve match vs invent-create;
+- [x] Unit + IT: invent proposal validation; approve match vs invent-create;
       dismiss no-op; ModularityTests pass.
-- [ ] No changes to pacing-evidence, stretch targets, or native Plan UI.
+- [x] No changes to pacing-evidence, stretch targets, or native Plan UI.
 
 ## Tasks
 
-- [ ] Backend: feed safe exposures into suggestion brief; LLM invent rules +
+- [x] Backend: feed safe exposures into suggestion brief; LLM invent rules +
       validation (≤1 invent, safe anchor required); heuristic unchanged
       (catalog-only); unit tests with mocked LLM.
-- [ ] Contract: `SuggestedSessionFood` invent fields (`foodId` nullable,
+- [x] Contract: `SuggestedSessionFood` invent fields (`foodId` nullable,
       `proposedName`, `proposedVariantNote`); version bump; web + mobile DTO
       sync.
-- [ ] Web: Suggest panel invent display + swap; Approve match-or-create then
+- [x] Web: Suggest panel invent display + swap; Approve match-or-create then
       session create + exposure upsert; tests.
-- [ ] Backend IT (and/or web-mocked): invent approve path; dismiss does not
+- [x] Backend IT (and/or web-mocked): invent approve path; dismiss does not
       invent; ModularityTests.
-- [ ] Docs: archive on `/pr` after ship.
+- [x] Docs: archive on `/pr` after ship.
 
 ## Open questions
 

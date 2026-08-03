@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 
 import com.yourorg.quickapp.foods.CatalogFood;
 import com.yourorg.quickapp.foods.FoodCatalog;
+import com.yourorg.quickapp.foods.SafeExposureSnapshot;
 import com.yourorg.quickapp.sessions.Familiarity;
 import com.yourorg.quickapp.sessions.InsufficientSuggestionCatalogException;
 import com.yourorg.quickapp.sessions.Liked;
@@ -59,12 +60,25 @@ class SessionSuggestionServiceTest {
                         llm,
                         Clock.fixed(now, ZoneOffset.UTC));
         when(foodCatalog.listActiveSnackPreferences(householdId)).thenReturn(List.of());
+        when(foodCatalog.listSafeExposures(householdId)).thenReturn(List.of());
         when(foodCatalog.listSelectable(householdId))
                 .thenReturn(
                         List.of(
                                 new CatalogFood(foodA, "Apples", "apple", null),
                                 new CatalogFood(foodB, "Strawberries", "strawberry", null),
                                 new CatalogFood(foodC, "Blueberries", "blueberry", null)));
+    }
+
+    private void stubReadyHistory() {
+        when(sessions.existsByHouseholdIdAndScheduledOnAndStatusIn(any(), any(), any()))
+                .thenReturn(false);
+        when(sessions.findByHouseholdIdAndStatusOrderByScheduledOnDescUpdatedAtDesc(
+                        householdId, SessionStatus.completed))
+                .thenReturn(
+                        List.of(
+                                completedNight(LocalDate.of(2026, 7, 12), foodA),
+                                completedNight(LocalDate.of(2026, 7, 13), foodB),
+                                completedNight(LocalDate.of(2026, 7, 14), foodC)));
     }
 
     @Test
@@ -85,15 +99,7 @@ class SessionSuggestionServiceTest {
 
     @Test
     void readyHistoryUsesAiWhenLlmReturnsValidShortlistPicks() {
-        when(sessions.existsByHouseholdIdAndScheduledOnAndStatusIn(any(), any(), any()))
-                .thenReturn(false);
-        when(sessions.findByHouseholdIdAndStatusOrderByScheduledOnDescUpdatedAtDesc(
-                        householdId, SessionStatus.completed))
-                .thenReturn(
-                        List.of(
-                                completedNight(LocalDate.of(2026, 7, 12), foodA),
-                                completedNight(LocalDate.of(2026, 7, 13), foodB),
-                                completedNight(LocalDate.of(2026, 7, 14), foodC)));
+        stubReadyHistory();
         when(llm.propose(any()))
                 .thenReturn(
                         Optional.of(
@@ -113,16 +119,112 @@ class SessionSuggestionServiceTest {
     }
 
     @Test
-    void invalidAiPickFallsBackToHeuristic() {
+    void aiInventWithSafeAnchorIsAccepted() {
+        stubReadyHistory();
+        when(foodCatalog.listSafeExposures(householdId))
+                .thenReturn(List.of(new SafeExposureSnapshot(foodB, "Strawberries", "")));
+        when(llm.propose(any()))
+                .thenReturn(
+                        Optional.of(
+                                new LlmSuggestionChoice(
+                                        List.of(
+                                                new LlmFoodPick(foodB, Familiarity.safe),
+                                                LlmFoodPick.invent(
+                                                        "Pickles", "spears", Familiarity.truly_new)),
+                                        "Salty stretch")));
+
+        SessionSuggestionResponse response = service.suggestNext(householdId);
+
+        assertThat(response.source()).isEqualTo(SuggestionSource.ai);
+        assertThat(response.foods().get(0).foodId()).isEqualTo(foodB);
+        assertThat(response.foods().get(0).familiarity()).isEqualTo(Familiarity.safe);
+        assertThat(response.foods().get(1).foodId()).isNull();
+        assertThat(response.foods().get(1).proposedName()).isEqualTo("Pickles");
+        assertThat(response.foods().get(1).proposedVariantNote()).isEqualTo("spears");
+        assertThat(response.foods().get(1).foodId()).isNull();
+    }
+
+    @Test
+    void inventNameMatchingCandidateBecomesCatalogPick() {
+        stubReadyHistory();
+        when(foodCatalog.listSafeExposures(householdId))
+                .thenReturn(List.of(new SafeExposureSnapshot(foodB, "Strawberries", "")));
+        when(llm.propose(any()))
+                .thenReturn(
+                        Optional.of(
+                                new LlmSuggestionChoice(
+                                        List.of(
+                                                new LlmFoodPick(foodB, Familiarity.safe),
+                                                LlmFoodPick.invent(
+                                                        "Blueberries", null, Familiarity.familiar_but_new)),
+                                        "Match catalog")));
+
+        SessionSuggestionResponse response = service.suggestNext(householdId);
+
+        assertThat(response.source()).isEqualTo(SuggestionSource.ai);
+        assertThat(response.foods().get(1).foodId()).isEqualTo(foodC);
+        assertThat(response.foods().get(1).proposedName()).isNull();
+    }
+
+    @Test
+    void twoInventsFallsBackToHeuristic() {
+        stubReadyHistory();
+        when(foodCatalog.listSafeExposures(householdId))
+                .thenReturn(List.of(new SafeExposureSnapshot(foodB, "Strawberries", "")));
+        when(llm.propose(any()))
+                .thenReturn(
+                        Optional.of(
+                                new LlmSuggestionChoice(
+                                        List.of(
+                                                LlmFoodPick.invent("Pickles", null, Familiarity.truly_new),
+                                                LlmFoodPick.invent("Olives", null, Familiarity.truly_new)),
+                                        "too stretchy")));
+
+        SessionSuggestionResponse response = service.suggestNext(householdId);
+
+        assertThat(response.source()).isEqualTo(SuggestionSource.heuristic);
+        assertThat(response.foods()).noneMatch(f -> f.foodId() == null);
+    }
+
+    @Test
+    void inventWithoutSafeExposuresFallsBackToHeuristic() {
+        stubReadyHistory();
+        when(llm.propose(any()))
+                .thenReturn(
+                        Optional.of(
+                                new LlmSuggestionChoice(
+                                        List.of(
+                                                new LlmFoodPick(foodB, Familiarity.safe),
+                                                LlmFoodPick.invent(
+                                                        "Pickles", null, Familiarity.truly_new)),
+                                        "invent")));
+
+        SessionSuggestionResponse response = service.suggestNext(householdId);
+
+        assertThat(response.source()).isEqualTo(SuggestionSource.heuristic);
+        assertThat(response.foods()).noneMatch(f -> f.foodId() == null);
+    }
+
+    @Test
+    void inventOnHeuristicPathIsRejected() {
         when(sessions.existsByHouseholdIdAndScheduledOnAndStatusIn(any(), any(), any()))
                 .thenReturn(false);
         when(sessions.findByHouseholdIdAndStatusOrderByScheduledOnDescUpdatedAtDesc(
                         householdId, SessionStatus.completed))
-                .thenReturn(
-                        List.of(
-                                completedNight(LocalDate.of(2026, 7, 12), foodA),
-                                completedNight(LocalDate.of(2026, 7, 13), foodB),
-                                completedNight(LocalDate.of(2026, 7, 14), foodC)));
+                .thenReturn(List.of(completedNight(LocalDate.of(2026, 7, 14), foodA)));
+        when(foodCatalog.listSafeExposures(householdId))
+                .thenReturn(List.of(new SafeExposureSnapshot(foodA, "Apples", "")));
+
+        SessionSuggestionResponse response = service.suggestNext(householdId);
+
+        assertThat(response.source()).isEqualTo(SuggestionSource.heuristic);
+        assertThat(response.foods()).noneMatch(f -> f.foodId() == null);
+        verify(llm, never()).propose(any());
+    }
+
+    @Test
+    void invalidAiPickFallsBackToHeuristic() {
+        stubReadyHistory();
         UUID offList = UUID.fromString("cccccccc-cccc-cccc-cccc-cccccccccccc");
         when(llm.propose(any()))
                 .thenReturn(
