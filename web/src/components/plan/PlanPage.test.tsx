@@ -147,6 +147,19 @@ async function pickCalendarDay(
   await user.click(within(form).getByRole("button", { name: dayLabel }));
 }
 
+async function pickFood(
+  user: ReturnType<typeof userEvent.setup>,
+  form: HTMLElement,
+  slotLabel: string,
+  foodName: string,
+) {
+  await user.click(
+    within(form).getByRole("combobox", { name: `${slotLabel} picker` }),
+  );
+  const list = screen.getByRole("listbox");
+  await user.click(within(list).getByText(foodName));
+}
+
 describe("PlanPage helpers", () => {
   it("formats local today for date min", () => {
     expect(localTodayIsoDate(new Date("2026-07-22T15:00:00"))).toBe(
@@ -314,9 +327,35 @@ describe("PlanPage", () => {
     await user.click(screen.getByRole("button", { name: "Plan a night" }));
 
     const form = screen.getByRole("form", { name: "Plan a night" });
-    const picker = within(form).getByLabelText("Food 1 picker");
-    expect(within(picker).getByText("Apples")).toBeInTheDocument();
-    expect(within(picker).queryByText("Salt chips")).not.toBeInTheDocument();
+    await user.click(
+      within(form).getByRole("combobox", { name: "Food 1 picker" }),
+    );
+    const list = screen.getByRole("listbox");
+    expect(within(list).getByText("Apples")).toBeInTheDocument();
+    expect(within(list).queryByText("Salt chips")).not.toBeInTheDocument();
+  });
+
+  it("filters food picker options by typed name", async () => {
+    const user = userEvent.setup();
+    renderPlan(mockSessionsClient());
+
+    await screen.findByRole("heading", { name: "Plan" });
+    await user.click(screen.getByRole("button", { name: "Plan a night" }));
+
+    const form = screen.getByRole("form", { name: "Plan a night" });
+    await user.click(
+      within(form).getByRole("combobox", { name: "Food 1 picker" }),
+    );
+    await user.type(screen.getByLabelText("Food 1 search"), "blue");
+    const list = screen.getByRole("listbox");
+    expect(within(list).getByText("Blueberries")).toBeInTheDocument();
+    expect(within(list).queryByText("Apples")).not.toBeInTheDocument();
+    expect(within(list).queryByText("Strawberries")).not.toBeInTheDocument();
+
+    await user.click(within(list).getByText("Blueberries"));
+    expect(
+      within(form).getByRole("combobox", { name: "Food 1 picker" }),
+    ).toHaveTextContent("Blueberries");
   });
 
   it("creates a planned night with two foods", async () => {
@@ -345,10 +384,7 @@ describe("PlanPage", () => {
     expect(familiarity).toHaveValue("truly_new");
 
     await pickCalendarDay(user, form, /July 20/i);
-    await user.selectOptions(
-      within(form).getByLabelText("Food 1 picker"),
-      foods[0].id,
-    );
+    await pickFood(user, form, "Food 1", "Apples");
     expect(within(form).getByLabelText("Food 1 familiarity")).toHaveValue(
       "truly_new",
     );
@@ -360,10 +396,7 @@ describe("PlanPage", () => {
       within(form).getByLabelText("Food 1 familiarity"),
       "safe",
     );
-    await user.selectOptions(
-      within(form).getByLabelText("Food 2 picker"),
-      foods[1].id,
-    );
+    await pickFood(user, form, "Food 2", "Strawberries");
     await user.selectOptions(
       within(form).getByLabelText("Food 2 familiarity"),
       "truly_new",
@@ -414,10 +447,7 @@ describe("PlanPage", () => {
     await user.click(screen.getByRole("button", { name: "Plan a night" }));
     const form = screen.getByRole("form", { name: "Plan a night" });
 
-    await user.selectOptions(
-      within(form).getByLabelText("Food 1 picker"),
-      foods[0].id,
-    );
+    await pickFood(user, form, "Food 1", "Apples");
     expect(within(form).getByLabelText("Food 1 familiarity")).toHaveValue(
       "familiar_but_new",
     );
@@ -480,18 +510,12 @@ describe("PlanPage", () => {
 
     const form = screen.getByRole("form", { name: "Plan a night" });
     await pickCalendarDay(user, form, /July 20/i);
-    await user.selectOptions(
-      within(form).getByLabelText("Food 1 picker"),
-      foods[0].id,
-    );
+    await pickFood(user, form, "Food 1", "Apples");
     await user.selectOptions(
       within(form).getByLabelText("Food 1 familiarity"),
       "safe",
     );
-    await user.selectOptions(
-      within(form).getByLabelText("Food 2 picker"),
-      foods[1].id,
-    );
+    await pickFood(user, form, "Food 2", "Strawberries");
     await user.type(
       within(form).getByLabelText("Food 2 variant note"),
       "new brand",
@@ -530,14 +554,8 @@ describe("PlanPage", () => {
 
     const form = screen.getByRole("form", { name: "Plan a night" });
     await pickCalendarDay(user, form, /July 20/i);
-    await user.selectOptions(
-      within(form).getByLabelText("Food 1 picker"),
-      foods[0].id,
-    );
-    await user.selectOptions(
-      within(form).getByLabelText("Food 2 picker"),
-      foods[0].id,
-    );
+    await pickFood(user, form, "Food 1", "Apples");
+    await pickFood(user, form, "Food 2", "Apples");
 
     expect(within(form).getByLabelText("Food 1 variant note")).toBeRequired();
     expect(within(form).getByLabelText("Food 2 variant note")).toBeRequired();
@@ -624,14 +642,8 @@ describe("PlanPage", () => {
 
     const form = screen.getByRole("form", { name: "Plan a night" });
     await pickCalendarDay(user, form, /July 20/i);
-    await user.selectOptions(
-      within(form).getByLabelText("Food 1 picker"),
-      foods[0].id,
-    );
-    await user.selectOptions(
-      within(form).getByLabelText("Food 2 picker"),
-      foods[1].id,
-    );
+    await pickFood(user, form, "Food 1", "Apples");
+    await pickFood(user, form, "Food 2", "Strawberries");
     await user.click(within(form).getByRole("button", { name: "Save night" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
@@ -682,10 +694,7 @@ describe("PlanPage", () => {
 
     const form = screen.getByRole("form", { name: "Edit night" });
     await pickCalendarDay(user, form, /July 22/i);
-    await user.selectOptions(
-      within(form).getByLabelText("Food 1 picker"),
-      foods[1].id,
-    );
+    await pickFood(user, form, "Food 1", "Strawberries");
     const note = within(form).getByLabelText("Food 1 variant note");
     await user.clear(note);
     await user.type(note, "TJ's");
@@ -693,10 +702,7 @@ describe("PlanPage", () => {
       within(form).getByLabelText("Food 1 familiarity"),
       "familiar_but_new",
     );
-    await user.selectOptions(
-      within(form).getByLabelText("Food 2 picker"),
-      foods[2].id,
-    );
+    await pickFood(user, form, "Food 2", "Blueberries");
     await user.selectOptions(
       within(form).getByLabelText("Food 2 familiarity"),
       "safe",
@@ -919,10 +925,7 @@ describe("PlanPage", () => {
     ).toBeInTheDocument();
 
     await pickCalendarDay(user, form, /July 22/i);
-    await user.selectOptions(
-      within(form).getByLabelText("Food 1 picker"),
-      foods[2].id,
-    );
+    await pickFood(user, form, "Food 1", "Blueberries");
     await user.selectOptions(
       within(form).getByLabelText("Food 1 familiarity"),
       "safe",
