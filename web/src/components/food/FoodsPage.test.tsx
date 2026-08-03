@@ -419,9 +419,12 @@ describe("FoodsPage", () => {
 });
 
 describe("exposure helpers", () => {
-  it("normalizes variant keys", async () => {
-    const { normalizeVariantKey, mergeExposureIntoFoods, removeExposureFromFoods } =
-      await import("@/components/food/FoodsPage");
+  it("normalizes variant keys and merges/clears exposures", async () => {
+    const { normalizeVariantKey } = await import("@/lib/foodExposures");
+    const {
+      mergeExposureIntoFoods,
+      removeExposureFromFoods,
+    } = await import("@/components/food/FoodsPage");
     expect(normalizeVariantKey("  Bagelsaurus  ")).toBe("bagelsaurus");
 
     const food: FoodResponse = {

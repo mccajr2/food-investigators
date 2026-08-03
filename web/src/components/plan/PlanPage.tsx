@@ -14,6 +14,10 @@ import { RunSessionPage } from "@/components/run/RunSessionPage"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { planEmptyHint, planSectionBlurb } from "@/lib/childDisplayName"
+import {
+  autofillFamiliarity,
+  variantKeysForFood,
+} from "@/lib/foodExposures"
 
 const FAMILIARITY_OPTIONS: { value: Familiarity; label: string }[] = [
   { value: "safe", label: "Safe" },
@@ -60,7 +64,7 @@ type PlanPageProps = {
 
 const emptySlot = (): FoodSlot => ({
   foodId: "",
-  familiarity: "safe",
+  familiarity: "truly_new",
   variantNote: "",
 })
 
@@ -800,6 +804,25 @@ export function PlanPage({
   )
 }
 
+/** Apply food/variant changes with exposure-based familiarity autofill. */
+export function applyPlanSlotChange(
+  previous: FoodSlot,
+  next: FoodSlot,
+  foods: FoodResponse[],
+): FoodSlot {
+  const foodOrVariantChanged =
+    previous.foodId !== next.foodId || previous.variantNote !== next.variantNote
+  if (!foodOrVariantChanged) {
+    return next
+  }
+  if (!next.foodId) {
+    return { ...next, familiarity: "truly_new" }
+  }
+  const food = foods.find((item) => item.id === next.foodId)
+  const filled = autofillFamiliarity(food, next.variantNote)
+  return { ...next, familiarity: filled ?? "truly_new" }
+}
+
 type FoodSlotFieldsProps = {
   label: string
   slot: FoodSlot
@@ -818,11 +841,18 @@ function FoodSlotFields({
   onChange,
 }: FoodSlotFieldsProps) {
   const retrying = slot.familiarity === "retrying"
+  const selectedFood = foods.find((food) => food.id === slot.foodId)
+  const knownVariants = variantKeysForFood(selectedFood)
+  const variantListId = `${label.replace(/\s+/g, "-").toLowerCase()}-variants`
   const variantPlaceholder = variantRequired
     ? "Brand or variety (required)"
     : retrying
       ? "Optional — brand or prep helps when retrying"
       : "Optional brand, variety, or prep"
+
+  function commit(next: FoodSlot) {
+    onChange(applyPlanSlotChange(slot, next, foods))
+  }
 
   return (
     <fieldset disabled={disabled} className="flex flex-col gap-2">
@@ -831,7 +861,9 @@ function FoodSlotFields({
         aria-label={`${label} picker`}
         className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
         value={slot.foodId}
-        onChange={(event) => onChange({ ...slot, foodId: event.target.value })}
+        onChange={(event) =>
+          commit({ ...slot, foodId: event.target.value })
+        }
         required
       >
         <option value="">Choose a food…</option>
@@ -846,7 +878,7 @@ function FoodSlotFields({
         className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
         value={slot.familiarity}
         onChange={(event) =>
-          onChange({
+          commit({
             ...slot,
             familiarity: event.target.value as Familiarity,
           })
@@ -863,12 +895,20 @@ function FoodSlotFields({
         aria-label={`${label} variant note`}
         value={slot.variantNote}
         onChange={(event) =>
-          onChange({ ...slot, variantNote: event.target.value })
+          commit({ ...slot, variantNote: event.target.value })
         }
         placeholder={variantPlaceholder}
         required={variantRequired}
         maxLength={200}
+        list={knownVariants.length > 0 ? variantListId : undefined}
       />
+      {knownVariants.length > 0 ? (
+        <datalist id={variantListId}>
+          {knownVariants.map((key) => (
+            <option key={key} value={key} />
+          ))}
+        </datalist>
+      ) : null}
       {retrying && !variantRequired ? (
         <p
           className="text-xs text-muted-foreground"

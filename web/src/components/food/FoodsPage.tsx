@@ -17,6 +17,7 @@ import {
   customIconKeyFromName,
   isCustomIconKey,
 } from "@/lib/generatedFoodIcon"
+import { normalizeVariantKey } from "@/lib/foodExposures"
 
 type Status =
   | { kind: "loading" }
@@ -74,10 +75,6 @@ const FAMILIARITY_LABELS: Record<Familiarity, string> = {
   familiar_but_new: "Familiar but new",
   truly_new: "Truly new",
   retrying: "Retrying",
-}
-
-export function normalizeVariantKey(raw: string): string {
-  return raw.trim().toLowerCase()
 }
 
 export function variantLabel(variantKey: string): string {

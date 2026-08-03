@@ -140,7 +140,7 @@ from exposures returned on foods list).
 - [x] Contract: OpenAPI schemas + paths; bump version; sync web types/client and
       mobile `FoodsClient` / DTOs.
 - [x] Web Foods: list/add/edit/clear exposures (safes first-class in UI).
-- [ ] Web Plan: autofill familiarity from exposures when food/variant changes;
+- [x] Web Plan: autofill familiarity from exposures when food/variant changes;
       replace unconditional `safe` default for newly chosen foods.
 - [ ] Tests: foods unit + IT; web Plan autofill + Foods exposure UI; modularity.
 - [ ] Docs: archive prep only after ship — keep this file in `active/` until done.
