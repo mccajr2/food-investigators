@@ -1,6 +1,6 @@
 # Spec: signup-safe-foods
 
-Status: in-progress  
+Status: done  
 Created: 2026-08-03  
 Parent: [docs/roadmap.md](../../roadmap.md)  
 Added: 2026-08-03 · re-rank split  
@@ -88,40 +88,40 @@ one Create account form (collect fields → register → bootstrap → enter app
 
 ## Acceptance criteria
 
-- [ ] Web Create account shows a Safe foods nudge with copy that safe foods help
+- [x] Web Create account shows a Safe foods nudge with copy that safe foods help
       **plan tasting sessions**, **~5 empty tasting-food slots** as the default
       prompt, and an **optional snacks** affordance (add snack rows).
-- [ ] Parent can fill any subset of the tasting slots, add more (up to API max),
+- [x] Parent can fill any subset of the tasting slots, add more (up to API max),
       or **Skip** / leave empty; account still creates.
-- [ ] Name field supports free text and optional typeahead of system starter
+- [x] Name field supports free text and optional typeahead of system starter
       names; novel names are accepted.
-- [ ] After successful register, web calls bootstrap with **non-empty** rows only;
+- [x] After successful register, web calls bootstrap with **non-empty** rows only;
       zero filled rows → **skip** the bootstrap call.
-- [ ] `POST /api/foods/bootstrap-safes` (auth required): for each item, match
+- [x] `POST /api/foods/bootstrap-safes` (auth required): for each item, match
       system starter by case-insensitive name **or** create household food; upsert
       safe exposure with `source=signup`; snacks set `sessionEligible=false`.
-- [ ] More than 10 items → **400**. Unauthenticated → **401**.
-- [ ] Matching a system starter does **not** create a duplicate household food
+- [x] More than 10 items → **400**. Unauthenticated → **401**.
+- [x] Matching a system starter does **not** create a duplicate household food
       with the same name.
-- [ ] Invented names appear under Foods (tasting or Snacks) with a safe exposure
+- [x] Invented names appear under Foods (tasting or Snacks) with a safe exposure
       visible in Known safes / Plan autofill.
-- [ ] OpenAPI + web + mobile sharedLogic clients updated in the same change.
-- [ ] Unit + API/IT + web Create-account tests (incl. nudge copy / 5 tasting
+- [x] OpenAPI + web + mobile sharedLogic clients updated in the same change.
+- [x] Unit + API/IT + web Create-account tests (incl. nudge copy / 5 tasting
       slots / Skip); `ModularityTests` pass.
-- [ ] No native signup UI; no outcome sync; no suggestion shortlist changes;
+- [x] No native signup UI; no outcome sync; no suggestion shortlist changes;
       no hard minimum count gate on register.
 
 ## Tasks
 
-- [ ] Backend: `bootstrap-safes` (or equivalent) on foods module — match-or-create
+- [x] Backend: `bootstrap-safes` (or equivalent) on foods module — match-or-create
       + safe exposure `signup`; validation (max 10, blank names); unit + IT.
-- [ ] Contract: OpenAPI schemas/paths; bump version; sync web + mobile clients.
-- [ ] Web: Create account Safe foods nudge (~5 tasting slots + optional snacks +
+- [x] Contract: OpenAPI schemas/paths; bump version; sync web + mobile clients.
+- [x] Web: Create account Safe foods nudge (~5 tasting slots + optional snacks +
       session-planning copy + typeahead) → register → bootstrap.
-- [ ] Mobile: sharedLogic DTOs/client for bootstrap (and register only if touched);
+- [x] Mobile: sharedLogic DTOs/client for bootstrap (and register only if touched);
       no native UI required.
-- [ ] Tests: foods unit/IT; web AuthShell/register nudge + Skip; modularity.
-- [ ] Docs: archive on `/pr` after ship.
+- [x] Tests: foods unit/IT; web AuthShell/register nudge + Skip; modularity.
+- [x] Docs: archive on `/pr` after ship.
 
 ## Open questions
 

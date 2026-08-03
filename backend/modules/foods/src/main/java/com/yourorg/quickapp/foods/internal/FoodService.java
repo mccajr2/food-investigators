@@ -1,5 +1,7 @@
 package com.yourorg.quickapp.foods.internal;
 
+import com.yourorg.quickapp.foods.BootstrapSafeItemRequest;
+import com.yourorg.quickapp.foods.BootstrapSafesRequest;
 import com.yourorg.quickapp.foods.CreateFoodRequest;
 import com.yourorg.quickapp.foods.DuplicateFoodNameException;
 import com.yourorg.quickapp.foods.ExposureSource;
@@ -11,6 +13,7 @@ import com.yourorg.quickapp.foods.FoodLiked;
 import com.yourorg.quickapp.foods.FoodNotFoundException;
 import com.yourorg.quickapp.foods.FoodResponse;
 import com.yourorg.quickapp.foods.FoodTexture;
+import com.yourorg.quickapp.foods.InvalidBootstrapSafesException;
 import com.yourorg.quickapp.foods.InvalidFoodPreferenceException;
 import com.yourorg.quickapp.foods.SystemFoodImmutableException;
 import com.yourorg.quickapp.foods.UpdateFoodRequest;
@@ -19,9 +22,11 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
@@ -32,6 +37,7 @@ public class FoodService {
 
     private static final int TASTE_NOTE_MAX = 100;
     private static final int VARIANT_KEY_MAX = 200;
+    private static final int BOOTSTRAP_SAFES_MAX = 10;
 
     private final FoodRepository foods;
     private final HouseholdFoodExposureRepository exposures;
@@ -88,9 +94,53 @@ public class FoodService {
                 now);
         Food saved = foods.save(food);
         if (!saved.isSessionEligible()) {
-            upsertSafeEmptyVariant(householdId, saved.getId(), now);
+            upsertSafe(householdId, saved.getId(), "", ExposureSource.manual, now);
         }
         return toResponse(saved);
+    }
+
+    @Transactional
+    public List<FoodExposureResponse> bootstrapSafes(
+            UUID householdId, BootstrapSafesRequest request) {
+        List<BootstrapSafeItemRequest> items =
+                request.items() == null ? List.of() : request.items();
+        if (items.size() > BOOTSTRAP_SAFES_MAX) {
+            throw new InvalidBootstrapSafesException(
+                    "At most " + BOOTSTRAP_SAFES_MAX + " safe foods can be bootstrapped");
+        }
+        Set<String> seen = new HashSet<>();
+        Instant now = clock.instant();
+        List<FoodExposureResponse> results = new ArrayList<>(items.size());
+        for (BootstrapSafeItemRequest item : items) {
+            String name = item.name().trim();
+            if (name.isEmpty()) {
+                throw new InvalidBootstrapSafesException("Food name is required");
+            }
+            String variantKey = normalizeVariantKey(item.variantKey());
+            String dedupeKey = name.toLowerCase(Locale.ROOT) + "\0" + variantKey;
+            if (!seen.add(dedupeKey)) {
+                throw new InvalidBootstrapSafesException(
+                        "Duplicate safe food in request: " + name);
+            }
+            boolean sessionEligible =
+                    item.sessionEligible() == null || item.sessionEligible();
+            Food food =
+                    foods.findFirstByHouseholdIdIsNullAndNameIgnoreCase(name)
+                            .orElseGet(() -> inventHouseholdFood(householdId, name, sessionEligible, now));
+            results.add(
+                    upsertSafe(householdId, food.getId(), variantKey, ExposureSource.signup, now));
+        }
+        return results;
+    }
+
+    private Food inventHouseholdFood(
+            UUID householdId, String name, boolean sessionEligible, Instant now) {
+        requireUniqueVisibleName(householdId, name, null);
+        String iconKey = FoodIconKeys.customFromName(name);
+        FoodIconKeys.requireAllowed(iconKey);
+        Food food = Food.household(householdId, name, iconKey, now);
+        food.setSessionEligible(sessionEligible, now);
+        return foods.save(food);
     }
 
     @Transactional
@@ -123,7 +173,7 @@ public class FoodService {
         }
         Food saved = foods.save(food);
         if (!saved.isSessionEligible()) {
-            upsertSafeEmptyVariant(householdId, saved.getId(), now);
+            upsertSafe(householdId, saved.getId(), "", ExposureSource.manual, now);
         }
         return toResponse(saved);
     }
@@ -141,20 +191,7 @@ public class FoodService {
         requireVisibleFood(householdId, foodId);
         String variantKey = normalizeVariantKey(request.variantKey());
         Instant now = clock.instant();
-        HouseholdFoodExposure row =
-                exposures
-                        .findByHouseholdIdAndFoodIdAndVariantKey(householdId, foodId, variantKey)
-                        .orElseGet(
-                                () ->
-                                        HouseholdFoodExposure.create(
-                                                householdId,
-                                                foodId,
-                                                variantKey,
-                                                request.familiarity(),
-                                                ExposureSource.manual,
-                                                now));
-        row.updateFamiliarity(request.familiarity(), ExposureSource.manual, now);
-        return toExposureResponse(exposures.save(row));
+        return upsertSafe(householdId, foodId, variantKey, ExposureSource.manual, now, request.familiarity());
     }
 
     @Transactional
@@ -164,21 +201,36 @@ public class FoodService {
         exposures.deleteByHouseholdIdAndFoodIdAndVariantKey(householdId, foodId, variantKey);
     }
 
-    private void upsertSafeEmptyVariant(UUID householdId, UUID foodId, Instant now) {
+    private FoodExposureResponse upsertSafe(
+            UUID householdId,
+            UUID foodId,
+            String variantKey,
+            ExposureSource source,
+            Instant now) {
+        return upsertSafe(householdId, foodId, variantKey, source, now, FoodFamiliarity.safe);
+    }
+
+    private FoodExposureResponse upsertSafe(
+            UUID householdId,
+            UUID foodId,
+            String variantKey,
+            ExposureSource source,
+            Instant now,
+            FoodFamiliarity familiarity) {
         HouseholdFoodExposure row =
                 exposures
-                        .findByHouseholdIdAndFoodIdAndVariantKey(householdId, foodId, "")
+                        .findByHouseholdIdAndFoodIdAndVariantKey(householdId, foodId, variantKey)
                         .orElseGet(
                                 () ->
                                         HouseholdFoodExposure.create(
                                                 householdId,
                                                 foodId,
-                                                "",
-                                                FoodFamiliarity.safe,
-                                                ExposureSource.manual,
+                                                variantKey,
+                                                familiarity,
+                                                source,
                                                 now));
-        row.updateFamiliarity(FoodFamiliarity.safe, ExposureSource.manual, now);
-        exposures.save(row);
+        row.updateFamiliarity(familiarity, source, now);
+        return toExposureResponse(exposures.save(row));
     }
 
     private Map<UUID, List<FoodExposureResponse>> exposuresByFood(UUID householdId) {

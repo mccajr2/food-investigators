@@ -183,6 +183,66 @@ describe("FoodsClient", () => {
     expect((fetchFn.mock.calls[1]?.[1] as RequestInit).method).toBe("DELETE")
   })
 
+  it("bootstraps safes via POST /api/foods/bootstrap-safes", async () => {
+    const exposures = [
+      {
+        foodId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa04",
+        variantKey: "honeycrisp",
+        familiarity: "safe",
+        source: "signup",
+      },
+    ]
+    const fetchFn = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify(exposures), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    )
+    const client = new FoodsClient("http://localhost:8080", fetchFn, memoryStore())
+
+    const result = await client.bootstrapSafes({
+      items: [
+        { name: "Apples", variantKey: "Honeycrisp", sessionEligible: true },
+        { name: "Goldfish", sessionEligible: false },
+      ],
+    })
+
+    expect(result).toEqual(exposures)
+    expect(String(fetchFn.mock.calls[0]?.[0])).toBe(
+      "http://localhost:8080/api/foods/bootstrap-safes",
+    )
+    expect((fetchFn.mock.calls[0]?.[1] as RequestInit).method).toBe("POST")
+    expect((fetchFn.mock.calls[0]?.[1] as RequestInit).body).toBe(
+      JSON.stringify({
+        items: [
+          { name: "Apples", variantKey: "Honeycrisp", sessionEligible: true },
+          { name: "Goldfish", sessionEligible: false },
+        ],
+      }),
+    )
+  })
+
+  it("surfaces bootstrap validation errors", async () => {
+    const fetchFn = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          message: "At most 10 safe foods can be bootstrapped",
+        }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        },
+      ),
+    )
+    const client = new FoodsClient("http://localhost:8080", fetchFn, memoryStore())
+
+    await expect(
+      client.bootstrapSafes({
+        items: Array.from({ length: 11 }, (_, i) => ({ name: `Food ${i}` })),
+      }),
+    ).rejects.toThrow("At most 10 safe foods can be bootstrapped")
+  })
+
   it("surfaces invalid icon errors", async () => {
     const fetchFn = vi.fn().mockResolvedValue(
       new Response(JSON.stringify({ message: "Invalid icon key" }), {

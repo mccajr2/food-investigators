@@ -20,6 +20,7 @@ function mockFoodsClient(
     archive: vi.fn(),
     upsertExposure: vi.fn(),
     clearExposure: vi.fn(),
+    bootstrapSafes: vi.fn().mockResolvedValue([]),
     ...overrides,
   } as FoodsClient
 }
@@ -170,8 +171,9 @@ describe("AuthShell", () => {
         childDisplayName: null,
       },
     })
+    const bootstrapSafes = vi.fn()
 
-    renderShell({ register })
+    renderShell({ register }, { bootstrapSafes })
 
     await waitFor(() => {
       expect(
@@ -192,6 +194,116 @@ describe("AuthShell", () => {
       false,
       null,
     )
+    expect(bootstrapSafes).not.toHaveBeenCalled()
+  })
+
+  it("shows safe foods nudge with five tasting slots on create account", async () => {
+    const user = userEvent.setup()
+    renderShell()
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("tab", { name: "Create account" }),
+      ).toBeInTheDocument()
+    })
+    await user.click(screen.getByRole("tab", { name: "Create account" }))
+
+    expect(
+      screen.getByText(/help plan tasting sessions/i),
+    ).toBeInTheDocument()
+    expect(screen.getByLabelText("Tasting food 1 name")).toBeInTheDocument()
+    expect(screen.getByLabelText("Tasting food 5 name")).toBeInTheDocument()
+    expect(screen.queryByLabelText("Tasting food 6 name")).not.toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: "Add a snack" }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(/You can skip this and add foods later/i),
+    ).toBeInTheDocument()
+  })
+
+  it("registers filled safes then bootstraps; skips bootstrap when empty", async () => {
+    const user = userEvent.setup()
+    const register = vi.fn().mockResolvedValue({
+      token: "tok",
+      user: {
+        id: "11111111-1111-1111-1111-111111111111",
+        email: "new@example.com",
+        householdId: "22222222-2222-2222-2222-222222222222",
+        childDisplayName: null,
+      },
+    })
+    const bootstrapSafes = vi.fn().mockResolvedValue([])
+
+    renderShell({ register }, { bootstrapSafes })
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("tab", { name: "Create account" }),
+      ).toBeInTheDocument()
+    })
+    await user.click(screen.getByRole("tab", { name: "Create account" }))
+    await user.type(screen.getByLabelText("Email"), "new@example.com")
+    await user.type(screen.getByLabelText("Password"), "password1")
+    await user.type(screen.getByLabelText("Tasting food 1 name"), "Apples")
+    await user.type(
+      screen.getByLabelText("Tasting food 1 brand or prep"),
+      "Honeycrisp",
+    )
+    await user.click(screen.getByRole("button", { name: "Add a snack" }))
+    await user.type(screen.getByLabelText("Snack 1 name"), "Goldfish")
+    await user.click(screen.getByRole("button", { name: "Create account" }))
+
+    expect(await screen.findByText("new@example.com")).toBeInTheDocument()
+    expect(bootstrapSafes).toHaveBeenCalledWith({
+      items: [
+        {
+          name: "Apples",
+          variantKey: "Honeycrisp",
+          sessionEligible: true,
+        },
+        {
+          name: "Goldfish",
+          variantKey: undefined,
+          sessionEligible: false,
+        },
+      ],
+    })
+  })
+
+  it("keeps the account signed in when bootstrap fails after register", async () => {
+    const user = userEvent.setup()
+    const register = vi.fn().mockResolvedValue({
+      token: "tok",
+      user: {
+        id: "11111111-1111-1111-1111-111111111111",
+        email: "new@example.com",
+        householdId: "22222222-2222-2222-2222-222222222222",
+        childDisplayName: null,
+      },
+    })
+    const bootstrapSafes = vi
+      .fn()
+      .mockRejectedValue(new Error("At most 10 safe foods can be bootstrapped"))
+
+    renderShell({ register }, { bootstrapSafes })
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("tab", { name: "Create account" }),
+      ).toBeInTheDocument()
+    })
+    await user.click(screen.getByRole("tab", { name: "Create account" }))
+    await user.type(screen.getByLabelText("Email"), "new@example.com")
+    await user.type(screen.getByLabelText("Password"), "password1")
+    await user.type(screen.getByLabelText("Tasting food 1 name"), "Apples")
+    await user.click(screen.getByRole("button", { name: "Create account" }))
+
+    expect(await screen.findByText("new@example.com")).toBeInTheDocument()
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      /Account created, but we couldn't save your safe foods/,
+    )
+    expect(screen.getByRole("alert")).toHaveTextContent(/You can add them on Foods/)
   })
 
   it("registers with optional child first name", async () => {

@@ -183,6 +183,48 @@ class FoodsClientTest {
         }
 
     @Test
+    fun bootstrapSafesHitsExpectedPathAndParsesSignupSource() =
+        runTest {
+            val store = InMemoryTokenStore()
+            store.saveToken("tok", rememberMe = true)
+            var path = ""
+            val engine =
+                MockEngine { request ->
+                    path = "${request.method.value} ${request.url.encodedPath}"
+                    respond(
+                        content =
+                            """
+                            [{"foodId":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa04",
+                              "variantKey":"honeycrisp",
+                              "familiarity":"safe",
+                              "source":"signup"}]
+                            """.trimIndent(),
+                        status = HttpStatusCode.OK,
+                        headers = headersOf(HttpHeaders.ContentType, "application/json"),
+                    )
+                }
+
+            val client = FoodsClient("http://localhost:8080", httpClient(engine), store)
+            val results =
+                client.bootstrapSafes(
+                    listOf(
+                        BootstrapSafeItemRequest(
+                            name = "Apples",
+                            variantKey = "Honeycrisp",
+                            sessionEligible = true,
+                        ),
+                        BootstrapSafeItemRequest(name = "Goldfish", sessionEligible = false),
+                    ),
+                )
+
+            assertEquals("POST /api/foods/bootstrap-safes", path)
+            assertEquals(1, results.size)
+            assertEquals("signup", results[0].source)
+            assertEquals("honeycrisp", results[0].variantKey)
+            assertEquals("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa04", results[0].foodId)
+        }
+
+    @Test
     fun createUpdateArchiveHitExpectedPaths() =
         runTest {
             val store = InMemoryTokenStore()

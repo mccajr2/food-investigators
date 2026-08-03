@@ -2,6 +2,7 @@ import { apiBaseUrl } from "@/config"
 import { apiUrl } from "@/api/authClient"
 import { defaultBrowserTokenStore, type TokenStore } from "@/api/tokenStore"
 import type {
+  BootstrapSafesRequest,
   CreateFoodRequest,
   ErrorMessage,
   FoodExposureResponse,
@@ -46,6 +47,20 @@ export class FoodsClient {
       throw new Error(await readErrorMessage(response, "Create food failed"))
     }
     return (await response.json()) as FoodResponse
+  }
+
+  async bootstrapSafes(
+    request: BootstrapSafesRequest,
+  ): Promise<FoodExposureResponse[]> {
+    const response = await this.authorized("/api/foods/bootstrap-safes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(request),
+    })
+    if (!response.ok) {
+      throw new Error(await readErrorMessage(response, "Bootstrap safes failed"))
+    }
+    return (await response.json()) as FoodExposureResponse[]
   }
 
   async update(foodId: string, request: UpdateFoodRequest): Promise<FoodResponse> {

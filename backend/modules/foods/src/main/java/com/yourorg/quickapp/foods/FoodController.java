@@ -44,6 +44,13 @@ public class FoodController {
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
+    @PostMapping("/bootstrap-safes")
+    public List<FoodExposureResponse> bootstrapSafes(
+            @AuthenticationPrincipal AccountPrincipal principal,
+            @Valid @RequestBody BootstrapSafesRequest request) {
+        return foodService.bootstrapSafes(requireHouseholdId(principal), request);
+    }
+
     @PutMapping("/{foodId}")
     public FoodResponse update(
             @AuthenticationPrincipal AccountPrincipal principal,

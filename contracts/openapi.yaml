@@ -1,17 +1,17 @@
 openapi: 3.0.3
 info:
   title: Quickapp API
-  version: 0.11.0
+  version: 0.12.0
   description: >
     Contract-first API for Food Investigators. Documents family-account auth
     (email/password register and login, Bearer session tokens, GET/PATCH
     /api/auth/me with optional household childDisplayName), the household food
     catalog (system starters + custom foods, archive, optional snack foods
     excluded from tasting sessions, household exposure profiles per food +
-    variant), tasting sessions (create, list upcoming, history of completed,
-    download history PDF, get, update, cancel, complete with run outcomes,
-    optional parent notes on completed sessions), and household Insights
-    (aggregates + dismissible tips).
+    variant, optional signup bootstrap of safe exposures), tasting sessions
+    (create, list upcoming, history of completed, download history PDF, get,
+    update, cancel, complete with run outcomes, optional parent notes on
+    completed sessions), and household Insights (aggregates + dismissible tips).
 servers:
   - url: http://localhost:8080
     description: Local development
@@ -226,6 +226,66 @@ paths:
                 $ref: "#/components/schemas/ErrorMessage"
         "409":
           description: Name already used by a starter or active household food
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+              example:
+                message: A food with that name already exists
+  /api/foods/bootstrap-safes:
+    post:
+      operationId: bootstrapSafeFoods
+      summary: Bootstrap safe exposures after signup (match-or-create)
+      description: >
+        For each item, match a visible system starter by case-insensitive name
+        or create a household food (`custom_<slug>` icon). Upserts a `safe`
+        exposure with source `signup`. Snacks use `sessionEligible: false`.
+        At most 10 items; duplicate name+variant in one request is rejected.
+        Empty `items` is a no-op.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BootstrapSafesRequest"
+            example:
+              items:
+                - name: Apples
+                  variantKey: Honeycrisp
+                  sessionEligible: true
+                - name: Cucumber
+                  sessionEligible: true
+                - name: Goldfish
+                  sessionEligible: false
+      responses:
+        "200":
+          description: Exposures upserted (possibly empty)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FoodExposureResponse"
+        "400":
+          description: >
+            Too many items, blank name, duplicate name+variant in the request,
+            or other invalid body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+        "401":
+          description: Missing or invalid session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+        "409":
+          description: >
+            Invented name collides with an active household food that is not a
+            system starter match
           content:
             application/json:
               schema:
@@ -1199,8 +1259,42 @@ components:
         - signup
         - outcome
       description: >
-        How the exposure was last written. Write endpoints in this version always
-        set `manual`; `signup` / `outcome` are reserved for later slices.
+        How the exposure was last written. Manual upsert endpoints set `manual`;
+        `POST /api/foods/bootstrap-safes` sets `signup`. `outcome` is reserved
+        for a later slice.
+    BootstrapSafeItemRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+          example: Bagel
+        variantKey:
+          type: string
+          maxLength: 200
+          description: Brand/prep note; normalized server-side. Omit or blank for unspecified.
+          example: Bagelsaurus
+        sessionEligible:
+          type: boolean
+          default: true
+          description: >
+            When false, the invented household food is treated as a snack
+            (excluded from tasting sessions). Ignored for matched system starters
+            (system foods stay session-eligible).
+    BootstrapSafesRequest:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          maxItems: 10
+          description: Safe foods to bootstrap (0–10). Empty list is allowed.
+          items:
+            $ref: "#/components/schemas/BootstrapSafeItemRequest"
     CreateFoodRequest:
       type: object
       required:

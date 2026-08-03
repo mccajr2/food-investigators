@@ -4,6 +4,8 @@ export { InsightsClient } from "@/api/insightsClient"
 export { SessionsClient } from "@/api/sessionsClient"
 export type {
   AuthResponse,
+  BootstrapSafeItemRequest,
+  BootstrapSafesRequest,
   CompleteSessionRequest,
   CreateFoodRequest,
   CreateSessionRequest,
