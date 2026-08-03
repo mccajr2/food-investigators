@@ -1,9 +1,11 @@
-import { useEffect, useRef, useState, type FormEvent } from "react"
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react"
 
 import { FoodsClient } from "@/api"
 import {
   FOOD_ICON_KEYS,
+  type Familiarity,
   type FoodIconKey,
+  type FoodExposureResponse,
   type FoodResponse,
   type Liked,
   type Texture,
@@ -27,6 +29,10 @@ type Editor =
   | { mode: "create" }
   | { mode: "edit"; food: FoodResponse }
 
+type ExposureEditor =
+  | { mode: "closed" }
+  | { mode: "open"; foodId: string }
+
 /** Library starters, or generate a custom icon from the food name. */
 type IconChoice = "fromName" | FoodIconKey
 
@@ -43,6 +49,13 @@ const TEXTURE_OPTIONS: { value: Texture; label: string }[] = [
   { value: "wet", label: "Wet" },
 ]
 
+const FAMILIARITY_OPTIONS: { value: Familiarity; label: string }[] = [
+  { value: "safe", label: "Safe" },
+  { value: "familiar_but_new", label: "Familiar but new" },
+  { value: "truly_new", label: "Truly new" },
+  { value: "retrying", label: "Retrying" },
+]
+
 const LIKED_LABELS: Record<Liked, string> = {
   like: "Like",
   so_so: "So-so",
@@ -54,6 +67,63 @@ const TEXTURE_LABELS: Record<Texture, string> = {
   crunchy: "Crunchy",
   chewy: "Chewy",
   wet: "Wet",
+}
+
+const FAMILIARITY_LABELS: Record<Familiarity, string> = {
+  safe: "Safe",
+  familiar_but_new: "Familiar but new",
+  truly_new: "Truly new",
+  retrying: "Retrying",
+}
+
+export function normalizeVariantKey(raw: string): string {
+  return raw.trim().toLowerCase()
+}
+
+export function variantLabel(variantKey: string): string {
+  return variantKey === "" ? "Any / unspecified" : variantKey
+}
+
+export function mergeExposureIntoFoods(
+  foods: FoodResponse[],
+  exposure: FoodExposureResponse,
+): FoodResponse[] {
+  return foods.map((food) => {
+    if (food.id !== exposure.foodId) {
+      return food
+    }
+    const others = (food.exposures ?? []).filter(
+      (row) => row.variantKey !== exposure.variantKey,
+    )
+    return {
+      ...food,
+      exposures: [...others, exposure].sort((a, b) =>
+        a.variantKey.localeCompare(b.variantKey),
+      ),
+    }
+  })
+}
+
+export function removeExposureFromFoods(
+  foods: FoodResponse[],
+  foodId: string,
+  variantKey: string,
+): FoodResponse[] {
+  const key = normalizeVariantKey(variantKey)
+  return foods.map((food) => {
+    if (food.id !== foodId) {
+      return food
+    }
+    return {
+      ...food,
+      exposures: (food.exposures ?? []).filter((row) => row.variantKey !== key),
+    }
+  })
+}
+
+type SafeRow = {
+  food: FoodResponse
+  exposure: FoodExposureResponse
 }
 
 type FoodsPageProps = {
@@ -69,6 +139,13 @@ export function FoodsPage({
   const [foods, setFoods] = useState<FoodResponse[]>([])
   const [status, setStatus] = useState<Status>({ kind: "loading" })
   const [editor, setEditor] = useState<Editor>({ mode: "closed" })
+  const [exposureEditor, setExposureEditor] = useState<ExposureEditor>({
+    mode: "closed",
+  })
+  const [exposureFoodId, setExposureFoodId] = useState("")
+  const [exposureVariant, setExposureVariant] = useState("")
+  const [exposureFamiliarity, setExposureFamiliarity] =
+    useState<Familiarity>("safe")
   const [name, setName] = useState("")
   const [iconChoice, setIconChoice] = useState<IconChoice>("fromName")
   const [isSnack, setIsSnack] = useState(false)
@@ -114,6 +191,26 @@ export function FoodsPage({
   const snacks = foods.filter(
     (food) => !food.system && food.sessionEligible === false,
   )
+  const knownSafes = useMemo(() => {
+    const rows: SafeRow[] = []
+    for (const food of foods) {
+      for (const exposure of food.exposures ?? []) {
+        if (exposure.familiarity === "safe") {
+          rows.push({ food, exposure })
+        }
+      }
+    }
+    return rows.sort((a, b) => {
+      const byName = a.food.name.localeCompare(b.food.name, undefined, {
+        sensitivity: "base",
+      })
+      if (byName !== 0) {
+        return byName
+      }
+      return a.exposure.variantKey.localeCompare(b.exposure.variantKey)
+    })
+  }, [foods])
+
   const previewIconKey =
     iconChoice === "fromName"
       ? customIconKeyFromName(name || "food")
@@ -127,6 +224,7 @@ export function FoodsPage({
   }
 
   function openCreate() {
+    setExposureEditor({ mode: "closed" })
     setName("")
     setIconChoice("fromName")
     resetPreferenceFields()
@@ -134,6 +232,7 @@ export function FoodsPage({
   }
 
   function openEdit(food: FoodResponse) {
+    setExposureEditor({ mode: "closed" })
     setName(food.name)
     if (
       isCustomIconKey(food.iconKey) ||
@@ -152,6 +251,19 @@ export function FoodsPage({
 
   function closeEditor() {
     setEditor({ mode: "closed" })
+  }
+
+  function openExposureEditor(foodId?: string) {
+    setEditor({ mode: "closed" })
+    const initialId = foodId ?? foods[0]?.id ?? ""
+    setExposureFoodId(initialId)
+    setExposureVariant("")
+    setExposureFamiliarity("safe")
+    setExposureEditor({ mode: "open", foodId: initialId })
+  }
+
+  function closeExposureEditor() {
+    setExposureEditor({ mode: "closed" })
   }
 
   function resolveIconKey(trimmedName: string): string {
@@ -237,6 +349,50 @@ export function FoodsPage({
     }
   }
 
+  async function onSaveExposure(event: FormEvent) {
+    event.preventDefault()
+    if (!exposureFoodId) {
+      return
+    }
+    setStatus({ kind: "saving" })
+    try {
+      const upserted = await client.upsertExposure(exposureFoodId, {
+        variantKey: exposureVariant,
+        familiarity: exposureFamiliarity,
+      })
+      setFoods((current) => mergeExposureIntoFoods(current, upserted))
+      setExposureEditor({ mode: "closed" })
+      setStatus({ kind: "ready" })
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Could not save exposure"
+      if (isUnauthorizedMessage(message)) {
+        onUnauthorizedRef.current?.()
+        return
+      }
+      setStatus({ kind: "error", message })
+    }
+  }
+
+  async function onClearExposure(foodId: string, variantKey: string) {
+    setStatus({ kind: "saving" })
+    try {
+      await client.clearExposure(foodId, variantKey)
+      setFoods((current) =>
+        removeExposureFromFoods(current, foodId, variantKey),
+      )
+      setStatus({ kind: "ready" })
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Could not clear exposure"
+      if (isUnauthorizedMessage(message)) {
+        onUnauthorizedRef.current?.()
+        return
+      }
+      setStatus({ kind: "error", message })
+    }
+  }
+
   return (
     <section aria-labelledby="foods-heading" className="flex flex-col gap-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
@@ -245,16 +401,30 @@ export function FoodsPage({
             Foods
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Starter library, tasting foods, and snacks for this household.
+            Starter library, tasting foods, snacks, and known safe presentations.
           </p>
         </div>
-        <Button
-          type="button"
-          onClick={openCreate}
-          disabled={status.kind === "loading" || status.kind === "saving"}
-        >
-          Add food
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => openExposureEditor()}
+            disabled={
+              status.kind === "loading" ||
+              status.kind === "saving" ||
+              foods.length === 0
+            }
+          >
+            Add exposure
+          </Button>
+          <Button
+            type="button"
+            onClick={openCreate}
+            disabled={status.kind === "loading" || status.kind === "saving"}
+          >
+            Add food
+          </Button>
+        </div>
       </div>
 
       {status.kind === "loading" ? (
@@ -267,6 +437,95 @@ export function FoodsPage({
         <p role="alert" className="text-sm text-destructive">
           {status.message}
         </p>
+      ) : null}
+
+      {exposureEditor.mode === "open" ? (
+        <form
+          className="flex flex-col gap-4 rounded-lg border border-border bg-card p-4"
+          onSubmit={(event) => void onSaveExposure(event)}
+          aria-label="Add or edit exposure"
+        >
+          <p className="text-sm text-muted-foreground">
+            Mark how familiar a food presentation is (brand or prep). Starters
+            keep their catalog row; this only saves a household overlay.
+          </p>
+          <div className="flex flex-col gap-1">
+            <label htmlFor="exposure-food" className="text-sm font-medium">
+              Food
+            </label>
+            <select
+              id="exposure-food"
+              aria-label="Exposure food"
+              className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+              value={exposureFoodId}
+              onChange={(event) => setExposureFoodId(event.target.value)}
+              disabled={status.kind === "saving"}
+              required
+            >
+              {foods.map((food) => (
+                <option key={food.id} value={food.id}>
+                  {food.name}
+                  {food.system ? " (starter)" : ""}
+                  {food.sessionEligible === false ? " (snack)" : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label htmlFor="exposure-variant" className="text-sm font-medium">
+              Brand / prep note
+            </label>
+            <Input
+              id="exposure-variant"
+              aria-label="Brand / prep note"
+              value={exposureVariant}
+              onChange={(event) => setExposureVariant(event.target.value)}
+              placeholder="e.g. Bagelsaurus (optional)"
+              maxLength={200}
+              disabled={status.kind === "saving"}
+            />
+            <p className="text-xs text-muted-foreground">
+              Leave blank for unspecified. Matching is case-insensitive.
+            </p>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label
+              htmlFor="exposure-familiarity"
+              className="text-sm font-medium"
+            >
+              Familiarity
+            </label>
+            <select
+              id="exposure-familiarity"
+              aria-label="Exposure familiarity"
+              className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+              value={exposureFamiliarity}
+              onChange={(event) =>
+                setExposureFamiliarity(event.target.value as Familiarity)
+              }
+              disabled={status.kind === "saving"}
+            >
+              {FAMILIARITY_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button type="submit" disabled={status.kind === "saving"}>
+              {status.kind === "saving" ? "Saving…" : "Save exposure"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={closeExposureEditor}
+              disabled={status.kind === "saving"}
+            >
+              Cancel
+            </Button>
+          </div>
+        </form>
       ) : null}
 
       {editor.mode !== "closed" ? (
@@ -355,6 +614,7 @@ export function FoodsPage({
               <span className="font-medium">Snack (not for tasting)</span>
               <span className="mt-0.5 block text-xs text-muted-foreground">
                 Snacks stay in Foods but are not offered when planning a night.
+                Listed snacks count as safe exposures.
               </span>
             </span>
           </label>
@@ -445,7 +705,57 @@ export function FoodsPage({
         </form>
       ) : null}
 
-      <FoodSection title="Starter foods" foods={starters} />
+      <section
+        className="flex flex-col gap-3"
+        aria-labelledby="known-safes-heading"
+      >
+        <h3
+          id="known-safes-heading"
+          className="text-sm font-medium uppercase tracking-wide text-muted-foreground"
+        >
+          Known safes
+        </h3>
+        {knownSafes.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No safe presentations yet. Add an exposure or mark a snack.
+          </p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {knownSafes.map(({ food, exposure }) => (
+              <li
+                key={`${food.id}:${exposure.variantKey}`}
+                className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 py-2 last:border-b-0"
+              >
+                <div>
+                  <p className="text-sm font-medium">{food.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {variantLabel(exposure.variantKey)}
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  aria-label={`Clear safe ${food.name} ${variantLabel(exposure.variantKey)}`}
+                  onClick={() =>
+                    void onClearExposure(food.id, exposure.variantKey)
+                  }
+                  disabled={status.kind === "saving"}
+                >
+                  Clear safe
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <FoodSection
+        title="Starter foods"
+        foods={starters}
+        onMarkPresentation={(food) => openExposureEditor(food.id)}
+        busy={status.kind === "saving"}
+      />
 
       <FoodSection
         title="Tasting foods"
@@ -453,6 +763,7 @@ export function FoodsPage({
         empty="No tasting foods yet. Add one to get started."
         onEdit={openEdit}
         onArchive={(food) => void onArchive(food)}
+        onMarkPresentation={(food) => openExposureEditor(food.id)}
         busy={status.kind === "saving"}
       />
 
@@ -475,6 +786,7 @@ type FoodSectionProps = {
   empty?: string
   onEdit?: (food: FoodResponse) => void
   onArchive?: (food: FoodResponse) => void
+  onMarkPresentation?: (food: FoodResponse) => void
   busy?: boolean
   showSnackDetails?: boolean
 }
@@ -502,12 +814,26 @@ function snackDetailLine(food: FoodResponse): string | null {
   return parts.length > 0 ? parts.join(" · ") : null
 }
 
+function exposureSummary(food: FoodResponse): string | null {
+  const rows = food.exposures ?? []
+  if (rows.length === 0) {
+    return null
+  }
+  return rows
+    .map(
+      (row) =>
+        `${variantLabel(row.variantKey)} · ${FAMILIARITY_LABELS[row.familiarity]}`,
+    )
+    .join("; ")
+}
+
 function FoodSection({
   title,
   foods,
   empty,
   onEdit,
   onArchive,
+  onMarkPresentation,
   busy,
   showSnackDetails,
 }: FoodSectionProps) {
@@ -522,6 +848,9 @@ function FoodSection({
         <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {foods.map((food) => {
             const details = showSnackDetails ? snackDetailLine(food) : null
+            const exposures = showSnackDetails
+              ? null
+              : exposureSummary(food)
             return (
               <li
                 key={food.id}
@@ -543,28 +872,44 @@ function FoodSection({
                 {details ? (
                   <p className="text-xs text-muted-foreground">{details}</p>
                 ) : null}
-                {onEdit && onArchive ? (
-                  <div className="flex flex-wrap justify-center gap-2">
+                {exposures ? (
+                  <p className="text-xs text-muted-foreground">{exposures}</p>
+                ) : null}
+                <div className="flex flex-wrap justify-center gap-2">
+                  {onMarkPresentation ? (
                     <Button
                       type="button"
                       size="sm"
                       variant="outline"
-                      onClick={() => onEdit(food)}
+                      onClick={() => onMarkPresentation(food)}
                       disabled={busy}
                     >
-                      Edit
+                      Set familiarity
                     </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => onArchive(food)}
-                      disabled={busy}
-                    >
-                      Archive
-                    </Button>
-                  </div>
-                ) : null}
+                  ) : null}
+                  {onEdit && onArchive ? (
+                    <>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => onEdit(food)}
+                        disabled={busy}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => onArchive(food)}
+                        disabled={busy}
+                      >
+                        Archive
+                      </Button>
+                    </>
+                  ) : null}
+                </div>
               </li>
             )
           })}

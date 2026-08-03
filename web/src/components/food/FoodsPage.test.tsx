@@ -52,6 +52,9 @@ describe("FoodsPage", () => {
     expect(screen.getByText("Apples")).toBeInTheDocument();
     expect(screen.getByText("Banana")).toBeInTheDocument();
     expect(
+      screen.getAllByRole("button", { name: "Set familiarity" }).length,
+    ).toBeGreaterThan(0);
+    expect(
       screen.queryByRole("button", { name: "Edit" }),
     ).not.toBeInTheDocument();
     expect(
@@ -319,5 +322,127 @@ describe("FoodsPage", () => {
     );
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Not signed in");
+  });
+
+  it("lists known safes and clears an exposure", async () => {
+    const user = userEvent.setup();
+    const withSafe: FoodResponse[] = [
+      {
+        ...starters[0]!,
+        exposures: [
+          {
+            foodId: starters[0]!.id,
+            variantKey: "bagelsaurus",
+            familiarity: "safe",
+            source: "manual",
+          },
+        ],
+      },
+      starters[1]!,
+    ];
+    const clearExposure = vi.fn().mockResolvedValue(undefined);
+    render(
+      <FoodsPage
+        client={mockFoodsClient({
+          list: vi.fn().mockResolvedValue(withSafe),
+          clearExposure,
+        })}
+      />,
+    );
+
+    expect(
+      await screen.findByRole("heading", { name: "Known safes" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("bagelsaurus")).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "Clear safe Apples bagelsaurus",
+      }),
+    );
+
+    expect(clearExposure).toHaveBeenCalledWith(
+      starters[0]!.id,
+      "bagelsaurus",
+    );
+    await waitFor(() => {
+      expect(screen.queryByText("bagelsaurus")).not.toBeInTheDocument();
+    });
+  });
+
+  it("adds an exposure overlay on a starter food", async () => {
+    const user = userEvent.setup();
+    const upsertExposure = vi.fn().mockResolvedValue({
+      foodId: starters[0]!.id,
+      variantKey: "bagelsaurus",
+      familiarity: "safe",
+      source: "manual",
+    });
+    render(
+      <FoodsPage
+        client={mockFoodsClient({ upsertExposure })}
+      />,
+    );
+
+    await screen.findByText("Apples");
+    const startersSection = screen
+      .getByRole("heading", { name: "Starter foods" })
+      .closest("section");
+    expect(startersSection).not.toBeNull();
+    await user.click(
+      within(startersSection!).getAllByRole("button", {
+        name: "Set familiarity",
+      })[0]!,
+    );
+
+    const form = screen.getByRole("form", { name: "Add or edit exposure" });
+    expect(within(form).getByLabelText("Exposure food")).toHaveValue(
+      starters[0]!.id,
+    );
+    await user.type(
+      within(form).getByLabelText("Brand / prep note"),
+      "Bagelsaurus",
+    );
+    await user.click(
+      within(form).getByRole("button", { name: "Save exposure" }),
+    );
+
+    expect(upsertExposure).toHaveBeenCalledWith(starters[0]!.id, {
+      variantKey: "Bagelsaurus",
+      familiarity: "safe",
+    });
+    expect(
+      await screen.findByRole("heading", { name: "Known safes" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("bagelsaurus")).toBeInTheDocument();
+  });
+});
+
+describe("exposure helpers", () => {
+  it("normalizes variant keys", async () => {
+    const { normalizeVariantKey, mergeExposureIntoFoods, removeExposureFromFoods } =
+      await import("@/components/food/FoodsPage");
+    expect(normalizeVariantKey("  Bagelsaurus  ")).toBe("bagelsaurus");
+
+    const food: FoodResponse = {
+      ...starters[0]!,
+      exposures: [],
+    };
+    const merged = mergeExposureIntoFoods(
+      [food],
+      {
+        foodId: food.id,
+        variantKey: "bagelsaurus",
+        familiarity: "safe",
+        source: "manual",
+      },
+    );
+    expect(merged[0]?.exposures).toHaveLength(1);
+    const cleared = removeExposureFromFoods(
+      merged,
+      food.id,
+      "Bagelsaurus",
+    );
+    expect(cleared[0]?.exposures).toEqual([]);
   });
 });
