@@ -14,6 +14,7 @@ const starters: FoodResponse[] = [
     householdId: null,
     system: true,
     sessionEligible: true,
+    exposures: [],
   },
   {
     id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa12",
@@ -22,6 +23,7 @@ const starters: FoodResponse[] = [
     householdId: null,
     system: true,
     sessionEligible: true,
+    exposures: [],
   },
 ];
 
@@ -31,6 +33,8 @@ function mockFoodsClient(overrides: Partial<FoodsClient> = {}): FoodsClient {
     create: vi.fn(),
     update: vi.fn(),
     archive: vi.fn(),
+    upsertExposure: vi.fn(),
+    clearExposure: vi.fn(),
     ...overrides,
   } as FoodsClient;
 }
@@ -64,6 +68,7 @@ describe("FoodsPage", () => {
       householdId: "22222222-2222-2222-2222-222222222222",
       system: false,
       sessionEligible: true,
+      exposures: [],
     };
     const create = vi.fn().mockResolvedValue(created);
     render(<FoodsPage client={mockFoodsClient({ create })} />);
@@ -102,6 +107,7 @@ describe("FoodsPage", () => {
       householdId: "22222222-2222-2222-2222-222222222222",
       system: false,
       sessionEligible: true,
+      exposures: [],
     };
     const create = vi.fn().mockResolvedValue(created);
     render(<FoodsPage client={mockFoodsClient({ create })} />);
@@ -135,6 +141,7 @@ describe("FoodsPage", () => {
       householdId: "22222222-2222-2222-2222-222222222222",
       system: false,
       sessionEligible: true,
+      exposures: [],
     };
     const create = vi.fn().mockResolvedValue(created);
     render(<FoodsPage client={mockFoodsClient({ create })} />);
@@ -178,6 +185,7 @@ describe("FoodsPage", () => {
       householdId: "22222222-2222-2222-2222-222222222222",
       system: false,
       sessionEligible: true,
+      exposures: [],
     };
     const updated = { ...mine, name: "Vanilla cup", iconKey: "yogurt_vanilla" };
     const update = vi.fn().mockResolvedValue(updated);
@@ -236,6 +244,7 @@ describe("FoodsPage", () => {
       householdId: "22222222-2222-2222-2222-222222222222",
       system: false,
       sessionEligible: false,
+      exposures: [],
       liked: "like",
       texture: "crunchy",
       tasteNote: "salt & vinegar",

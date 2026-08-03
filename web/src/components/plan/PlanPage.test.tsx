@@ -25,6 +25,7 @@ const foods: FoodResponse[] = [
     householdId: null,
     system: true,
     sessionEligible: true,
+    exposures: [],
   },
   {
     id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa05",
@@ -33,6 +34,7 @@ const foods: FoodResponse[] = [
     householdId: null,
     system: true,
     sessionEligible: true,
+    exposures: [],
   },
   {
     id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa13",
@@ -41,6 +43,7 @@ const foods: FoodResponse[] = [
     householdId: null,
     system: true,
     sessionEligible: true,
+    exposures: [],
   },
 ];
 
@@ -114,6 +117,8 @@ function mockFoodsClient(overrides: Partial<FoodsClient> = {}): FoodsClient {
     create: vi.fn(),
     update: vi.fn(),
     archive: vi.fn(),
+    upsertExposure: vi.fn(),
+    clearExposure: vi.fn(),
     ...overrides,
   } as FoodsClient;
 }
@@ -229,6 +234,7 @@ describe("PlanPage", () => {
       householdId: "22222222-2222-2222-2222-222222222222",
       system: false,
       sessionEligible: false,
+      exposures: [],
       liked: "like",
       texture: "crunchy",
       tasteNote: "salt & vinegar",

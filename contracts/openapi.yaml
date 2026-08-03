@@ -1,16 +1,17 @@
 openapi: 3.0.3
 info:
   title: Quickapp API
-  version: 0.10.0
+  version: 0.11.0
   description: >
     Contract-first API for Food Investigators. Documents family-account auth
     (email/password register and login, Bearer session tokens, GET/PATCH
     /api/auth/me with optional household childDisplayName), the household food
     catalog (system starters + custom foods, archive, optional snack foods
-    excluded from tasting sessions), tasting sessions (create, list upcoming,
-    history of completed, download history PDF, get, update, cancel, complete
-    with run outcomes, optional parent notes on completed sessions), and
-    household Insights (aggregates + dismissible tips).
+    excluded from tasting sessions, household exposure profiles per food +
+    variant), tasting sessions (create, list upcoming, history of completed,
+    download history PDF, get, update, cancel, complete with run outcomes,
+    optional parent notes on completed sessions), and household Insights
+    (aggregates + dismissible tips).
 servers:
   - url: http://localhost:8080
     description: Local development
@@ -312,6 +313,87 @@ paths:
                 $ref: "#/components/schemas/ErrorMessage"
         "403":
           description: System starter foods cannot be changed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+        "404":
+          description: Food not found for this household
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+  /api/foods/{foodId}/exposures:
+    put:
+      operationId: upsertFoodExposure
+      summary: Upsert a household exposure profile for a food presentation
+      description: >
+        Sets familiarity for `(foodId, variantKey)` for this household.
+        `variantKey` is normalized (trim + case-fold); omit or blank for
+        unspecified presentation. Works for system starters (overlay) and
+        household foods. Source is always `manual` on this endpoint.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/FoodId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertFoodExposureRequest"
+            example:
+              variantKey: Bagelsaurus
+              familiarity: safe
+      responses:
+        "200":
+          description: Exposure upserted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FoodExposureResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+        "401":
+          description: Missing or invalid session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+        "404":
+          description: Food not found for this household
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+    delete:
+      operationId: clearFoodExposure
+      summary: Clear (delete) a household exposure for a food presentation
+      description: >
+        Removes the exposure row for `(foodId, variantKey)` so Plan no longer
+        autofills that familiarity. `variantKey` query is normalized the same
+        way as upsert; omit or blank clears the unspecified-presentation row.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/FoodId"
+        - name: variantKey
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 200
+            default: ""
+          description: Brand/prep note; normalized with trim + case-fold
+      responses:
+        "204":
+          description: Exposure cleared (idempotent if already absent)
+        "401":
+          description: Missing or invalid session
           content:
             application/json:
               schema:
@@ -1017,6 +1099,7 @@ components:
         - iconKey
         - system
         - sessionEligible
+        - exposures
       properties:
         id:
           type: string
@@ -1068,6 +1151,56 @@ components:
           format: date-time
           nullable: true
           description: Set when the household food is soft-archived; null when active
+        exposures:
+          type: array
+          description: >
+            This household's exposure profiles for this food (food + variant).
+            Empty when none are set. Used for Plan familiarity autofill.
+          items:
+            $ref: "#/components/schemas/FoodExposureResponse"
+    FoodExposureResponse:
+      type: object
+      required:
+        - foodId
+        - variantKey
+        - familiarity
+        - source
+      properties:
+        foodId:
+          type: string
+          format: uuid
+        variantKey:
+          type: string
+          maxLength: 200
+          description: >
+            Normalized brand/prep note (trim + case-fold). Empty string means
+            unspecified presentation.
+          example: bagelsaurus
+        familiarity:
+          $ref: "#/components/schemas/Familiarity"
+        source:
+          $ref: "#/components/schemas/ExposureSource"
+    UpsertFoodExposureRequest:
+      type: object
+      required:
+        - familiarity
+      properties:
+        variantKey:
+          type: string
+          maxLength: 200
+          description: Brand/prep note; normalized server-side. Omit or blank for unspecified.
+          example: Bagelsaurus
+        familiarity:
+          $ref: "#/components/schemas/Familiarity"
+    ExposureSource:
+      type: string
+      enum:
+        - manual
+        - signup
+        - outcome
+      description: >
+        How the exposure was last written. Write endpoints in this version always
+        set `manual`; `signup` / `outcome` are reserved for later slices.
     CreateFoodRequest:
       type: object
       required:
@@ -1133,7 +1266,9 @@ components:
         - familiar_but_new
         - truly_new
         - retrying
-      description: How familiar the child is with this planned food
+      description: >
+        How familiar the child is with this food presentation (Plan slot or
+        household exposure profile).
     SessionStatus:
       type: string
       enum:

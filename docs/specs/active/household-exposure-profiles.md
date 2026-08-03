@@ -137,7 +137,7 @@ from exposures returned on foods list).
 - [x] Backend: Flyway `household_food_exposures`; entity/repo; Familiarity (+
       source) in foods module; service upsert/list/delete-or-clear; snack create/
       update hooks → safe exposure; wire controller.
-- [ ] Contract: OpenAPI schemas + paths; bump version; sync web types/client and
+- [x] Contract: OpenAPI schemas + paths; bump version; sync web types/client and
       mobile `FoodsClient` / DTOs.
 - [ ] Web Foods: list/add/edit/clear exposures (safes first-class in UI).
 - [ ] Web Plan: autofill familiarity from exposures when food/variant changes;

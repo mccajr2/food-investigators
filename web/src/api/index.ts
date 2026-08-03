@@ -7,7 +7,9 @@ export type {
   CompleteSessionRequest,
   CreateFoodRequest,
   CreateSessionRequest,
+  ExposureSource,
   Familiarity,
+  FoodExposureResponse,
   FoodIconKey,
   FoodOutcomeRequest,
   FoodResponse,
@@ -32,6 +34,7 @@ export type {
   UpdateMeRequest,
   UpdateParentNoteRequest,
   UpdateSessionRequest,
+  UpsertFoodExposureRequest,
   UserResponse,
 } from "@/api/types"
 export { FOOD_ICON_KEYS } from "@/api/types"

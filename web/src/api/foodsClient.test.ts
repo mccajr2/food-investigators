@@ -27,6 +27,7 @@ const sampleFood = {
   texture: null,
   tasteNote: null,
   archivedAt: null,
+  exposures: [],
 }
 
 describe("FoodsClient", () => {
@@ -145,6 +146,41 @@ describe("FoodsClient", () => {
     expect(String(fetchFn.mock.calls[1]?.[0])).toBe(
       `http://localhost:8080/api/foods/${sampleFood.id}/archive`,
     )
+  })
+
+  it("upserts and clears exposures", async () => {
+    const exposure = {
+      foodId: sampleFood.id,
+      variantKey: "bagelsaurus",
+      familiarity: "safe" as const,
+      source: "manual" as const,
+    }
+    const fetchFn = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(exposure), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+      )
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+
+    const client = new FoodsClient("http://localhost:8080", fetchFn, memoryStore())
+    const upserted = await client.upsertExposure(sampleFood.id, {
+      variantKey: "Bagelsaurus",
+      familiarity: "safe",
+    })
+    await client.clearExposure(sampleFood.id, "Bagelsaurus")
+
+    expect(upserted.variantKey).toBe("bagelsaurus")
+    expect(String(fetchFn.mock.calls[0]?.[0])).toBe(
+      `http://localhost:8080/api/foods/${sampleFood.id}/exposures`,
+    )
+    expect((fetchFn.mock.calls[0]?.[1] as RequestInit).method).toBe("PUT")
+    expect(String(fetchFn.mock.calls[1]?.[0])).toBe(
+      `http://localhost:8080/api/foods/${sampleFood.id}/exposures?variantKey=Bagelsaurus`,
+    )
+    expect((fetchFn.mock.calls[1]?.[1] as RequestInit).method).toBe("DELETE")
   })
 
   it("surfaces invalid icon errors", async () => {
