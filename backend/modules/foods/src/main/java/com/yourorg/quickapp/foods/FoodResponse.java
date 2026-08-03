@@ -1,6 +1,7 @@
 package com.yourorg.quickapp.foods;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 public record FoodResponse(
@@ -14,4 +15,5 @@ public record FoodResponse(
         FoodLiked liked,
         FoodTexture texture,
         String tasteNote,
-        Instant archivedAt) {}
+        Instant archivedAt,
+        List<FoodExposureResponse> exposures) {}

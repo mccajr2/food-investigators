@@ -1,6 +1,7 @@
 package com.yourorg.quickapp.foods;
 
 import static org.hamcrest.Matchers.nullValue;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -347,13 +348,19 @@ class FoodsApiIntegrationTest {
                         .andExpect(jsonPath("$.liked").value("like"))
                         .andExpect(jsonPath("$.texture").value("crunchy"))
                         .andExpect(jsonPath("$.tasteNote").value("salt & vinegar"))
+                        .andExpect(jsonPath("$.exposures.length()").value(1))
+                        .andExpect(jsonPath("$.exposures[0].variantKey").value(""))
+                        .andExpect(jsonPath("$.exposures[0].familiarity").value("safe"))
                         .andReturn();
         String snackId = idFrom(createResult);
 
         mockMvc.perform(get("/api/foods").header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[?(@.id == '%s')].sessionEligible".formatted(snackId)).value(false))
-                .andExpect(jsonPath("$[?(@.id == '%s')].tasteNote".formatted(snackId)).value("salt & vinegar"));
+                .andExpect(jsonPath("$[?(@.id == '%s')].tasteNote".formatted(snackId)).value("salt & vinegar"))
+                .andExpect(
+                        jsonPath("$[?(@.id == '%s')].exposures[0].familiarity".formatted(snackId))
+                                .value("safe"));
 
         mockMvc.perform(
                         put("/api/foods/" + snackId)
@@ -432,6 +439,70 @@ class FoodsApiIntegrationTest {
                                         """))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.message").value("System starter foods cannot be changed"));
+    }
+
+    @Test
+    void upsertClearExposureOnSystemFoodAndIsolateHouseholds() throws Exception {
+        String tokenA = register("exp-a-" + System.nanoTime() + "@example.com");
+        String tokenB = register("exp-b-" + System.nanoTime() + "@example.com");
+
+        mockMvc.perform(
+                        put("/api/foods/" + SYSTEM_APPLES_ID + "/exposures")
+                                .header("Authorization", "Bearer " + tokenA)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                                        {"variantKey":"  Bagelsaurus  ","familiarity":"safe"}
+                                        """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.foodId").value(SYSTEM_APPLES_ID))
+                .andExpect(jsonPath("$.variantKey").value("bagelsaurus"))
+                .andExpect(jsonPath("$.familiarity").value("safe"))
+                .andExpect(jsonPath("$.source").value("manual"));
+
+        mockMvc.perform(
+                        put("/api/foods/" + SYSTEM_APPLES_ID + "/exposures")
+                                .header("Authorization", "Bearer " + tokenA)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                                        {"variantKey":"BAGELSAURUS","familiarity":"retrying"}
+                                        """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.variantKey").value("bagelsaurus"))
+                .andExpect(jsonPath("$.familiarity").value("retrying"));
+
+        mockMvc.perform(get("/api/foods").header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isOk())
+                .andExpect(
+                        jsonPath(
+                                        "$[?(@.id == '%s')].exposures[?(@.variantKey == 'bagelsaurus')].familiarity"
+                                                .formatted(SYSTEM_APPLES_ID))
+                                .value("retrying"));
+
+        mockMvc.perform(get("/api/foods").header("Authorization", "Bearer " + tokenB))
+                .andExpect(status().isOk())
+                .andExpect(
+                        jsonPath("$[?(@.id == '%s')].exposures.length()".formatted(SYSTEM_APPLES_ID))
+                                .value(0));
+
+        mockMvc.perform(
+                        delete("/api/foods/" + SYSTEM_APPLES_ID + "/exposures")
+                                .header("Authorization", "Bearer " + tokenA)
+                                .param("variantKey", "Bagelsaurus"))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/foods").header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isOk())
+                .andExpect(
+                        jsonPath("$[?(@.id == '%s')].exposures.length()".formatted(SYSTEM_APPLES_ID))
+                                .value(0));
+
+        mockMvc.perform(
+                        put("/api/foods/" + SYSTEM_APPLES_ID + "/exposures")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"familiarity\":\"safe\"}"))
+                .andExpect(status().isUnauthorized());
     }
 
     private String register(String email) throws Exception {

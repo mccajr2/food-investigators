@@ -8,6 +8,7 @@ import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -55,6 +56,23 @@ public class FoodController {
     public FoodResponse archive(
             @AuthenticationPrincipal AccountPrincipal principal, @PathVariable("foodId") UUID foodId) {
         return foodService.archive(requireHouseholdId(principal), foodId);
+    }
+
+    @PutMapping("/{foodId}/exposures")
+    public FoodExposureResponse upsertExposure(
+            @AuthenticationPrincipal AccountPrincipal principal,
+            @PathVariable("foodId") UUID foodId,
+            @Valid @RequestBody UpsertFoodExposureRequest request) {
+        return foodService.upsertExposure(requireHouseholdId(principal), foodId, request);
+    }
+
+    @DeleteMapping("/{foodId}/exposures")
+    public ResponseEntity<Void> clearExposure(
+            @AuthenticationPrincipal AccountPrincipal principal,
+            @PathVariable("foodId") UUID foodId,
+            @RequestParam(name = "variantKey", defaultValue = "") String variantKey) {
+        foodService.clearExposure(requireHouseholdId(principal), foodId, variantKey);
+        return ResponseEntity.noContent().build();
     }
 
     private static UUID requireHouseholdId(AccountPrincipal principal) {

@@ -18,6 +18,8 @@ function mockFoodsClient(
     create: vi.fn(),
     update: vi.fn(),
     archive: vi.fn(),
+    upsertExposure: vi.fn(),
+    clearExposure: vi.fn(),
     ...overrides,
   } as FoodsClient
 }

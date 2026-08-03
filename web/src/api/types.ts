@@ -68,6 +68,10 @@ export const FOOD_ICON_KEYS = [
 
 export type FoodIconKey = (typeof FOOD_ICON_KEYS)[number]
 
+export type Familiarity = "safe" | "familiar_but_new" | "truly_new" | "retrying"
+
+export type ExposureSource = "manual" | "signup" | "outcome"
+
 export type FoodResponse = {
   id: string
   name: string
@@ -81,6 +85,20 @@ export type FoodResponse = {
   texture?: Texture | null
   tasteNote?: string | null
   archivedAt?: string | null
+  /** Household exposure profiles for this food (food + variant). */
+  exposures: FoodExposureResponse[]
+}
+
+export type FoodExposureResponse = {
+  foodId: string
+  variantKey: string
+  familiarity: Familiarity
+  source: ExposureSource
+}
+
+export type UpsertFoodExposureRequest = {
+  variantKey?: string
+  familiarity: Familiarity
 }
 
 export type CreateFoodRequest = {
@@ -100,8 +118,6 @@ export type UpdateFoodRequest = {
   texture?: Texture | null
   tasteNote?: string | null
 }
-
-export type Familiarity = "safe" | "familiar_but_new" | "truly_new" | "retrying"
 
 export type SessionStatus = "planned" | "cancelled" | "completed"
 

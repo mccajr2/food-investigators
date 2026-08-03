@@ -137,6 +137,52 @@ class FoodsClientTest {
         }
 
     @Test
+    fun upsertAndClearExposureHitExpectedPaths() =
+        runTest {
+            val store = InMemoryTokenStore()
+            store.saveToken("tok", rememberMe = true)
+            val paths = mutableListOf<String>()
+            val engine =
+                MockEngine { request ->
+                    paths += "${request.method.value} ${request.url.encodedPath}?${request.url.encodedQuery}"
+                    if (request.method == HttpMethod.Delete) {
+                        respond("", status = HttpStatusCode.NoContent)
+                    } else {
+                        respond(
+                            content =
+                                """
+                                {"foodId":"cccccccc-cccc-cccc-cccc-cccccccccccc",
+                                 "variantKey":"bagelsaurus",
+                                 "familiarity":"safe",
+                                 "source":"manual"}
+                                """.trimIndent(),
+                            status = HttpStatusCode.OK,
+                            headers = headersOf(HttpHeaders.ContentType, "application/json"),
+                        )
+                    }
+                }
+
+            val client = FoodsClient("http://localhost:8080", httpClient(engine), store)
+            val upserted =
+                client.upsertExposure(
+                    foodId = "cccccccc-cccc-cccc-cccc-cccccccccccc",
+                    familiarity = "safe",
+                    variantKey = "Bagelsaurus",
+                )
+            client.clearExposure("cccccccc-cccc-cccc-cccc-cccccccccccc", "Bagelsaurus")
+
+            assertEquals("bagelsaurus", upserted.variantKey)
+            assertEquals("safe", upserted.familiarity)
+            assertEquals(
+                listOf(
+                    "PUT /api/foods/cccccccc-cccc-cccc-cccc-cccccccccccc/exposures?",
+                    "DELETE /api/foods/cccccccc-cccc-cccc-cccc-cccccccccccc/exposures?variantKey=Bagelsaurus",
+                ),
+                paths,
+            )
+        }
+
+    @Test
     fun createUpdateArchiveHitExpectedPaths() =
         runTest {
             val store = InMemoryTokenStore()

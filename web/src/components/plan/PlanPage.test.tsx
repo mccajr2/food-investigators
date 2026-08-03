@@ -9,6 +9,7 @@ import type {
   SessionSuggestionResponse,
 } from "@/api/types";
 import {
+  applyPlanSlotChange,
   isEarlyRunNeeded,
   localTodayIsoDate,
   PlanPage,
@@ -25,6 +26,7 @@ const foods: FoodResponse[] = [
     householdId: null,
     system: true,
     sessionEligible: true,
+    exposures: [],
   },
   {
     id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa05",
@@ -33,6 +35,7 @@ const foods: FoodResponse[] = [
     householdId: null,
     system: true,
     sessionEligible: true,
+    exposures: [],
   },
   {
     id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa13",
@@ -41,6 +44,7 @@ const foods: FoodResponse[] = [
     householdId: null,
     system: true,
     sessionEligible: true,
+    exposures: [],
   },
 ];
 
@@ -114,6 +118,8 @@ function mockFoodsClient(overrides: Partial<FoodsClient> = {}): FoodsClient {
     create: vi.fn(),
     update: vi.fn(),
     archive: vi.fn(),
+    upsertExposure: vi.fn(),
+    clearExposure: vi.fn(),
     ...overrides,
   } as FoodsClient;
 }
@@ -174,6 +180,69 @@ describe("PlanPage helpers", () => {
       ),
     ).toMatch(/brand\/variety/);
   });
+
+  it("autofills familiarity from household exposures when food or variant changes", () => {
+    const catalog: FoodResponse[] = [
+      {
+        ...foods[0],
+        exposures: [
+          {
+            foodId: foods[0].id,
+            variantKey: "bagelsaurus",
+            familiarity: "safe",
+            source: "manual",
+          },
+        ],
+      },
+      foods[1],
+    ];
+    const empty = {
+      foodId: "",
+      familiarity: "truly_new" as const,
+      variantNote: "",
+    };
+    expect(
+      applyPlanSlotChange(
+        empty,
+        { foodId: catalog[0].id, familiarity: "truly_new", variantNote: "" },
+        catalog,
+      ).familiarity,
+    ).toBe("familiar_but_new");
+    expect(
+      applyPlanSlotChange(
+        empty,
+        {
+          foodId: catalog[0].id,
+          familiarity: "truly_new",
+          variantNote: "Bagelsaurus",
+        },
+        catalog,
+      ).familiarity,
+    ).toBe("safe");
+    expect(
+      applyPlanSlotChange(
+        empty,
+        { foodId: catalog[1].id, familiarity: "safe", variantNote: "" },
+        catalog,
+      ).familiarity,
+    ).toBe("truly_new");
+    // Familiarity-only override is preserved when food/variant unchanged.
+    expect(
+      applyPlanSlotChange(
+        {
+          foodId: catalog[0].id,
+          familiarity: "safe",
+          variantNote: "Bagelsaurus",
+        },
+        {
+          foodId: catalog[0].id,
+          familiarity: "retrying",
+          variantNote: "Bagelsaurus",
+        },
+        catalog,
+      ).familiarity,
+    ).toBe("retrying");
+  });
 });
 
 describe("PlanPage", () => {
@@ -229,6 +298,7 @@ describe("PlanPage", () => {
       householdId: "22222222-2222-2222-2222-222222222222",
       system: false,
       sessionEligible: false,
+      exposures: [],
       liked: "like",
       texture: "crunchy",
       tasteNote: "salt & vinegar",
@@ -272,19 +342,23 @@ describe("PlanPage", () => {
       within(familiarity).getByRole("option", { name: "Retrying" }),
     ).toHaveValue("retrying");
     expect(within(familiarity).queryByRole("option", { name: "Likes" })).toBeNull();
+    expect(familiarity).toHaveValue("truly_new");
 
     await pickCalendarDay(user, form, /July 20/i);
     await user.selectOptions(
       within(form).getByLabelText("Food 1 picker"),
       foods[0].id,
     );
-    await user.selectOptions(
-      within(form).getByLabelText("Food 1 familiarity"),
-      "safe",
+    expect(within(form).getByLabelText("Food 1 familiarity")).toHaveValue(
+      "truly_new",
     );
     await user.type(
       within(form).getByLabelText("Food 1 variant note"),
       "Honeycrisp",
+    );
+    await user.selectOptions(
+      within(form).getByLabelText("Food 1 familiarity"),
+      "safe",
     );
     await user.selectOptions(
       within(form).getByLabelText("Food 2 picker"),
@@ -312,6 +386,49 @@ describe("PlanPage", () => {
       ],
     });
     expect(await screen.findByText(/Honeycrisp/)).toBeInTheDocument();
+  });
+
+  it("autofills safe when picking a known exposure presentation", async () => {
+    const user = userEvent.setup();
+    const withExposure: FoodResponse[] = [
+      {
+        ...foods[0],
+        exposures: [
+          {
+            foodId: foods[0].id,
+            variantKey: "honeycrisp",
+            familiarity: "safe",
+            source: "manual",
+          },
+        ],
+      },
+      foods[1],
+      foods[2],
+    ];
+    renderPlan(
+      mockSessionsClient(),
+      mockFoodsClient({ list: vi.fn().mockResolvedValue(withExposure) }),
+    );
+
+    await screen.findByRole("heading", { name: "Plan" });
+    await user.click(screen.getByRole("button", { name: "Plan a night" }));
+    const form = screen.getByRole("form", { name: "Plan a night" });
+
+    await user.selectOptions(
+      within(form).getByLabelText("Food 1 picker"),
+      foods[0].id,
+    );
+    expect(within(form).getByLabelText("Food 1 familiarity")).toHaveValue(
+      "familiar_but_new",
+    );
+    await user.clear(within(form).getByLabelText("Food 1 variant note"));
+    await user.type(
+      within(form).getByLabelText("Food 1 variant note"),
+      "Honeycrisp",
+    );
+    expect(within(form).getByLabelText("Food 1 familiarity")).toHaveValue(
+      "safe",
+    );
   });
 
   it("nudges optional brand/prep when Retrying is selected", async () => {
@@ -375,13 +492,13 @@ describe("PlanPage", () => {
       within(form).getByLabelText("Food 2 picker"),
       foods[1].id,
     );
-    await user.selectOptions(
-      within(form).getByLabelText("Food 2 familiarity"),
-      "retrying",
-    );
     await user.type(
       within(form).getByLabelText("Food 2 variant note"),
       "new brand",
+    );
+    await user.selectOptions(
+      within(form).getByLabelText("Food 2 familiarity"),
+      "retrying",
     );
     await user.click(within(form).getByRole("button", { name: "Save night" }));
 
@@ -569,13 +686,13 @@ describe("PlanPage", () => {
       within(form).getByLabelText("Food 1 picker"),
       foods[1].id,
     );
+    const note = within(form).getByLabelText("Food 1 variant note");
+    await user.clear(note);
+    await user.type(note, "TJ's");
     await user.selectOptions(
       within(form).getByLabelText("Food 1 familiarity"),
       "familiar_but_new",
     );
-    const note = within(form).getByLabelText("Food 1 variant note");
-    await user.clear(note);
-    await user.type(note, "TJ's");
     await user.selectOptions(
       within(form).getByLabelText("Food 2 picker"),
       foods[2].id,

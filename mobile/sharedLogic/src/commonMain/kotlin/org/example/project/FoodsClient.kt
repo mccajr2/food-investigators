@@ -2,6 +2,7 @@ package org.example.project
 
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.post
@@ -17,6 +18,14 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
 @Serializable
+data class FoodExposureResponse(
+    val foodId: String,
+    val variantKey: String,
+    val familiarity: String,
+    val source: String,
+)
+
+@Serializable
 data class FoodResponse(
     val id: String,
     val name: String,
@@ -29,6 +38,7 @@ data class FoodResponse(
     val texture: String? = null,
     val tasteNote: String? = null,
     val archivedAt: String? = null,
+    val exposures: List<FoodExposureResponse> = emptyList(),
 )
 
 @Serializable
@@ -49,6 +59,12 @@ data class UpdateFoodRequest(
     val liked: String? = null,
     val texture: String? = null,
     val tasteNote: String? = null,
+)
+
+@Serializable
+data class UpsertFoodExposureRequest(
+    val variantKey: String? = null,
+    val familiarity: String,
 )
 
 class FoodsException(message: String) : Exception(message)
@@ -141,6 +157,46 @@ class FoodsClient(
         return response.body()
     }
 
+    suspend fun upsertExposure(
+        foodId: String,
+        familiarity: String,
+        variantKey: String? = null,
+    ): FoodExposureResponse {
+        val response =
+            httpClient.put("$baseUrl/api/foods/$foodId/exposures") {
+                header(HttpHeaders.Authorization, bearerOrThrow())
+                contentType(ContentType.Application.Json)
+                setBody(
+                    UpsertFoodExposureRequest(
+                        variantKey = variantKey,
+                        familiarity = familiarity,
+                    ),
+                )
+            }
+        clearTokenIfUnauthorized(response)
+        if (!response.status.isSuccess()) {
+            throw FoodsException(readError(response))
+        }
+        return response.body()
+    }
+
+    suspend fun clearExposure(foodId: String, variantKey: String = "") {
+        val encoded =
+            if (variantKey.isEmpty()) {
+                ""
+            } else {
+                "?variantKey=" + variantKey.encodeURLParameter()
+            }
+        val response =
+            httpClient.delete("$baseUrl/api/foods/$foodId/exposures$encoded") {
+                header(HttpHeaders.Authorization, bearerOrThrow())
+            }
+        clearTokenIfUnauthorized(response)
+        if (!response.status.isSuccess()) {
+            throw FoodsException(readError(response))
+        }
+    }
+
     private suspend fun authorizedGet(url: String): HttpResponse {
         val response =
             httpClient.get(url) {
@@ -181,3 +237,20 @@ class FoodsClient(
         ): FoodsClient = FoodsClient(baseUrl, createHttpClient(), tokens)
     }
 }
+
+private fun String.encodeURLParameter(): String =
+    buildString(length + 8) {
+        for (ch in this@encodeURLParameter) {
+            when {
+                ch.isLetterOrDigit() || ch == '-' || ch == '_' || ch == '.' || ch == '~' -> append(ch)
+                else -> {
+                    val bytes = ch.toString().encodeToByteArray()
+                    for (b in bytes) {
+                        append('%')
+                        append(((b.toInt() shr 4) and 0xF).toString(16).uppercase())
+                        append((b.toInt() and 0xF).toString(16).uppercase())
+                    }
+                }
+            }
+        }
+    }

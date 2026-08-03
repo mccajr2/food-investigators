@@ -4,8 +4,10 @@ import { defaultBrowserTokenStore, type TokenStore } from "@/api/tokenStore"
 import type {
   CreateFoodRequest,
   ErrorMessage,
+  FoodExposureResponse,
   FoodResponse,
   UpdateFoodRequest,
+  UpsertFoodExposureRequest,
 } from "@/api/types"
 
 export class FoodsClient {
@@ -66,6 +68,37 @@ export class FoodsClient {
       throw new Error(await readErrorMessage(response, "Archive food failed"))
     }
     return (await response.json()) as FoodResponse
+  }
+
+  async upsertExposure(
+    foodId: string,
+    request: UpsertFoodExposureRequest,
+  ): Promise<FoodExposureResponse> {
+    const response = await this.authorized(`/api/foods/${foodId}/exposures`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(request),
+    })
+    if (!response.ok) {
+      throw new Error(await readErrorMessage(response, "Upsert exposure failed"))
+    }
+    return (await response.json()) as FoodExposureResponse
+  }
+
+  async clearExposure(foodId: string, variantKey: string = ""): Promise<void> {
+    const params = new URLSearchParams()
+    if (variantKey !== "") {
+      params.set("variantKey", variantKey)
+    }
+    const query = params.toString()
+    const path =
+      query.length > 0
+        ? `/api/foods/${foodId}/exposures?${query}`
+        : `/api/foods/${foodId}/exposures`
+    const response = await this.authorized(path, { method: "DELETE" })
+    if (!response.ok) {
+      throw new Error(await readErrorMessage(response, "Clear exposure failed"))
+    }
   }
 
   private async authorized(

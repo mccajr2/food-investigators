@@ -2,6 +2,9 @@ package com.yourorg.quickapp.foods.internal;
 
 import com.yourorg.quickapp.foods.CreateFoodRequest;
 import com.yourorg.quickapp.foods.DuplicateFoodNameException;
+import com.yourorg.quickapp.foods.ExposureSource;
+import com.yourorg.quickapp.foods.FoodExposureResponse;
+import com.yourorg.quickapp.foods.FoodFamiliarity;
 import com.yourorg.quickapp.foods.FoodIconKeys;
 import com.yourorg.quickapp.foods.FoodIllustrationStore;
 import com.yourorg.quickapp.foods.FoodLiked;
@@ -11,13 +14,16 @@ import com.yourorg.quickapp.foods.FoodTexture;
 import com.yourorg.quickapp.foods.InvalidFoodPreferenceException;
 import com.yourorg.quickapp.foods.SystemFoodImmutableException;
 import com.yourorg.quickapp.foods.UpdateFoodRequest;
+import com.yourorg.quickapp.foods.UpsertFoodExposureRequest;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,13 +31,20 @@ import org.springframework.transaction.annotation.Transactional;
 public class FoodService {
 
     private static final int TASTE_NOTE_MAX = 100;
+    private static final int VARIANT_KEY_MAX = 200;
 
     private final FoodRepository foods;
+    private final HouseholdFoodExposureRepository exposures;
     private final FoodIllustrationStore illustrations;
     private final Clock clock;
 
-    FoodService(FoodRepository foods, FoodIllustrationStore illustrations, Clock clock) {
+    FoodService(
+            FoodRepository foods,
+            HouseholdFoodExposureRepository exposures,
+            FoodIllustrationStore illustrations,
+            Clock clock) {
         this.foods = foods;
+        this.exposures = exposures;
         this.illustrations = illustrations;
         this.clock = clock;
     }
@@ -47,7 +60,15 @@ public class FoodService {
         result.sort(Comparator.comparing(Food::getName, String.CASE_INSENSITIVE_ORDER));
         Map<String, String> urls =
                 illustrations.findPublicUrls(result.stream().map(Food::getIconKey).toList());
-        return result.stream().map(food -> toResponse(food, urls.get(food.getIconKey()))).toList();
+        Map<UUID, List<FoodExposureResponse>> byFood = exposuresByFood(householdId);
+        return result.stream()
+                .map(
+                        food ->
+                                toResponse(
+                                        food,
+                                        urls.get(food.getIconKey()),
+                                        byFood.getOrDefault(food.getId(), List.of())))
+                .toList();
     }
 
     @Transactional
@@ -65,7 +86,11 @@ public class FoodService {
                 request.texture(),
                 normalizeTasteNote(request.tasteNote()),
                 now);
-        return toResponse(foods.save(food));
+        Food saved = foods.save(food);
+        if (!saved.isSessionEligible()) {
+            upsertSafeEmptyVariant(householdId, saved.getId(), now);
+        }
+        return toResponse(saved);
     }
 
     @Transactional
@@ -96,7 +121,11 @@ public class FoodService {
                             : food.getTasteNote();
             food.setPreferences(liked, texture, tasteNote, now);
         }
-        return toResponse(foods.save(food));
+        Food saved = foods.save(food);
+        if (!saved.isSessionEligible()) {
+            upsertSafeEmptyVariant(householdId, saved.getId(), now);
+        }
+        return toResponse(saved);
     }
 
     @Transactional
@@ -104,6 +133,69 @@ public class FoodService {
         Food food = requireHouseholdFood(householdId, foodId);
         food.archive(clock.instant());
         return toResponse(foods.save(food));
+    }
+
+    @Transactional
+    public FoodExposureResponse upsertExposure(
+            UUID householdId, UUID foodId, UpsertFoodExposureRequest request) {
+        requireVisibleFood(householdId, foodId);
+        String variantKey = normalizeVariantKey(request.variantKey());
+        Instant now = clock.instant();
+        HouseholdFoodExposure row =
+                exposures
+                        .findByHouseholdIdAndFoodIdAndVariantKey(householdId, foodId, variantKey)
+                        .orElseGet(
+                                () ->
+                                        HouseholdFoodExposure.create(
+                                                householdId,
+                                                foodId,
+                                                variantKey,
+                                                request.familiarity(),
+                                                ExposureSource.manual,
+                                                now));
+        row.updateFamiliarity(request.familiarity(), ExposureSource.manual, now);
+        return toExposureResponse(exposures.save(row));
+    }
+
+    @Transactional
+    public void clearExposure(UUID householdId, UUID foodId, String variantKeyRaw) {
+        requireVisibleFood(householdId, foodId);
+        String variantKey = normalizeVariantKey(variantKeyRaw);
+        exposures.deleteByHouseholdIdAndFoodIdAndVariantKey(householdId, foodId, variantKey);
+    }
+
+    private void upsertSafeEmptyVariant(UUID householdId, UUID foodId, Instant now) {
+        HouseholdFoodExposure row =
+                exposures
+                        .findByHouseholdIdAndFoodIdAndVariantKey(householdId, foodId, "")
+                        .orElseGet(
+                                () ->
+                                        HouseholdFoodExposure.create(
+                                                householdId,
+                                                foodId,
+                                                "",
+                                                FoodFamiliarity.safe,
+                                                ExposureSource.manual,
+                                                now));
+        row.updateFamiliarity(FoodFamiliarity.safe, ExposureSource.manual, now);
+        exposures.save(row);
+    }
+
+    private Map<UUID, List<FoodExposureResponse>> exposuresByFood(UUID householdId) {
+        return exposures.findByHouseholdId(householdId).stream()
+                .map(FoodService::toExposureResponse)
+                .collect(
+                        Collectors.groupingBy(
+                                FoodExposureResponse::foodId,
+                                Collectors.collectingAndThen(
+                                        Collectors.toList(),
+                                        list ->
+                                                list.stream()
+                                                        .sorted(
+                                                                Comparator.comparing(
+                                                                        FoodExposureResponse
+                                                                                ::variantKey))
+                                                        .toList())));
     }
 
     private void requireUniqueVisibleName(UUID householdId, String name, UUID excludeId) {
@@ -116,6 +208,18 @@ public class FoodService {
         Food food = foods.findById(foodId).orElseThrow(FoodNotFoundException::new);
         if (food.isSystem()) {
             throw new SystemFoodImmutableException();
+        }
+        if (!householdId.equals(food.getHouseholdId())) {
+            throw new FoodNotFoundException();
+        }
+        return food;
+    }
+
+    /** System starters or this household's foods (including archived). */
+    private Food requireVisibleFood(UUID householdId, UUID foodId) {
+        Food food = foods.findById(foodId).orElseThrow(FoodNotFoundException::new);
+        if (food.isSystem()) {
+            return food;
         }
         if (!householdId.equals(food.getHouseholdId())) {
             throw new FoodNotFoundException();
@@ -138,11 +242,36 @@ public class FoodService {
         return trimmed;
     }
 
-    private FoodResponse toResponse(Food food) {
-        return toResponse(food, illustrations.findPublicUrl(food.getIconKey()).orElse(null));
+    static String normalizeVariantKey(String raw) {
+        if (raw == null) {
+            return "";
+        }
+        String normalized = raw.trim().toLowerCase(Locale.ROOT);
+        if (normalized.length() > VARIANT_KEY_MAX) {
+            throw new InvalidFoodPreferenceException(
+                    "Variant note must be at most " + VARIANT_KEY_MAX + " characters");
+        }
+        return normalized;
     }
 
-    private static FoodResponse toResponse(Food food, String iconUrl) {
+    private FoodResponse toResponse(Food food) {
+        if (food.getHouseholdId() == null) {
+            return toResponse(
+                    food, illustrations.findPublicUrl(food.getIconKey()).orElse(null), List.of());
+        }
+        List<FoodExposureResponse> foodExposures =
+                exposures.findByHouseholdIdAndFoodId(food.getHouseholdId(), food.getId()).stream()
+                        .map(FoodService::toExposureResponse)
+                        .sorted(Comparator.comparing(FoodExposureResponse::variantKey))
+                        .toList();
+        return toResponse(
+                food,
+                illustrations.findPublicUrl(food.getIconKey()).orElse(null),
+                foodExposures);
+    }
+
+    private static FoodResponse toResponse(
+            Food food, String iconUrl, List<FoodExposureResponse> foodExposures) {
         return new FoodResponse(
                 food.getId(),
                 food.getName(),
@@ -154,6 +283,12 @@ public class FoodService {
                 food.getLiked(),
                 food.getTexture(),
                 food.getTasteNote(),
-                food.getArchivedAt());
+                food.getArchivedAt(),
+                foodExposures);
+    }
+
+    private static FoodExposureResponse toExposureResponse(HouseholdFoodExposure row) {
+        return new FoodExposureResponse(
+                row.getFoodId(), row.getVariantKey(), row.getFamiliarity(), row.getSource());
     }
 }
