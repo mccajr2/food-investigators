@@ -52,7 +52,7 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | suggestion-pacing-evidence | planned | 2026-07-25 · re-rank split | Science-backed pacing / preference guidance for suggestions |
+| 1 | suggestion-pacing-evidence | active | 2026-07-25 · re-rank split | Science-backed pacing / preference guidance for suggestions |
 | 2 | stretch-food-targets | planned | 2026-08-03 · enhancement | Parent nominates stretch foods; Suggest proposes when ready (approve still required) |
 | 3 | disliked-prep-rotation | planned | 2026-07-28 · enhancement | Suggest distinct preps of a disliked food (~3 over weeks), then longer rest |
 | 4 | milestone-badges | planned | 2026-07-28 · enhancement | Celebration badges (e.g. first liked new food; 5/10/25 new foods) |
@@ -73,6 +73,7 @@ Unranked ideas. Promote into **Upcoming** with `/roadmap` (re-rank).
 
 | Id | Added | Summary |
 |----|-------|---------|
+| pacing-citation-library | 2026-08-03 · enhancement | Richer tagged pacing citation library beyond the small Suggest pack; parked while shipping curated static pack |
 | on-demand-food-illustrations | 2026-07-30 · re-rank split | Online AI for custom food stickers; **parked 2026-07-31** (Gemini image quota / beta cost) — resume later; do not merge WIP branch |
 | log-past-session | 2026-07-29 · enhancement | Explicit “log a past night” for vacation / away-from-iPad backfill (after `early-run-date-snap`) |
 | product-tour | 2026-07-29 · enhancement | Richer multi-step tour if welcome-orientation isn’t enough for beta parents |
@@ -95,6 +96,7 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Branch | Spec |
 |----|--------|------|
+| suggestion-pacing-evidence | `suggestion-pacing-evidence` | [active](specs/active/suggestion-pacing-evidence.md) |
 
 ## Done
 
@@ -231,3 +233,4 @@ Only notable events (first carve-up, major re-rank, cancelled theme) — not eve
 | 2026-08-03 | familiarity-from-outcomes shipped (complete → exposure upserts; never auto-downgrade safe; OpenAPI 0.13.0 hooks). Next up: `plan-food-autocomplete`. |
 | 2026-08-03 | plan-food-autocomplete shipped (Plan food typeahead combobox via cmdk + Popover). Next up: `suggestion-adjacent-foods`. |
 | 2026-08-03 | suggestion-adjacent-foods shipped (AI invent adjacent foods on Suggest; Approve match-or-create; OpenAPI 0.14.0). Next up: `suggestion-pacing-evidence`. |
+| 2026-08-03 | Specced `suggestion-pacing-evidence` (curated pacing pack + Suggest pacingNote/citations). Parked richer library as `pacing-citation-library`. |
