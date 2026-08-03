@@ -52,7 +52,7 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | suggestion-adjacent-foods | planned | 2026-08-03 · re-rank split | Suggest foods/presentations adjacent to safe exposures, beyond household list |
+| 1 | suggestion-adjacent-foods | active | 2026-08-03 · re-rank split | Suggest foods/presentations adjacent to safe exposures, beyond household list |
 | 2 | suggestion-pacing-evidence | planned | 2026-07-25 · re-rank split | Science-backed pacing / preference guidance for suggestions |
 | 3 | stretch-food-targets | planned | 2026-08-03 · enhancement | Parent nominates stretch foods; Suggest proposes when ready (approve still required) |
 | 4 | disliked-prep-rotation | planned | 2026-07-28 · enhancement | Suggest distinct preps of a disliked food (~3 over weeks), then longer rest |
@@ -96,6 +96,7 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Branch | Spec |
 |----|--------|------|
+| suggestion-adjacent-foods | `suggestion-adjacent-foods` | [active](specs/active/suggestion-adjacent-foods.md) |
 
 ## Done
 
