@@ -1,6 +1,6 @@
 # Spec: plan-food-autocomplete
 
-Status: draft  
+Status: done  
 Created: 2026-08-03  
 Parent: [docs/roadmap.md](../../roadmap.md)  
 Added: 2026-08-03 · enhancement  
@@ -63,35 +63,35 @@ beyond those two.
 
 ## Acceptance criteria
 
-- [ ] Plan create/edit food slots no longer use a native food `<select>`; they
+- [x] Plan create/edit food slots no longer use a native food `<select>`; they
       use a typeahead combobox (input + filtered dropdown).
-- [ ] Suggest-draft review slots use the same combobox (shared `FoodSlotFields`).
-- [ ] Typing filters the open list by case-insensitive substring of food name;
+- [x] Suggest-draft review slots use the same combobox (shared `FoodSlotFields`).
+- [x] Typing filters the open list by case-insensitive substring of food name;
       empty query shows all session-eligible foods.
-- [ ] Snacks (`sessionEligible === false`) remain excluded from options.
-- [ ] Choosing a match sets that food’s id on the slot; familiarity autofill and
+- [x] Snacks (`sessionEligible === false`) remain excluded from options.
+- [x] Choosing a match sets that food’s id on the slot; familiarity autofill and
       variant-note behavior still work as before.
-- [ ] No match → empty state in the list; parent cannot submit a free-typed name
+- [x] No match → empty state in the list; parent cannot submit a free-typed name
       as a new food (must pick an existing option).
-- [ ] Combobox remains usable with keyboard (filter, move, select, dismiss).
-- [ ] No OpenAPI / backend / mobile sharedLogic changes in this PR.
-- [ ] Unit/component tests: filter narrows options; select applies food id;
+- [x] Combobox remains usable with keyboard (filter, move, select, dismiss).
+- [x] No OpenAPI / backend / mobile sharedLogic changes in this PR.
+- [x] Unit/component tests: filter narrows options; select applies food id;
       snacks still excluded. Existing PlanPage tests updated for the new control.
-- [ ] New dependency is only the approved combobox stack (`cmdk` and, if needed,
+- [x] New dependency is only the approved combobox stack (`cmdk` and, if needed,
       `@radix-ui/react-popover`); lockfile updated via the project’s npm/Corepack
       workflow.
 
 ## Tasks
 
-- [ ] Web: add `cmdk` (+ `@radix-ui/react-popover` only if required); thin
+- [x] Web: add `cmdk` (+ `@radix-ui/react-popover` only if required); thin
       shadcn-style Combobox/Command primitives under `web/src/components/ui/` as
       needed.
-- [ ] Web: replace food `<select>` in `FoodSlotFields` with the combobox wired to
+- [x] Web: replace food `<select>` in `FoodSlotFields` with the combobox wired to
       session-eligible foods + name filter.
-- [ ] Web: update `PlanPage.test.tsx` (and any small unit test for the combobox
+- [x] Web: update `PlanPage.test.tsx` (and any small unit test for the combobox
       helper) for filter / select / snack exclusion; keep existing Plan flows
       green.
-- [ ] Docs: archive on `/pr` after ship.
+- [x] Docs: archive on `/pr` after ship.
 
 ## Open questions
 

@@ -10,6 +10,7 @@ import type {
   SuggestionSource,
 } from "@/api/types"
 import { PlanDatePicker } from "@/components/plan/PlanDatePicker"
+import { PlanFoodCombobox } from "@/components/plan/PlanFoodCombobox"
 import { RunSessionPage } from "@/components/run/RunSessionPage"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -857,22 +858,13 @@ function FoodSlotFields({
   return (
     <fieldset disabled={disabled} className="flex flex-col gap-2">
       <legend className="text-sm font-medium">{label}</legend>
-      <select
-        aria-label={`${label} picker`}
-        className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+      <PlanFoodCombobox
+        label={label}
+        foods={foods}
         value={slot.foodId}
-        onChange={(event) =>
-          commit({ ...slot, foodId: event.target.value })
-        }
-        required
-      >
-        <option value="">Choose a food…</option>
-        {foods.map((food) => (
-          <option key={food.id} value={food.id}>
-            {food.name}
-          </option>
-        ))}
-      </select>
+        disabled={disabled}
+        onChange={(foodId) => commit({ ...slot, foodId })}
+      />
       <select
         aria-label={`${label} familiarity`}
         className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
