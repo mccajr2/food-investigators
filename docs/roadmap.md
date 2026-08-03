@@ -17,13 +17,18 @@ panel), unlock simple food-themed mini-games when a stretch goes well (not for
 routine safe foods), celebrate milestones, and keep a therapist-ready history of
 what was tried and what worked.
 
-Familiarity ladder (parent-set at first): safe foods he consistently eats →
-familiar-but-new (prep/brand) → truly new → retrying (tried before, trying again).
-Pace stays parent-led early; the app may suggest the next session for approval.
-Later slices deepen prep retries for disliked foods and optional signup intake so
-the catalog starts closer to this child. A short welcome orients new beta parents
-to the learning / guiding / pacing idea before friends try a hosted MVP
-(Render + Neon + keep-alive).
+Familiarity is a **household-persisted exposure profile** keyed by **food +
+presentation** (brand/prep variant) — not food id alone and not only a Plan
+slot: safe → familiar-but-new → truly new → retrying. Safe presentations usually
+stay safe but are toggleable when tastes change. Catalog foods stay thin (one
+Bagel); Bagelsaurus vs Trader Joe’s are separate exposures. Signup bootstraps
+~5–10 truly safe exposures and may **invent** foods not yet in the DB (listed
+snacks count as safe). The designed path uses that safe set to recommend
+**adjacent** next foods/presentations — including ones not yet on the household
+list — paced to progress; tries that don’t land become retrying. Pace stays
+parent-led; the app may suggest the next session for approval. Later slices
+deepen prep retries, science-backed pacing, and a short welcome before a hosted
+beta MVP (Render + Neon + keep-alive).
 
 ## Product non-goals
 
@@ -45,18 +50,21 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | signup-starter-snacks | planned | 2026-07-23 · enhancement | Optional signup intake: liked tasting foods + snacks (else catalog defaults) |
-| 2 | plan-food-autocomplete | planned | 2026-08-03 · enhancement | Plan food pickers: typeahead text filter + filtered dropdown (replace long `<select>`) |
-| 3 | suggestion-pacing-evidence | planned | 2026-07-25 · re-rank split | Science-backed pacing / preference guidance for suggestions |
-| 4 | disliked-prep-rotation | planned | 2026-07-28 · enhancement | Suggest distinct preps of a disliked food (~3 over weeks), then longer rest |
-| 5 | milestone-badges | planned | 2026-07-28 · enhancement | Celebration badges (e.g. first liked new food; 5/10/25 new foods) |
-| 6 | welcome-orientation | planned | 2026-07-29 · enhancement | Dismissible welcome: why Food Investigators + Plan/Run/Insights lay of the land + pacing |
-| 7 | beta-backend-hosting | planned | 2026-07-29 · enhancement | Neon Postgres + Render backend + UptimeRobot keep-alive for beta |
-| 8 | beta-web-hosting | planned | 2026-07-29 · enhancement | Render web front pointed at prod API |
-| 9 | ci-cd-production | planned | 2026-07-29 · enhancement | After tests on `main`, auto-deploy backend + web to Render |
-| 10 | run-outcome-contract | planned | 2026-07-30 · enhancement | Harden run/outcome contract (document or promote encodings; deprecate unused fields) before native Run |
-| 11 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
-| 12 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
+| 1 | household-exposure-profiles | active | 2026-08-03 · re-rank split | Persist familiarity per food+variant exposure; Foods safes; snacks→safe; Plan autofill |
+| 2 | signup-safe-foods | planned | 2026-08-03 · re-rank split | Optional signup: ~5–10 safe exposures; may invent foods not in DB |
+| 3 | plan-food-autocomplete | planned | 2026-08-03 · enhancement | Plan food pickers: typeahead text filter + filtered dropdown (replace long `<select>`) |
+| 4 | familiarity-from-outcomes | planned | 2026-08-03 · re-rank split | After run, upsert exposure (food+variant) toward safe or → retrying |
+| 5 | suggestion-adjacent-foods | planned | 2026-08-03 · re-rank split | Suggest foods/presentations adjacent to safe exposures, beyond household list |
+| 6 | suggestion-pacing-evidence | planned | 2026-07-25 · re-rank split | Science-backed pacing / preference guidance for suggestions |
+| 7 | disliked-prep-rotation | planned | 2026-07-28 · enhancement | Suggest distinct preps of a disliked food (~3 over weeks), then longer rest |
+| 8 | milestone-badges | planned | 2026-07-28 · enhancement | Celebration badges (e.g. first liked new food; 5/10/25 new foods) |
+| 9 | welcome-orientation | planned | 2026-07-29 · enhancement | Dismissible welcome: why Food Investigators + Plan/Run/Insights lay of the land + pacing |
+| 10 | beta-backend-hosting | planned | 2026-07-29 · enhancement | Neon Postgres + Render backend + UptimeRobot keep-alive for beta |
+| 11 | beta-web-hosting | planned | 2026-07-29 · enhancement | Render web front pointed at prod API |
+| 12 | ci-cd-production | planned | 2026-07-29 · enhancement | After tests on `main`, auto-deploy backend + web to Render |
+| 13 | run-outcome-contract | planned | 2026-07-30 · enhancement | Harden run/outcome contract (document or promote encodings; deprecate unused fields) before native Run |
+| 14 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
+| 15 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
 
 Status values: `parking` · `planned` · `active` · `done` · `cancelled`  
 Added: `YYYY-MM-DD · initial` | `enhancement` | `re-rank split`
@@ -89,6 +97,7 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Branch | Spec |
 |----|--------|------|
+| household-exposure-profiles | `household-exposure-profiles` | [active](specs/active/household-exposure-profiles.md) |
 
 ## Done
 
@@ -212,3 +221,5 @@ Only notable events (first carve-up, major re-rank, cancelled theme) — not eve
 | 2026-07-31 | Parked `on-demand-food-illustrations` (Gemini image quota / beta cost; WIP branch not merged). Next up: `child-display-name`. |
 | 2026-07-31 | child-display-name shipped (optional household child first name; Settings + Plan/Run copy; OpenAPI/web/mobile). Next up: `signup-starter-snacks`. |
 | 2026-08-03 | Added `plan-food-autocomplete` (rank 2): Plan typeahead food pickers as catalogs grow; stays after signup intake. |
+| 2026-08-03 | Familiarity path carve-up: cancelled `signup-starter-snacks`; added `household-food-familiarity` → `signup-safe-foods` → `familiarity-from-outcomes` → `suggestion-adjacent-foods` (suggest beyond household list). Next up: `household-food-familiarity`. |
+| 2026-08-03 | Reframed familiarity unit as food+variant **exposure profiles**: cancelled food-only `household-food-familiarity`; Next up `household-exposure-profiles`. Signup may invent foods not in DB. |

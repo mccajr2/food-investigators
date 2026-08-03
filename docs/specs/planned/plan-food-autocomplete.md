@@ -35,5 +35,5 @@ option.
   `<select>` over `sessionEligible` foods.
 - Prefer accessible combobox pattern (input + filtered listbox) over dumping
   every food in an open list.
-- Ranked after `signup-starter-snacks` so intake can land first; promote to
-  Next up if Plan UX pain blocks beta before intake ships.
+- Ranked after `signup-safe-foods` so safe bootstrap can land first; promote to
+  Next up if Plan UX pain blocks beta before signup ships.
