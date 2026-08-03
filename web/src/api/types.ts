@@ -94,6 +94,11 @@ export type FoodExposureResponse = {
   variantKey: string
   familiarity: Familiarity
   source: ExposureSource
+  /** Null until first outcome-driven bump. */
+  attemptCount?: number | null
+  /** Session scheduledOn of the latest outcome bump. */
+  lastTriedOn?: string | null
+  lastLiked?: Liked | null
 }
 
 export type UpsertFoodExposureRequest = {

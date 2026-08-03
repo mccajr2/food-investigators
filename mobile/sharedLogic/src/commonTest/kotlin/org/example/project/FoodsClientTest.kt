@@ -154,7 +154,10 @@ class FoodsClientTest {
                                 {"foodId":"cccccccc-cccc-cccc-cccc-cccccccccccc",
                                  "variantKey":"bagelsaurus",
                                  "familiarity":"safe",
-                                 "source":"manual"}
+                                 "source":"manual",
+                                 "attemptCount":null,
+                                 "lastTriedOn":null,
+                                 "lastLiked":null}
                                 """.trimIndent(),
                             status = HttpStatusCode.OK,
                             headers = headersOf(HttpHeaders.ContentType, "application/json"),
@@ -173,6 +176,9 @@ class FoodsClientTest {
 
             assertEquals("bagelsaurus", upserted.variantKey)
             assertEquals("safe", upserted.familiarity)
+            assertEquals(null, upserted.attemptCount)
+            assertEquals(null, upserted.lastTriedOn)
+            assertEquals(null, upserted.lastLiked)
             assertEquals(
                 listOf(
                     "PUT /api/foods/cccccccc-cccc-cccc-cccc-cccccccccccc/exposures?",

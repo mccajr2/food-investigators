@@ -1,16 +1,17 @@
 openapi: 3.0.3
 info:
   title: Quickapp API
-  version: 0.12.0
+  version: 0.13.0
   description: >
     Contract-first API for Food Investigators. Documents family-account auth
     (email/password register and login, Bearer session tokens, GET/PATCH
     /api/auth/me with optional household childDisplayName), the household food
     catalog (system starters + custom foods, archive, optional snack foods
     excluded from tasting sessions, household exposure profiles per food +
-    variant, optional signup bootstrap of safe exposures), tasting sessions
-    (create, list upcoming, history of completed, download history PDF, get,
-    update, cancel, complete with run outcomes, optional parent notes on
+    variant including attempt hooks, optional signup bootstrap of safe
+    exposures, and outcome-driven exposure upserts on session complete), tasting
+    sessions (create, list upcoming, history of completed, download history PDF,
+    get, update, cancel, complete with run outcomes, optional parent notes on
     completed sessions), and household Insights (aggregates + dismissible tips).
 servers:
   - url: http://localhost:8080
@@ -823,6 +824,10 @@ paths:
         Persists per-food run outcomes (icon prompts + optional notes) and sets
         session status to `completed`. Only allowed while the session is still
         `planned`. Completed sessions are omitted from the default upcoming list.
+        Also upserts household exposure profiles for each food + normalized
+        variant: `liked=like` and `ateEnough=true` → `safe` / `outcome`; other
+        outcomes → `retrying` / `outcome` unless the exposure is already `safe`
+        (never auto-downgraded). Always increments attempt hooks on that key.
       security:
         - bearerAuth: []
       parameters:
@@ -1240,6 +1245,27 @@ components:
           $ref: "#/components/schemas/Familiarity"
         source:
           $ref: "#/components/schemas/ExposureSource"
+        attemptCount:
+          type: integer
+          nullable: true
+          description: >
+            Times this food+variant was completed in a run. Null until the first
+            outcome-driven bump (manual/signup upserts do not set it).
+          example: 2
+        lastTriedOn:
+          type: string
+          format: date
+          nullable: true
+          description: >
+            Calendar date of the latest completed session that touched this
+            exposure (session `scheduledOn`). Null until first outcome bump.
+        lastLiked:
+          type: string
+          nullable: true
+          enum: [like, so_so, no]
+          description: >
+            Liked value from the latest completed outcome for this key. Null
+            until first outcome bump (or if liked was omitted).
     UpsertFoodExposureRequest:
       type: object
       required:
@@ -1259,9 +1285,11 @@ components:
         - signup
         - outcome
       description: >
-        How the exposure was last written. Manual upsert endpoints set `manual`;
-        `POST /api/foods/bootstrap-safes` sets `signup`. `outcome` is reserved
-        for a later slice.
+        How the exposure familiarity was last written. Manual upsert endpoints
+        set `manual`; `POST /api/foods/bootstrap-safes` sets `signup`; completing
+        a session writes `outcome` when familiarity changes (or is created).
+        Existing `safe` rows keep familiarity on a bad outcome; source stays as
+        previously set when only attempt hooks are bumped.
     BootstrapSafeItemRequest:
       type: object
       required:

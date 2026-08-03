@@ -56,6 +56,13 @@ class OpenApiContractTest {
         assertThat(yaml).contains("custom_");
         assertThat(yaml).contains("custom_cucumber");
         assertThat(yaml).contains("A food with that name already exists");
+        assertThat(yaml).contains("FoodExposureResponse");
+        assertThat(yaml).contains("ExposureSource");
+        assertThat(yaml).contains("attemptCount");
+        assertThat(yaml).contains("lastTriedOn");
+        assertThat(yaml).contains("lastLiked");
+        assertThat(yaml).contains("outcome-driven exposure upserts");
+        assertThat(yaml).contains("never auto-downgraded");
     }
 
     @Test

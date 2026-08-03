@@ -96,9 +96,28 @@ class HouseholdFoodExposure {
         return source;
     }
 
+    Integer getAttemptCount() {
+        return attemptCount;
+    }
+
+    LocalDate getLastTriedOn() {
+        return lastTriedOn;
+    }
+
+    String getLastLiked() {
+        return lastLiked;
+    }
+
     void updateFamiliarity(FoodFamiliarity familiarity, ExposureSource source, Instant now) {
         this.familiarity = familiarity;
         this.source = source;
+        this.updatedAt = now;
+    }
+
+    void recordAttempt(LocalDate triedOn, String liked, Instant now) {
+        this.attemptCount = (attemptCount == null ? 0 : attemptCount) + 1;
+        this.lastTriedOn = triedOn;
+        this.lastLiked = liked;
         this.updatedAt = now;
     }
 }

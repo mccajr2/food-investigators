@@ -8,6 +8,8 @@ import static org.mockito.Mockito.when;
 
 import com.yourorg.quickapp.foods.CatalogFood;
 import com.yourorg.quickapp.foods.FoodCatalog;
+import com.yourorg.quickapp.foods.SessionCompletedEvent;
+import com.yourorg.quickapp.foods.SessionCompletedFood;
 import com.yourorg.quickapp.sessions.CompleteSessionRequest;
 import com.yourorg.quickapp.sessions.CreateSessionRequest;
 import com.yourorg.quickapp.sessions.Familiarity;
@@ -45,6 +47,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 @ExtendWith(MockitoExtension.class)
 class SessionServiceTest {
@@ -55,6 +58,9 @@ class SessionServiceTest {
     @Mock
     private FoodCatalog foodCatalog;
 
+    @Mock
+    private ApplicationEventPublisher events;
+
     private SessionService service;
     private final Instant now = Instant.parse("2026-07-15T12:00:00Z");
     private final UUID householdId = UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
@@ -63,7 +69,9 @@ class SessionServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new SessionService(sessions, foodCatalog, Clock.fixed(now, ZoneOffset.UTC));
+        service =
+                new SessionService(
+                        sessions, foodCatalog, Clock.fixed(now, ZoneOffset.UTC), events);
     }
 
     @Test
@@ -185,7 +193,8 @@ class SessionServiceTest {
                 new SessionService(
                         sessions,
                         foodCatalog,
-                        Clock.fixed(Instant.parse("2026-07-30T01:30:00Z"), ZoneOffset.UTC));
+                        Clock.fixed(Instant.parse("2026-07-30T01:30:00Z"), ZoneOffset.UTC),
+                        events);
         stubSelectable(foodA, "Apples", "apple");
         stubSelectable(foodB, "Bananas", "banana");
         stubVisible(foodA, "Apples", "apple");
@@ -520,6 +529,52 @@ class SessionServiceTest {
         assertThat(completed.foods().get(1).liked()).isEqualTo(Liked.so_so);
         assertThat(completed.foods().get(1).tastes()).isEmpty();
         assertThat(completed.foods().get(1).ateEnough()).isFalse();
+
+        ArgumentCaptor<SessionCompletedEvent> eventCaptor =
+                ArgumentCaptor.forClass(SessionCompletedEvent.class);
+        verify(events).publishEvent(eventCaptor.capture());
+        SessionCompletedEvent event = eventCaptor.getValue();
+        assertThat(event.householdId()).isEqualTo(householdId);
+        assertThat(event.sessionId()).isEqualTo(session.getId());
+        assertThat(event.scheduledOn()).isEqualTo(LocalDate.of(2026, 7, 20));
+        assertThat(event.foods())
+                .containsExactly(
+                        new SessionCompletedFood(foodA, null, "like", true),
+                        new SessionCompletedFood(foodB, null, "so_so", false));
+    }
+
+    @Test
+    void completePublishesEventWithVariantNotesInPositionOrder() {
+        TastingSession session =
+                TastingSession.planned(householdId, LocalDate.of(2026, 7, 21), now);
+        session.replaceFoods(
+                List.of(
+                        TastingSessionFood.of(foodA, Familiarity.truly_new, "Honeycrisp", 1),
+                        TastingSessionFood.of(foodB, Familiarity.retrying, "Trader Joe's", 2)),
+                now);
+        when(sessions.findByIdAndHouseholdId(session.getId(), householdId))
+                .thenReturn(Optional.of(session));
+        when(sessions.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        stubVisible(foodA, "Apples", "apple");
+        stubVisible(foodB, "Bananas", "banana");
+
+        service.complete(
+                householdId,
+                session.getId(),
+                new CompleteSessionRequest(
+                        List.of(
+                                new FoodOutcomeRequest(
+                                        1, Liked.like, null, null, null, null, null, null, true),
+                                new FoodOutcomeRequest(
+                                        2, Liked.no, null, null, null, null, null, null, false))));
+
+        ArgumentCaptor<SessionCompletedEvent> eventCaptor =
+                ArgumentCaptor.forClass(SessionCompletedEvent.class);
+        verify(events).publishEvent(eventCaptor.capture());
+        assertThat(eventCaptor.getValue().foods())
+                .containsExactly(
+                        new SessionCompletedFood(foodA, "Honeycrisp", "like", true),
+                        new SessionCompletedFood(foodB, "Trader Joe's", "no", false));
     }
 
     @Test
