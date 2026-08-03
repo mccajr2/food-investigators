@@ -23,6 +23,9 @@ data class FoodExposureResponse(
     val variantKey: String,
     val familiarity: String,
     val source: String,
+    val attemptCount: Int? = null,
+    val lastTriedOn: String? = null,
+    val lastLiked: String? = null,
 )
 
 @Serializable

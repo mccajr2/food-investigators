@@ -23,6 +23,8 @@ import com.yourorg.quickapp.foods.FoodTexture;
 import com.yourorg.quickapp.foods.InvalidBootstrapSafesException;
 import com.yourorg.quickapp.foods.InvalidFoodIconKeyException;
 import com.yourorg.quickapp.foods.InvalidFoodPreferenceException;
+import com.yourorg.quickapp.foods.SessionCompletedEvent;
+import com.yourorg.quickapp.foods.SessionCompletedFood;
 import com.yourorg.quickapp.foods.SystemFoodImmutableException;
 import com.yourorg.quickapp.foods.UpdateFoodRequest;
 import com.yourorg.quickapp.foods.UpsertFoodExposureRequest;
@@ -379,6 +381,9 @@ class FoodServiceTest {
         assertThat(created.variantKey()).isEqualTo("bagelsaurus");
         assertThat(created.familiarity()).isEqualTo(FoodFamiliarity.safe);
         assertThat(created.source()).isEqualTo(ExposureSource.manual);
+        assertThat(created.attemptCount()).isNull();
+        assertThat(created.lastTriedOn()).isNull();
+        assertThat(created.lastLiked()).isNull();
     }
 
     @Test
@@ -566,5 +571,135 @@ class FoodServiceTest {
         assertThat(results).isEmpty();
         verify(foods, never()).save(any());
         verify(exposures, never()).save(any());
+    }
+
+    @Test
+    void applySessionCompletedPositiveTryCreatesSafeOutcome() {
+        Food food = Food.household(householdId, "Carrot", "carrot", now);
+        when(foods.findById(food.getId())).thenReturn(Optional.of(food));
+        when(exposures.findByHouseholdIdAndFoodIdAndVariantKey(householdId, food.getId(), "steamed"))
+                .thenReturn(Optional.empty());
+
+        service.applySessionCompleted(
+                new SessionCompletedEvent(
+                        householdId,
+                        UUID.randomUUID(),
+                        java.time.LocalDate.of(2026, 8, 3),
+                        List.of(
+                                new SessionCompletedFood(
+                                        food.getId(), "  Steamed ", "like", true))));
+
+        ArgumentCaptor<HouseholdFoodExposure> captor =
+                ArgumentCaptor.forClass(HouseholdFoodExposure.class);
+        verify(exposures).save(captor.capture());
+        HouseholdFoodExposure saved = captor.getValue();
+        assertThat(saved.getFamiliarity()).isEqualTo(FoodFamiliarity.safe);
+        assertThat(saved.getSource()).isEqualTo(ExposureSource.outcome);
+        assertThat(saved.getVariantKey()).isEqualTo("steamed");
+        assertThat(saved.getAttemptCount()).isEqualTo(1);
+        assertThat(saved.getLastTriedOn()).isEqualTo(java.time.LocalDate.of(2026, 8, 3));
+        assertThat(saved.getLastLiked()).isEqualTo("like");
+    }
+
+    @Test
+    void applySessionCompletedDidNotLandCreatesRetrying() {
+        Food food = Food.household(householdId, "Peas", "peas", now);
+        when(foods.findById(food.getId())).thenReturn(Optional.of(food));
+        when(exposures.findByHouseholdIdAndFoodIdAndVariantKey(householdId, food.getId(), ""))
+                .thenReturn(Optional.empty());
+
+        service.applySessionCompleted(
+                new SessionCompletedEvent(
+                        householdId,
+                        UUID.randomUUID(),
+                        java.time.LocalDate.of(2026, 8, 4),
+                        List.of(new SessionCompletedFood(food.getId(), null, "no", true))));
+
+        ArgumentCaptor<HouseholdFoodExposure> captor =
+                ArgumentCaptor.forClass(HouseholdFoodExposure.class);
+        verify(exposures).save(captor.capture());
+        assertThat(captor.getValue().getFamiliarity()).isEqualTo(FoodFamiliarity.retrying);
+        assertThat(captor.getValue().getSource()).isEqualTo(ExposureSource.outcome);
+        assertThat(captor.getValue().getLastLiked()).isEqualTo("no");
+    }
+
+    @Test
+    void applySessionCompletedLikeWithoutAteEnoughIsRetrying() {
+        Food food = Food.household(householdId, "Broccoli", "broccoli", now);
+        when(foods.findById(food.getId())).thenReturn(Optional.of(food));
+        when(exposures.findByHouseholdIdAndFoodIdAndVariantKey(householdId, food.getId(), ""))
+                .thenReturn(Optional.empty());
+
+        service.applySessionCompleted(
+                new SessionCompletedEvent(
+                        householdId,
+                        UUID.randomUUID(),
+                        java.time.LocalDate.of(2026, 8, 5),
+                        List.of(new SessionCompletedFood(food.getId(), "", "like", false))));
+
+        ArgumentCaptor<HouseholdFoodExposure> captor =
+                ArgumentCaptor.forClass(HouseholdFoodExposure.class);
+        verify(exposures).save(captor.capture());
+        assertThat(captor.getValue().getFamiliarity()).isEqualTo(FoodFamiliarity.retrying);
+    }
+
+    @Test
+    void applySessionCompletedPreservesSafeOnBadOutcomeAndIncrementsAttempts() {
+        Food food = Food.household(householdId, "Yogurt", "yogurt", now);
+        HouseholdFoodExposure existing =
+                HouseholdFoodExposure.create(
+                        householdId,
+                        food.getId(),
+                        "",
+                        FoodFamiliarity.safe,
+                        ExposureSource.manual,
+                        now);
+        existing.recordAttempt(java.time.LocalDate.of(2026, 7, 1), "like", now);
+        when(foods.findById(food.getId())).thenReturn(Optional.of(food));
+        when(exposures.findByHouseholdIdAndFoodIdAndVariantKey(householdId, food.getId(), ""))
+                .thenReturn(Optional.of(existing));
+
+        service.applySessionCompleted(
+                new SessionCompletedEvent(
+                        householdId,
+                        UUID.randomUUID(),
+                        java.time.LocalDate.of(2026, 8, 6),
+                        List.of(new SessionCompletedFood(food.getId(), "  ", "so_so", false))));
+
+        ArgumentCaptor<HouseholdFoodExposure> captor =
+                ArgumentCaptor.forClass(HouseholdFoodExposure.class);
+        verify(exposures).save(captor.capture());
+        HouseholdFoodExposure saved = captor.getValue();
+        assertThat(saved.getFamiliarity()).isEqualTo(FoodFamiliarity.safe);
+        assertThat(saved.getSource()).isEqualTo(ExposureSource.manual);
+        assertThat(saved.getAttemptCount()).isEqualTo(2);
+        assertThat(saved.getLastTriedOn()).isEqualTo(java.time.LocalDate.of(2026, 8, 6));
+        assertThat(saved.getLastLiked()).isEqualTo("so_so");
+    }
+
+    @Test
+    void applySessionCompletedProcessesBothFoods() {
+        Food a = Food.household(householdId, "Apple", "apple", now);
+        Food b = Food.household(householdId, "Banana", "banana", now);
+        when(foods.findById(a.getId())).thenReturn(Optional.of(a));
+        when(foods.findById(b.getId())).thenReturn(Optional.of(b));
+        when(exposures.findByHouseholdIdAndFoodIdAndVariantKey(eq(householdId), any(), any()))
+                .thenReturn(Optional.empty());
+
+        service.applySessionCompleted(
+                new SessionCompletedEvent(
+                        householdId,
+                        UUID.randomUUID(),
+                        java.time.LocalDate.of(2026, 8, 7),
+                        List.of(
+                                new SessionCompletedFood(a.getId(), "", "like", true),
+                                new SessionCompletedFood(b.getId(), "ripe", "no", true))));
+
+        ArgumentCaptor<HouseholdFoodExposure> captor =
+                ArgumentCaptor.forClass(HouseholdFoodExposure.class);
+        verify(exposures, org.mockito.Mockito.times(2)).save(captor.capture());
+        assertThat(captor.getAllValues())
+                .extracting(HouseholdFoodExposure::getFamiliarity)
+                .containsExactly(FoodFamiliarity.safe, FoodFamiliarity.retrying);
     }
 }

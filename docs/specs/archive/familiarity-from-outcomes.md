@@ -1,6 +1,6 @@
 # Spec: familiarity-from-outcomes
 
-Status: in-progress  
+Status: done  
 Created: 2026-08-03  
 Parent: [docs/roadmap.md](../../roadmap.md)  
 Added: 2026-08-03 · re-rank split  
@@ -96,38 +96,38 @@ cross-module event in this app is acceptable for this slice.
 
 ## Acceptance criteria
 
-- [ ] Completing a session with a positive try (`liked=like` + `ateEnough=true`)
+- [x] Completing a session with a positive try (`liked=like` + `ateEnough=true`)
       upserts exposure `(foodId, normalized variant)` → `safe` / `outcome`
       (new or overwrite non-safe).
-- [ ] Completing with didn’t-land (`liked=no` | `so_so` | `ateEnough=false`)
+- [x] Completing with didn’t-land (`liked=no` | `so_so` | `ateEnough=false`)
       upserts `retrying` / `outcome` when the prior familiarity was not `safe`.
-- [ ] An existing `safe` exposure is **not** changed to `retrying` (or any
+- [x] An existing `safe` exposure is **not** changed to `retrying` (or any
       non-safe) by outcomes; hooks still update.
-- [ ] Variant normalization matches existing exposure rules (trim + case-fold;
+- [x] Variant normalization matches existing exposure rules (trim + case-fold;
       blank → `""`).
-- [ ] Both food positions are processed on one complete.
-- [ ] Cross-module: sessions does not depend on foods `internal`; foods applies
+- [x] Both food positions are processed on one complete.
+- [x] Cross-module: sessions does not depend on foods `internal`; foods applies
       updates via application event (or equivalent Modulith-safe boundary).
       `ModularityTests` pass.
-- [ ] Unauthenticated complete still **401**; other households unaffected.
-- [ ] OpenAPI + clients updated if exposure response gains hook fields; version
+- [x] Unauthenticated complete still **401**; other households unaffected.
+- [x] OpenAPI + clients updated if exposure response gains hook fields; version
       bump in the same change.
-- [ ] Unit + IT: positive → safe; didn’t-land → retrying; safe preserved on
+- [x] Unit + IT: positive → safe; didn’t-land → retrying; safe preserved on
       bad outcome; attempt_count increments. Web test only if UI surfaces
       change; otherwise backend coverage is enough for the sync path.
-- [ ] No reward-rule changes; no backfill of old sessions; no suggestion changes.
+- [x] No reward-rule changes; no backfill of old sessions; no suggestion changes.
 
 ## Tasks
 
-- [ ] Backend sessions: publish `SessionCompletedEvent` (or equivalent) after
+- [x] Backend sessions: publish `SessionCompletedEvent` (or equivalent) after
       successful complete with per-food outcome payload.
-- [ ] Backend foods: listen and apply locked upsert rules + hooks; unit tests.
-- [ ] Backend IT: complete session → assert exposures / sources / safe
+- [x] Backend foods: listen and apply locked upsert rules + hooks; unit tests.
+- [x] Backend IT: complete session → assert exposures / sources / safe
       preservation; `ModularityTests`.
-- [ ] Contract: document outcome source behavior; optional exposure hook fields
+- [x] Contract: document outcome source behavior; optional exposure hook fields
       + version bump; sync web + mobile if fields added.
-- [ ] Web: only if exposing hooks/source in Foods UI; otherwise skip.
-- [ ] Docs: archive on `/pr` after ship.
+- [x] Web: only if exposing hooks/source in Foods UI; otherwise skip.
+- [x] Docs: archive on `/pr` after ship.
 
 ## Open questions
 

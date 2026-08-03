@@ -154,6 +154,9 @@ describe("FoodsClient", () => {
       variantKey: "bagelsaurus",
       familiarity: "safe" as const,
       source: "manual" as const,
+      attemptCount: null,
+      lastTriedOn: null,
+      lastLiked: null,
     }
     const fetchFn = vi
       .fn()

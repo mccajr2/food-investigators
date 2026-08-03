@@ -15,11 +15,14 @@ import com.yourorg.quickapp.foods.FoodResponse;
 import com.yourorg.quickapp.foods.FoodTexture;
 import com.yourorg.quickapp.foods.InvalidBootstrapSafesException;
 import com.yourorg.quickapp.foods.InvalidFoodPreferenceException;
+import com.yourorg.quickapp.foods.SessionCompletedEvent;
+import com.yourorg.quickapp.foods.SessionCompletedFood;
 import com.yourorg.quickapp.foods.SystemFoodImmutableException;
 import com.yourorg.quickapp.foods.UpdateFoodRequest;
 import com.yourorg.quickapp.foods.UpsertFoodExposureRequest;
 import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -131,6 +134,62 @@ public class FoodService {
                     upsertSafe(householdId, food.getId(), variantKey, ExposureSource.signup, now));
         }
         return results;
+    }
+
+    /**
+     * Applies locked v1 outcome → exposure rules for a completed tasting
+     * session. Never auto-downgrades {@code safe}.
+     */
+    @Transactional
+    public void applySessionCompleted(SessionCompletedEvent event) {
+        Instant now = clock.instant();
+        for (SessionCompletedFood food : event.foods()) {
+            applyOutcomeExposure(
+                    event.householdId(),
+                    food.foodId(),
+                    food.variantNote(),
+                    food.liked(),
+                    food.ateEnough(),
+                    event.scheduledOn(),
+                    now);
+        }
+    }
+
+    private void applyOutcomeExposure(
+            UUID householdId,
+            UUID foodId,
+            String variantNote,
+            String liked,
+            boolean ateEnough,
+            LocalDate triedOn,
+            Instant now) {
+        requireVisibleFood(householdId, foodId);
+        String variantKey = normalizeVariantKey(variantNote);
+        HouseholdFoodExposure row =
+                exposures
+                        .findByHouseholdIdAndFoodIdAndVariantKey(householdId, foodId, variantKey)
+                        .orElse(null);
+        boolean alreadySafe = row != null && row.getFamiliarity() == FoodFamiliarity.safe;
+        if (!alreadySafe) {
+            FoodFamiliarity target =
+                    "like".equals(liked) && ateEnough
+                            ? FoodFamiliarity.safe
+                            : FoodFamiliarity.retrying;
+            if (row == null) {
+                row =
+                        HouseholdFoodExposure.create(
+                                householdId,
+                                foodId,
+                                variantKey,
+                                target,
+                                ExposureSource.outcome,
+                                now);
+            } else {
+                row.updateFamiliarity(target, ExposureSource.outcome, now);
+            }
+        }
+        row.recordAttempt(triedOn, liked, now);
+        exposures.save(row);
     }
 
     private Food inventHouseholdFood(
@@ -341,6 +400,12 @@ public class FoodService {
 
     private static FoodExposureResponse toExposureResponse(HouseholdFoodExposure row) {
         return new FoodExposureResponse(
-                row.getFoodId(), row.getVariantKey(), row.getFamiliarity(), row.getSource());
+                row.getFoodId(),
+                row.getVariantKey(),
+                row.getFamiliarity(),
+                row.getSource(),
+                row.getAttemptCount(),
+                row.getLastTriedOn(),
+                row.getLastLiked());
     }
 }

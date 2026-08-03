@@ -2,6 +2,8 @@ package com.yourorg.quickapp.sessions.internal;
 
 import com.yourorg.quickapp.foods.CatalogFood;
 import com.yourorg.quickapp.foods.FoodCatalog;
+import com.yourorg.quickapp.foods.SessionCompletedEvent;
+import com.yourorg.quickapp.foods.SessionCompletedFood;
 import com.yourorg.quickapp.sessions.CalendarProperties;
 import com.yourorg.quickapp.sessions.CompleteSessionRequest;
 import com.yourorg.quickapp.sessions.CreateSessionRequest;
@@ -26,6 +28,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -33,6 +36,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,22 +50,34 @@ public class SessionService {
     private final FoodCatalog foodCatalog;
     private final Clock clock;
     private final ZoneId calendarZone;
+    private final ApplicationEventPublisher events;
 
     @Autowired
     SessionService(
             TastingSessionRepository sessions,
             FoodCatalog foodCatalog,
             Clock clock,
-            CalendarProperties calendarProperties) {
+            CalendarProperties calendarProperties,
+            ApplicationEventPublisher events) {
         this.sessions = sessions;
         this.foodCatalog = foodCatalog;
         this.clock = clock;
         this.calendarZone = calendarProperties.zoneId();
+        this.events = events;
     }
 
     /** Test helper — same calendar zone as production default when omitted. */
+    SessionService(
+            TastingSessionRepository sessions,
+            FoodCatalog foodCatalog,
+            Clock clock,
+            ApplicationEventPublisher events) {
+        this(sessions, foodCatalog, clock, new CalendarProperties("America/New_York"), events);
+    }
+
+    /** Test helper without event publisher (no-op). */
     SessionService(TastingSessionRepository sessions, FoodCatalog foodCatalog, Clock clock) {
-        this(sessions, foodCatalog, clock, new CalendarProperties("America/New_York"));
+        this(sessions, foodCatalog, clock, event -> {});
     }
 
     @Transactional
@@ -156,7 +172,30 @@ public class SessionService {
         requireEditable(session);
         applyOutcomes(session, request.foods());
         session.complete(clock.instant());
-        return toResponse(sessions.save(session));
+        TastingSession saved = sessions.save(session);
+        events.publishEvent(toCompletedEvent(saved));
+        return toResponse(saved);
+    }
+
+    private static SessionCompletedEvent toCompletedEvent(TastingSession session) {
+        List<SessionCompletedFood> foods =
+                session.getFoods().stream()
+                        .sorted(Comparator.comparingInt(TastingSessionFood::getPosition))
+                        .map(
+                                row ->
+                                        new SessionCompletedFood(
+                                                row.getFoodId(),
+                                                row.getVariantNote(),
+                                                row.getLiked() == null
+                                                        ? null
+                                                        : row.getLiked().name(),
+                                                Boolean.TRUE.equals(row.getAteEnough())))
+                        .toList();
+        return new SessionCompletedEvent(
+                session.getHouseholdId(),
+                session.getId(),
+                session.getScheduledOn(),
+                foods);
     }
 
     @Transactional
