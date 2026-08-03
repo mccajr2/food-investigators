@@ -8,6 +8,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.yourorg.quickapp.foods.BootstrapSafeItemRequest;
+import com.yourorg.quickapp.foods.BootstrapSafesRequest;
 import com.yourorg.quickapp.foods.CreateFoodRequest;
 import com.yourorg.quickapp.foods.DuplicateFoodNameException;
 import com.yourorg.quickapp.foods.ExposureSource;
@@ -18,6 +20,7 @@ import com.yourorg.quickapp.foods.FoodLiked;
 import com.yourorg.quickapp.foods.FoodNotFoundException;
 import com.yourorg.quickapp.foods.FoodResponse;
 import com.yourorg.quickapp.foods.FoodTexture;
+import com.yourorg.quickapp.foods.InvalidBootstrapSafesException;
 import com.yourorg.quickapp.foods.InvalidFoodIconKeyException;
 import com.yourorg.quickapp.foods.InvalidFoodPreferenceException;
 import com.yourorg.quickapp.foods.SystemFoodImmutableException;
@@ -26,6 +29,7 @@ import com.yourorg.quickapp.foods.UpsertFoodExposureRequest;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -435,5 +439,132 @@ class FoodServiceTest {
         assertThat(FoodService.normalizeVariantKey("  Bagelsaurus  ")).isEqualTo("bagelsaurus");
         assertThat(FoodService.normalizeVariantKey(null)).isEqualTo("");
         assertThat(FoodService.normalizeVariantKey("   ")).isEqualTo("");
+    }
+
+    @Test
+    void bootstrapSafesMatchesSystemStarterWithoutCreatingHouseholdFood() {
+        UUID systemId = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa04");
+        Food system = Food.system(systemId, "Apples", "apple", now);
+        when(foods.findFirstByHouseholdIdIsNullAndNameIgnoreCase("Apples"))
+                .thenReturn(Optional.of(system));
+        when(exposures.findByHouseholdIdAndFoodIdAndVariantKey(householdId, systemId, "honeycrisp"))
+                .thenReturn(Optional.empty());
+
+        List<FoodExposureResponse> results =
+                service.bootstrapSafes(
+                        householdId,
+                        new BootstrapSafesRequest(
+                                List.of(
+                                        new BootstrapSafeItemRequest(
+                                                "  Apples  ", "Honeycrisp", true))));
+
+        assertThat(results).hasSize(1);
+        assertThat(results.get(0).foodId()).isEqualTo(systemId);
+        assertThat(results.get(0).variantKey()).isEqualTo("honeycrisp");
+        assertThat(results.get(0).familiarity()).isEqualTo(FoodFamiliarity.safe);
+        assertThat(results.get(0).source()).isEqualTo(ExposureSource.signup);
+        verify(foods, never()).save(any());
+    }
+
+    @Test
+    void bootstrapSafesInventsHouseholdFoodWithSignupExposure() {
+        when(foods.findFirstByHouseholdIdIsNullAndNameIgnoreCase("Cucumber"))
+                .thenReturn(Optional.empty());
+        when(foods.existsVisibleName(householdId, "Cucumber", null)).thenReturn(false);
+        when(foods.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(exposures.findByHouseholdIdAndFoodIdAndVariantKey(eq(householdId), any(), eq("")))
+                .thenReturn(Optional.empty());
+
+        List<FoodExposureResponse> results =
+                service.bootstrapSafes(
+                        householdId,
+                        new BootstrapSafesRequest(
+                                List.of(new BootstrapSafeItemRequest("Cucumber", null, true))));
+
+        assertThat(results).hasSize(1);
+        assertThat(results.get(0).familiarity()).isEqualTo(FoodFamiliarity.safe);
+        assertThat(results.get(0).source()).isEqualTo(ExposureSource.signup);
+        assertThat(results.get(0).variantKey()).isEqualTo("");
+
+        ArgumentCaptor<Food> foodCaptor = ArgumentCaptor.forClass(Food.class);
+        verify(foods).save(foodCaptor.capture());
+        assertThat(foodCaptor.getValue().getName()).isEqualTo("Cucumber");
+        assertThat(foodCaptor.getValue().getIconKey()).isEqualTo("custom_cucumber");
+        assertThat(foodCaptor.getValue().isSessionEligible()).isTrue();
+        assertThat(foodCaptor.getValue().getHouseholdId()).isEqualTo(householdId);
+    }
+
+    @Test
+    void bootstrapSafesCreatesSnackAsNonSessionEligible() {
+        when(foods.findFirstByHouseholdIdIsNullAndNameIgnoreCase("Goldfish"))
+                .thenReturn(Optional.empty());
+        when(foods.existsVisibleName(householdId, "Goldfish", null)).thenReturn(false);
+        when(foods.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(exposures.findByHouseholdIdAndFoodIdAndVariantKey(eq(householdId), any(), eq("")))
+                .thenReturn(Optional.empty());
+
+        service.bootstrapSafes(
+                householdId,
+                new BootstrapSafesRequest(
+                        List.of(new BootstrapSafeItemRequest("Goldfish", "", false))));
+
+        ArgumentCaptor<Food> foodCaptor = ArgumentCaptor.forClass(Food.class);
+        verify(foods).save(foodCaptor.capture());
+        assertThat(foodCaptor.getValue().isSessionEligible()).isFalse();
+
+        ArgumentCaptor<HouseholdFoodExposure> exposureCaptor =
+                ArgumentCaptor.forClass(HouseholdFoodExposure.class);
+        verify(exposures).save(exposureCaptor.capture());
+        assertThat(exposureCaptor.getValue().getSource()).isEqualTo(ExposureSource.signup);
+        assertThat(exposureCaptor.getValue().getFamiliarity()).isEqualTo(FoodFamiliarity.safe);
+    }
+
+    @Test
+    void bootstrapSafesRejectsMoreThanTenItems() {
+        List<BootstrapSafeItemRequest> items = new ArrayList<>();
+        for (int i = 0; i < 11; i++) {
+            items.add(new BootstrapSafeItemRequest("Food " + i, null, true));
+        }
+
+        assertThatThrownBy(
+                        () ->
+                                service.bootstrapSafes(
+                                        householdId, new BootstrapSafesRequest(items)))
+                .isInstanceOf(InvalidBootstrapSafesException.class)
+                .hasMessageContaining("10");
+        verify(foods, never()).save(any());
+    }
+
+    @Test
+    void bootstrapSafesRejectsDuplicateNameAndVariant() {
+        when(foods.findFirstByHouseholdIdIsNullAndNameIgnoreCase("Bagel"))
+                .thenReturn(Optional.empty());
+        when(foods.existsVisibleName(householdId, "Bagel", null)).thenReturn(false);
+        when(foods.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(exposures.findByHouseholdIdAndFoodIdAndVariantKey(eq(householdId), any(), eq("bagelsaurus")))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(
+                        () ->
+                                service.bootstrapSafes(
+                                        householdId,
+                                        new BootstrapSafesRequest(
+                                                List.of(
+                                                        new BootstrapSafeItemRequest(
+                                                                "Bagel", "Bagelsaurus", true),
+                                                        new BootstrapSafeItemRequest(
+                                                                "bagel", "  BAGELSAURUS ", true)))))
+                .isInstanceOf(InvalidBootstrapSafesException.class)
+                .hasMessageContaining("Duplicate");
+    }
+
+    @Test
+    void bootstrapSafesAllowsEmptyList() {
+        List<FoodExposureResponse> results =
+                service.bootstrapSafes(householdId, new BootstrapSafesRequest(List.of()));
+
+        assertThat(results).isEmpty();
+        verify(foods, never()).save(any());
+        verify(exposures, never()).save(any());
     }
 }

@@ -505,6 +505,107 @@ class FoodsApiIntegrationTest {
                 .andExpect(status().isUnauthorized());
     }
 
+    @Test
+    void bootstrapSafesMatchInventSnackCapAndAuth() throws Exception {
+        String token = register("bootstrap-" + System.nanoTime() + "@example.com");
+
+        mockMvc.perform(
+                        post("/api/foods/bootstrap-safes")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                                        {"items":[{"name":"Cucumber","sessionEligible":true}]}
+                                        """))
+                .andExpect(status().isUnauthorized());
+
+        mockMvc.perform(
+                        post("/api/foods/bootstrap-safes")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"items\":[]}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
+
+        mockMvc.perform(
+                        post("/api/foods/bootstrap-safes")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                                        {
+                                          "items": [
+                                            {"name":"Apples","variantKey":"Honeycrisp","sessionEligible":true},
+                                            {"name":"Cucumber","sessionEligible":true},
+                                            {"name":"Goldfish","sessionEligible":false}
+                                          ]
+                                        }
+                                        """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(3))
+                .andExpect(jsonPath("$[0].foodId").value(SYSTEM_APPLES_ID))
+                .andExpect(jsonPath("$[0].variantKey").value("honeycrisp"))
+                .andExpect(jsonPath("$[0].familiarity").value("safe"))
+                .andExpect(jsonPath("$[0].source").value("signup"))
+                .andExpect(jsonPath("$[1].familiarity").value("safe"))
+                .andExpect(jsonPath("$[1].source").value("signup"))
+                .andExpect(jsonPath("$[2].familiarity").value("safe"))
+                .andExpect(jsonPath("$[2].source").value("signup"));
+
+        mockMvc.perform(get("/api/foods").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.name == 'Apples')].system").value(true))
+                .andExpect(
+                        jsonPath(
+                                        "$[?(@.id == '%s')].exposures[?(@.variantKey == 'honeycrisp')].source"
+                                                .formatted(SYSTEM_APPLES_ID))
+                                .value("signup"))
+                .andExpect(jsonPath("$[?(@.name == 'Cucumber')].system").value(false))
+                .andExpect(jsonPath("$[?(@.name == 'Cucumber')].sessionEligible").value(true))
+                .andExpect(jsonPath("$[?(@.name == 'Cucumber')].iconKey").value("custom_cucumber"))
+                .andExpect(
+                        jsonPath("$[?(@.name == 'Cucumber')].exposures[0].source").value("signup"))
+                .andExpect(jsonPath("$[?(@.name == 'Goldfish')].sessionEligible").value(false))
+                .andExpect(
+                        jsonPath("$[?(@.name == 'Goldfish')].exposures[0].source").value("signup"));
+
+        // Matching Apples must not create a second household "Apples" row.
+        mockMvc.perform(get("/api/foods").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.name == 'Apples' && @.system == false)]").isEmpty());
+
+        mockMvc.perform(
+                        post("/api/foods/bootstrap-safes")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                                        {
+                                          "items": [
+                                            {"name":"Bagel","variantKey":"a"},
+                                            {"name":"bagel","variantKey":"A"}
+                                          ]
+                                        }
+                                        """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("Duplicate")));
+
+        StringBuilder tooMany = new StringBuilder("{\"items\":[");
+        for (int i = 0; i < 11; i++) {
+            if (i > 0) {
+                tooMany.append(',');
+            }
+            tooMany.append("{\"name\":\"Food").append(i).append("\"}");
+        }
+        tooMany.append("]}");
+        mockMvc.perform(
+                        post("/api/foods/bootstrap-safes")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(tooMany.toString()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("10")));
+    }
+
     private String register(String email) throws Exception {
         MvcResult result =
                 mockMvc.perform(

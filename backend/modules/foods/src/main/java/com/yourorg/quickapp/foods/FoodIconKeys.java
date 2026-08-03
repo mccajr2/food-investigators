@@ -1,5 +1,6 @@
 package com.yourorg.quickapp.foods;
 
+import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -61,5 +62,25 @@ public final class FoodIconKeys {
         if (!isAllowed(iconKey)) {
             throw new InvalidFoodIconKeyException(iconKey);
         }
+    }
+
+    /**
+     * Builds a {@code custom_<slug>} key from a display name (aligned with the
+     * web client's {@code customIconKeyFromName}).
+     */
+    public static String customFromName(String name) {
+        String slug =
+                name == null
+                        ? ""
+                        : name.trim()
+                                .toLowerCase(Locale.ROOT)
+                                .replaceAll("[^a-z0-9]+", "_")
+                                .replaceAll("^_+|_+$", "")
+                                .replaceAll("_+", "_");
+        if (slug.length() > 48) {
+            slug = slug.substring(0, 48);
+        }
+        String body = slug.isEmpty() ? "food" : slug;
+        return "custom_" + body;
     }
 }

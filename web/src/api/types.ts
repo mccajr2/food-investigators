@@ -101,6 +101,16 @@ export type UpsertFoodExposureRequest = {
   familiarity: Familiarity
 }
 
+export type BootstrapSafeItemRequest = {
+  name: string
+  variantKey?: string
+  sessionEligible?: boolean
+}
+
+export type BootstrapSafesRequest = {
+  items: BootstrapSafeItemRequest[]
+}
+
 export type CreateFoodRequest = {
   name: string
   iconKey: FoodIconKey | string

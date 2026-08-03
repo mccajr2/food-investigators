@@ -20,6 +20,11 @@ public class FoodExceptionHandler {
         return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
     }
 
+    @ExceptionHandler(InvalidBootstrapSafesException.class)
+    ResponseEntity<Map<String, String>> invalidBootstrap(InvalidBootstrapSafesException ex) {
+        return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
+    }
+
     @ExceptionHandler(DuplicateFoodNameException.class)
     ResponseEntity<Map<String, String>> duplicateName(DuplicateFoodNameException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)

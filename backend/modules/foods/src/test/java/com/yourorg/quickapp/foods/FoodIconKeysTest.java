@@ -69,4 +69,12 @@ class FoodIconKeysTest {
                 .isInstanceOf(InvalidFoodIconKeyException.class);
         FoodIconKeys.requireAllowed("carrot");
     }
+
+    @Test
+    void customFromNameMatchesWebSlugRules() {
+        assertThat(FoodIconKeys.customFromName("  Cucumber  ")).isEqualTo("custom_cucumber");
+        assertThat(FoodIconKeys.customFromName("Mac & Cheese!")).isEqualTo("custom_mac_cheese");
+        assertThat(FoodIconKeys.customFromName("!!!")).isEqualTo("custom_food");
+        assertThat(FoodIconKeys.isAllowed(FoodIconKeys.customFromName("Green Beans"))).isTrue();
+    }
 }

@@ -5,6 +5,12 @@ import { apiBaseUrl } from "@/config"
 import { defaultBrowserTokenStore } from "@/api/tokenStore"
 import type { UserResponse } from "@/api/types"
 import { BrandLogo } from "@/components/BrandLogo"
+import {
+  collectBootstrapItems,
+  emptyTastingSlots,
+  SignupSafeFoodsNudge,
+  type SignupSafeFoodRow,
+} from "@/components/auth/SignupSafeFoodsNudge"
 import { FoodsPage } from "@/components/food/FoodsPage"
 import { HistoryPage } from "@/components/history/HistoryPage"
 import { InsightsPage } from "@/components/insights/InsightsPage"
@@ -17,6 +23,7 @@ import {
   CardHeader,
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { BOOTSTRAP_SAFES_MAX } from "@/lib/systemStarterNames"
 
 type AuthMode = "sign-in" | "register"
 type SignedInView = "plan" | "history" | "foods" | "insights" | "settings"
@@ -89,6 +96,9 @@ export function AuthShell({
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [childDisplayName, setChildDisplayName] = useState("")
+  const [safeFoodRows, setSafeFoodRows] = useState<SignupSafeFoodRow[]>(() =>
+    emptyTastingSlots(),
+  )
   const [rememberMe, setRememberMe] = useState(true)
   const [user, setUser] = useState<UserResponse | null>(null)
   const [status, setStatus] = useState<Status>({ kind: "bootstrapping" })
@@ -130,15 +140,44 @@ export function AuthShell({
     event.preventDefault()
     setStatus({ kind: "loading" })
     try {
-      const auth =
-        mode === "register"
-          ? await client.register(
-              email.trim(),
-              password,
-              rememberMe,
-              childDisplayName.trim() || null,
-            )
-          : await client.login(email.trim(), password, rememberMe)
+      if (mode === "register") {
+        const bootstrapItems = collectBootstrapItems(safeFoodRows)
+        if (bootstrapItems.length > BOOTSTRAP_SAFES_MAX) {
+          setStatus({
+            kind: "error",
+            message: `At most ${BOOTSTRAP_SAFES_MAX} safe foods can be saved at signup.`,
+          })
+          return
+        }
+        const auth = await client.register(
+          email.trim(),
+          password,
+          rememberMe,
+          childDisplayName.trim() || null,
+        )
+        setUser(auth.user)
+        setProfileNameDraft(auth.user.childDisplayName ?? "")
+        setPassword("")
+        setChildDisplayName("")
+        setSafeFoodRows(emptyTastingSlots())
+        if (bootstrapItems.length > 0) {
+          try {
+            await foodsClient.bootstrapSafes({ items: bootstrapItems })
+          } catch (error) {
+            const detail =
+              error instanceof Error ? error.message : "Something went wrong"
+            setStatus({
+              kind: "error",
+              message: `Account created, but we couldn't save your safe foods (${detail}). You can add them on Foods.`,
+            })
+            return
+          }
+        }
+        setStatus({ kind: "idle" })
+        return
+      }
+
+      const auth = await client.login(email.trim(), password, rememberMe)
       setUser(auth.user)
       setProfileNameDraft(auth.user.childDisplayName ?? "")
       setPassword("")
@@ -479,6 +518,15 @@ export function AuthShell({
               onChange={(event) => setChildDisplayName(event.target.value)}
               placeholder="Child's first name (optional)"
               maxLength={CHILD_NAME_MAX}
+              disabled={status.kind === "loading"}
+            />
+          ) : null}
+
+          {mode === "register" ? (
+            <SignupSafeFoodsNudge
+              rows={safeFoodRows}
+              onChange={setSafeFoodRows}
+              childDisplayName={childDisplayName}
               disabled={status.kind === "loading"}
             />
           ) : null}

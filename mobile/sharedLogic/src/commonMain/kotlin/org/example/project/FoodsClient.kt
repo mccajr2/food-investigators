@@ -67,6 +67,18 @@ data class UpsertFoodExposureRequest(
     val familiarity: String,
 )
 
+@Serializable
+data class BootstrapSafeItemRequest(
+    val name: String,
+    val variantKey: String? = null,
+    val sessionEligible: Boolean? = null,
+)
+
+@Serializable
+data class BootstrapSafesRequest(
+    val items: List<BootstrapSafeItemRequest>,
+)
+
 class FoodsException(message: String) : Exception(message)
 
 class FoodsClient(
@@ -106,6 +118,20 @@ class FoodsClient(
                         tasteNote = tasteNote,
                     ),
                 )
+            }
+        clearTokenIfUnauthorized(response)
+        if (!response.status.isSuccess()) {
+            throw FoodsException(readError(response))
+        }
+        return response.body()
+    }
+
+    suspend fun bootstrapSafes(items: List<BootstrapSafeItemRequest>): List<FoodExposureResponse> {
+        val response =
+            httpClient.post("$baseUrl/api/foods/bootstrap-safes") {
+                header(HttpHeaders.Authorization, bearerOrThrow())
+                contentType(ContentType.Application.Json)
+                setBody(BootstrapSafesRequest(items = items))
             }
         clearTokenIfUnauthorized(response)
         if (!response.status.isSuccess()) {
