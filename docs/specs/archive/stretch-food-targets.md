@@ -1,6 +1,6 @@
 # Spec: stretch-food-targets
 
-Status: in-progress  
+Status: done  
 Created: 2026-08-03  
 Parent: [docs/roadmap.md](../../roadmap.md)  
 Added: 2026-08-03 · enhancement  
@@ -87,36 +87,36 @@ next try.
 
 ## Acceptance criteria
 
-- [ ] Parent can add and remove stretch targets (food + variant; invent OK) on
+- [x] Parent can add and remove stretch targets (food + variant; invent OK) on
       the Foods page; targets persist per household.
-- [ ] Active stretch targets appear in the Suggest brief; on non-`pull_back`
+- [x] Active stretch targets appear in the Suggest brief; on non-`pull_back`
       paces, Suggest prefers path-shaped intermediates toward a target over
       unrelated invents when inventing/stretching.
-- [ ] Suggest may propose the nominated **destination** only when the simple
+- [x] Suggest may propose the nominated **destination** only when the simple
       readiness gate passes; never on `pull_back`; never auto-schedule without
       Approve.
-- [ ] Existing Suggest composition preserved: exactly two foods, at most one
+- [x] Existing Suggest composition preserved: exactly two foods, at most one
       invent, other slot safe when inventing; Approve materialization unchanged.
-- [ ] Soft cap on active targets enforced by API; remove works; completing a
+- [x] Soft cap on active targets enforced by API; remove works; completing a
       session does not silently delete the target (cool-down still applies).
-- [ ] OpenAPI documents stretch-target endpoints + any Suggest brief fields
+- [x] OpenAPI documents stretch-target endpoints + any Suggest brief fields
       needed; version bump; web + mobile DTOs synced.
-- [ ] Unit + IT + ModularityTests; web Foods coverage for queue UI.
-- [ ] No Plan nomination CRUD, no `stretch-pathway` ladder UI, no native Foods
+- [x] Unit + IT + ModularityTests; web Foods coverage for queue UI.
+- [x] No Plan nomination CRUD, no `stretch-pathway` ladder UI, no native Foods
       UI, no Run/Insights tip catalog changes.
 
 ## Tasks
 
-- [ ] Backend (foods): persist stretch targets; list/add/remove API; invent-on-
+- [x] Backend (foods): persist stretch targets; list/add/remove API; invent-on-
       nominate; soft cap; unit + IT.
-- [ ] Backend (sessions): load active targets into Suggest brief; Gemini +
+- [x] Backend (sessions): load active targets into Suggest brief; Gemini +
       heuristic C-lite path bias + destination readiness / pull_back / cool-down;
       unit + IT; ModularityTests.
-- [ ] Contract: OpenAPI stretch-target paths/schemas (+ Suggest fields if any);
+- [x] Contract: OpenAPI stretch-target paths/schemas (+ Suggest fields if any);
       version bump; web + mobile DTO sync.
-- [ ] Web: Foods stretch-target section (list/add/remove); client wiring;
+- [x] Web: Foods stretch-target section (list/add/remove); client wiring;
       component tests.
-- [ ] Docs: archive on `/pr` after ship.
+- [x] Docs: archive on `/pr` after ship.
 
 ## Open questions
 

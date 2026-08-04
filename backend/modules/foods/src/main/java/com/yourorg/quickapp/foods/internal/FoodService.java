@@ -3,7 +3,9 @@ package com.yourorg.quickapp.foods.internal;
 import com.yourorg.quickapp.foods.BootstrapSafeItemRequest;
 import com.yourorg.quickapp.foods.BootstrapSafesRequest;
 import com.yourorg.quickapp.foods.CreateFoodRequest;
+import com.yourorg.quickapp.foods.CreateStretchTargetRequest;
 import com.yourorg.quickapp.foods.DuplicateFoodNameException;
+import com.yourorg.quickapp.foods.DuplicateStretchTargetException;
 import com.yourorg.quickapp.foods.ExposureSource;
 import com.yourorg.quickapp.foods.FoodExposureResponse;
 import com.yourorg.quickapp.foods.FoodFamiliarity;
@@ -15,8 +17,10 @@ import com.yourorg.quickapp.foods.FoodResponse;
 import com.yourorg.quickapp.foods.FoodTexture;
 import com.yourorg.quickapp.foods.InvalidBootstrapSafesException;
 import com.yourorg.quickapp.foods.InvalidFoodPreferenceException;
+import com.yourorg.quickapp.foods.InvalidStretchTargetException;
 import com.yourorg.quickapp.foods.SessionCompletedEvent;
 import com.yourorg.quickapp.foods.SessionCompletedFood;
+import com.yourorg.quickapp.foods.StretchTargetResponse;
 import com.yourorg.quickapp.foods.SystemFoodImmutableException;
 import com.yourorg.quickapp.foods.UpdateFoodRequest;
 import com.yourorg.quickapp.foods.UpsertFoodExposureRequest;
@@ -31,6 +35,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,19 +46,23 @@ public class FoodService {
     private static final int TASTE_NOTE_MAX = 100;
     private static final int VARIANT_KEY_MAX = 200;
     private static final int BOOTSTRAP_SAFES_MAX = 10;
+    static final int STRETCH_TARGETS_MAX = 5;
 
     private final FoodRepository foods;
     private final HouseholdFoodExposureRepository exposures;
+    private final HouseholdStretchTargetRepository stretchTargets;
     private final FoodIllustrationStore illustrations;
     private final Clock clock;
 
     FoodService(
             FoodRepository foods,
             HouseholdFoodExposureRepository exposures,
+            HouseholdStretchTargetRepository stretchTargets,
             FoodIllustrationStore illustrations,
             Clock clock) {
         this.foods = foods;
         this.exposures = exposures;
+        this.stretchTargets = stretchTargets;
         this.illustrations = illustrations;
         this.clock = clock;
     }
@@ -258,6 +267,95 @@ public class FoodService {
         requireVisibleFood(householdId, foodId);
         String variantKey = normalizeVariantKey(variantKeyRaw);
         exposures.deleteByHouseholdIdAndFoodIdAndVariantKey(householdId, foodId, variantKey);
+    }
+
+    @Transactional(readOnly = true)
+    public List<StretchTargetResponse> listStretchTargets(UUID householdId) {
+        List<HouseholdStretchTarget> rows = stretchTargets.findByHouseholdId(householdId);
+        if (rows.isEmpty()) {
+            return List.of();
+        }
+        Map<UUID, Food> foodById =
+                foods.findAllById(
+                                rows.stream()
+                                        .map(HouseholdStretchTarget::getFoodId)
+                                        .distinct()
+                                        .toList())
+                        .stream()
+                        .collect(Collectors.toMap(Food::getId, Function.identity()));
+        List<StretchTargetResponse> result = new ArrayList<>();
+        for (HouseholdStretchTarget row : rows) {
+            Food food = foodById.get(row.getFoodId());
+            if (food == null) {
+                continue;
+            }
+            result.add(toStretchTargetResponse(row, food));
+        }
+        result.sort(
+                Comparator.comparing(StretchTargetResponse::foodName, String.CASE_INSENSITIVE_ORDER)
+                        .thenComparing(StretchTargetResponse::variantKey));
+        return List.copyOf(result);
+    }
+
+    @Transactional
+    public StretchTargetResponse addStretchTarget(
+            UUID householdId, CreateStretchTargetRequest request) {
+        if (stretchTargets.countByHouseholdId(householdId) >= STRETCH_TARGETS_MAX) {
+            throw new InvalidStretchTargetException(
+                    "At most " + STRETCH_TARGETS_MAX + " stretch targets can be active");
+        }
+        Instant now = clock.instant();
+        Food food = resolveStretchTargetFood(householdId, request, now);
+        if (!food.isSessionEligible()) {
+            throw new InvalidStretchTargetException(
+                    "Stretch targets must be tasting foods (not snacks)");
+        }
+        String variantKey = normalizeVariantKey(request.variantKey());
+        if (stretchTargets
+                .findByHouseholdIdAndFoodIdAndVariantKey(householdId, food.getId(), variantKey)
+                .isPresent()) {
+            throw new DuplicateStretchTargetException();
+        }
+        HouseholdStretchTarget saved =
+                stretchTargets.save(
+                        HouseholdStretchTarget.create(householdId, food.getId(), variantKey, now));
+        return toStretchTargetResponse(saved, food);
+    }
+
+    @Transactional
+    public void removeStretchTarget(UUID householdId, UUID foodId, String variantKeyRaw) {
+        requireVisibleFood(householdId, foodId);
+        String variantKey = normalizeVariantKey(variantKeyRaw);
+        if (stretchTargets
+                .findByHouseholdIdAndFoodIdAndVariantKey(householdId, foodId, variantKey)
+                .isEmpty()) {
+            throw new FoodNotFoundException();
+        }
+        stretchTargets.deleteByHouseholdIdAndFoodIdAndVariantKey(householdId, foodId, variantKey);
+    }
+
+    private Food resolveStretchTargetFood(
+            UUID householdId, CreateStretchTargetRequest request, Instant now) {
+        boolean hasFoodId = request.foodId() != null;
+        String name = request.name() == null ? "" : request.name().trim();
+        boolean hasName = !name.isEmpty();
+        if (hasFoodId == hasName) {
+            throw new InvalidStretchTargetException(
+                    "Provide either foodId or name (not both, not neither)");
+        }
+        if (hasFoodId) {
+            return requireVisibleFood(householdId, request.foodId());
+        }
+        return foods.findFirstByHouseholdIdIsNullAndNameIgnoreCase(name)
+                .or(() -> foods.findFirstByHouseholdIdAndArchivedAtIsNullAndNameIgnoreCase(
+                        householdId, name))
+                .orElseGet(() -> inventHouseholdFood(householdId, name, true, now));
+    }
+
+    private static StretchTargetResponse toStretchTargetResponse(
+            HouseholdStretchTarget row, Food food) {
+        return new StretchTargetResponse(
+                row.getId(), food.getId(), food.getName(), row.getVariantKey(), row.getCreatedAt());
     }
 
     private FoodExposureResponse upsertSafe(

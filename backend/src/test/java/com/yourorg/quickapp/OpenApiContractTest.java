@@ -63,6 +63,14 @@ class OpenApiContractTest {
         assertThat(yaml).contains("lastLiked");
         assertThat(yaml).contains("outcome-driven exposure upserts");
         assertThat(yaml).contains("never auto-downgraded");
+        assertThat(yaml).contains("/api/foods/stretch-targets");
+        assertThat(yaml).contains("listStretchTargets");
+        assertThat(yaml).contains("addStretchTarget");
+        assertThat(yaml).contains("removeStretchTarget");
+        assertThat(yaml).contains("StretchTargetResponse");
+        assertThat(yaml).contains("CreateStretchTargetRequest");
+        assertThat(yaml).contains("At most 5 stretch targets can be active");
+        assertThat(yaml).contains("That stretch target is already on the list");
     }
 
     @Test
@@ -97,7 +105,8 @@ class OpenApiContractTest {
         assertThat(yaml).contains("pacingNote");
         assertThat(yaml).contains("PacingCitation");
         assertThat(yaml).contains("calm pacing evidence");
-        assertThat(yaml).contains("version: 0.15.0");
+        assertThat(yaml).contains("stretch-target path bias");
+        assertThat(yaml).contains("version: 0.16.0");
         assertThat(yaml).contains("CreateSessionRequest");
         assertThat(yaml).contains("UpdateSessionRequest");
         assertThat(yaml).contains("CompleteSessionRequest");

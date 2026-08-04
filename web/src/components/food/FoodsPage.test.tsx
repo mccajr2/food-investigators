@@ -35,6 +35,10 @@ function mockFoodsClient(overrides: Partial<FoodsClient> = {}): FoodsClient {
     archive: vi.fn(),
     upsertExposure: vi.fn(),
     clearExposure: vi.fn(),
+    listStretchTargets: vi.fn().mockResolvedValue([]),
+    addStretchTarget: vi.fn(),
+    removeStretchTarget: vi.fn(),
+    bootstrapSafes: vi.fn(),
     ...overrides,
   } as FoodsClient;
 }
@@ -415,6 +419,102 @@ describe("FoodsPage", () => {
       await screen.findByRole("heading", { name: "Known safes" }),
     ).toBeInTheDocument();
     expect(screen.getByText("bagelsaurus")).toBeInTheDocument();
+  });
+
+  it("lists stretch targets and can remove one", async () => {
+    const user = userEvent.setup();
+    const removeStretchTarget = vi.fn().mockResolvedValue(undefined);
+    const listStretchTargets = vi.fn().mockResolvedValue([
+      {
+        id: "dddddddd-dddd-dddd-dddd-dddddddddddd",
+        foodId: starters[0]!.id,
+        foodName: "Apples",
+        variantKey: "honeycrisp",
+        createdAt: "2026-08-03T18:00:00Z",
+      },
+    ]);
+    render(
+      <FoodsPage
+        client={mockFoodsClient({ listStretchTargets, removeStretchTarget })}
+      />,
+    );
+
+    expect(
+      await screen.findByRole("heading", { name: "Stretch targets" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("honeycrisp")).toBeInTheDocument();
+    await user.click(
+      screen.getByRole("button", {
+        name: "Remove stretch Apples honeycrisp",
+      }),
+    );
+    expect(removeStretchTarget).toHaveBeenCalledWith(
+      starters[0]!.id,
+      "honeycrisp",
+    );
+    await waitFor(() => {
+      expect(screen.queryByText("honeycrisp")).not.toBeInTheDocument();
+    });
+  });
+
+  it("adds a stretch target by inventing a name", async () => {
+    const user = userEvent.setup();
+    const created = {
+      id: "dddddddd-dddd-dddd-dddd-dddddddddddd",
+      foodId: "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+      foodName: "Ground beef",
+      variantKey: "taco night",
+      createdAt: "2026-08-03T18:00:00Z",
+    };
+    const addStretchTarget = vi.fn().mockResolvedValue(created);
+    const inventedFood: FoodResponse = {
+      id: created.foodId,
+      name: "Ground beef",
+      iconKey: "custom_ground_beef",
+      householdId: "22222222-2222-2222-2222-222222222222",
+      system: false,
+      sessionEligible: true,
+      exposures: [],
+    };
+    const list = vi.fn().mockImplementation(async () => {
+      if (addStretchTarget.mock.calls.length > 0) {
+        return [...starters, inventedFood];
+      }
+      return starters;
+    });
+    render(
+      <FoodsPage
+        client={mockFoodsClient({ list, addStretchTarget })}
+      />,
+    );
+
+    await screen.findByText("Apples");
+    await user.click(
+      screen.getByRole("button", { name: "Add stretch target" }),
+    );
+    const form = screen.getByRole("form", { name: "Add stretch target" });
+    await user.click(within(form).getByRole("radio", { name: "Invent a new food name" }));
+    await user.type(
+      within(form).getByLabelText("Stretch target name"),
+      "Ground beef",
+    );
+    await user.type(
+      within(form).getByLabelText("Stretch brand / prep note"),
+      "taco night",
+    );
+    await user.click(
+      within(form).getByRole("button", { name: "Save stretch target" }),
+    );
+
+    expect(addStretchTarget).toHaveBeenCalledWith({
+      name: "Ground beef",
+      variantKey: "taco night",
+    });
+    expect(
+      await screen.findByRole("button", {
+        name: "Remove stretch Ground beef taco night",
+      }),
+    ).toBeInTheDocument();
   });
 });
 

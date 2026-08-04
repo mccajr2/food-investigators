@@ -6,6 +6,7 @@ import com.yourorg.quickapp.foods.FoodFamiliarity;
 import com.yourorg.quickapp.foods.FoodIllustrationStore;
 import com.yourorg.quickapp.foods.SafeExposureSnapshot;
 import com.yourorg.quickapp.foods.SnackPreferenceSnapshot;
+import com.yourorg.quickapp.foods.StretchTargetSnapshot;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -24,14 +25,17 @@ class JpaFoodCatalog implements FoodCatalog {
 
     private final FoodRepository foods;
     private final HouseholdFoodExposureRepository exposures;
+    private final HouseholdStretchTargetRepository stretchTargets;
     private final FoodIllustrationStore illustrations;
 
     JpaFoodCatalog(
             FoodRepository foods,
             HouseholdFoodExposureRepository exposures,
+            HouseholdStretchTargetRepository stretchTargets,
             FoodIllustrationStore illustrations) {
         this.foods = foods;
         this.exposures = exposures;
+        this.stretchTargets = stretchTargets;
         this.illustrations = illustrations;
     }
 
@@ -118,6 +122,39 @@ class JpaFoodCatalog implements FoodCatalog {
         if (result.size() > MAX_SAFE_EXPOSURES) {
             return List.copyOf(result.subList(0, MAX_SAFE_EXPOSURES));
         }
+        return List.copyOf(result);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<StretchTargetSnapshot> listStretchTargets(UUID householdId) {
+        List<HouseholdStretchTarget> rows = stretchTargets.findByHouseholdId(householdId);
+        if (rows.isEmpty()) {
+            return List.of();
+        }
+        Map<UUID, Food> foodById =
+                foods.findAllById(
+                                rows.stream()
+                                        .map(HouseholdStretchTarget::getFoodId)
+                                        .distinct()
+                                        .toList())
+                        .stream()
+                        .collect(Collectors.toMap(Food::getId, Function.identity()));
+        List<StretchTargetSnapshot> result = new ArrayList<>();
+        for (HouseholdStretchTarget row : rows) {
+            Food food = foodById.get(row.getFoodId());
+            if (food == null) {
+                continue;
+            }
+            if (!food.isSystem() && !householdId.equals(food.getHouseholdId())) {
+                continue;
+            }
+            result.add(
+                    new StretchTargetSnapshot(food.getId(), food.getName(), row.getVariantKey()));
+        }
+        result.sort(
+                Comparator.comparing(StretchTargetSnapshot::foodName, String.CASE_INSENSITIVE_ORDER)
+                        .thenComparing(StretchTargetSnapshot::variantKey));
         return List.copyOf(result);
     }
 

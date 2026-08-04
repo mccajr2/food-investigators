@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 import com.yourorg.quickapp.foods.CatalogFood;
 import com.yourorg.quickapp.foods.FoodCatalog;
 import com.yourorg.quickapp.foods.SafeExposureSnapshot;
+import com.yourorg.quickapp.foods.StretchTargetSnapshot;
 import com.yourorg.quickapp.sessions.Familiarity;
 import com.yourorg.quickapp.sessions.InsufficientSuggestionCatalogException;
 import com.yourorg.quickapp.sessions.Liked;
@@ -61,6 +62,7 @@ class SessionSuggestionServiceTest {
                         Clock.fixed(now, ZoneOffset.UTC));
         when(foodCatalog.listActiveSnackPreferences(householdId)).thenReturn(List.of());
         when(foodCatalog.listSafeExposures(householdId)).thenReturn(List.of());
+        when(foodCatalog.listStretchTargets(householdId)).thenReturn(List.of());
         when(foodCatalog.listSelectable(householdId))
                 .thenReturn(
                         List.of(
@@ -249,6 +251,68 @@ class SessionSuggestionServiceTest {
 
         assertThat(response.source()).isEqualTo(SuggestionSource.heuristic);
         assertThat(response.foods()).hasSize(2);
+    }
+
+    @Test
+    void heuristicPrefersReadyStretchDestinationWithSafeAnchor() {
+        stubReadyHistory();
+        when(foodCatalog.listSafeExposures(householdId))
+                .thenReturn(List.of(new SafeExposureSnapshot(foodA, "Apples", "")));
+        when(foodCatalog.listStretchTargets(householdId))
+                .thenReturn(List.of(new StretchTargetSnapshot(foodC, "Blueberries", "")));
+        when(llm.propose(any())).thenReturn(Optional.empty());
+
+        SessionSuggestionResponse response = service.suggestNext(householdId);
+
+        assertThat(response.source()).isEqualTo(SuggestionSource.heuristic);
+        assertThat(response.foods())
+                .extracting(f -> f.foodId())
+                .containsExactlyInAnyOrder(foodA, foodC);
+        assertThat(response.rationale()).containsIgnoringCase("Blueberries");
+    }
+
+    @Test
+    void aiDestinationWhileOnCooldownFallsBackToHeuristic() {
+        when(sessions.existsByHouseholdIdAndScheduledOnAndStatusIn(any(), any(), any()))
+                .thenReturn(false);
+        TastingSession rejected =
+                TastingSession.planned(householdId, LocalDate.of(2026, 7, 14), now);
+        rejected.replaceFoods(
+                List.of(
+                        TastingSessionFood.of(foodC, Familiarity.truly_new, null, 1),
+                        TastingSessionFood.of(foodA, Familiarity.safe, null, 2)),
+                now);
+        rejected.getFoods()
+                .get(0)
+                .recordOutcome(Liked.no, null, null, null, null, null, null, false);
+        rejected.getFoods()
+                .get(1)
+                .recordOutcome(Liked.like, Texture.soft, null, null, null, null, null, true);
+        rejected.complete(now);
+        when(sessions.findByHouseholdIdAndStatusOrderByScheduledOnDescUpdatedAtDesc(
+                        householdId, SessionStatus.completed))
+                .thenReturn(
+                        List.of(
+                                rejected,
+                                completedNight(LocalDate.of(2026, 7, 13), foodB),
+                                completedNight(LocalDate.of(2026, 7, 12), foodA)));
+        when(foodCatalog.listSafeExposures(householdId))
+                .thenReturn(List.of(new SafeExposureSnapshot(foodA, "Apples", "")));
+        when(foodCatalog.listStretchTargets(householdId))
+                .thenReturn(List.of(new StretchTargetSnapshot(foodC, "Blueberries", "")));
+        when(llm.propose(any()))
+                .thenReturn(
+                        Optional.of(
+                                new LlmSuggestionChoice(
+                                        List.of(
+                                                new LlmFoodPick(foodA, Familiarity.safe),
+                                                new LlmFoodPick(foodC, Familiarity.truly_new)),
+                                        "too soon")));
+
+        SessionSuggestionResponse response = service.suggestNext(householdId);
+
+        assertThat(response.source()).isEqualTo(SuggestionSource.heuristic);
+        assertThat(response.foods()).noneMatch(f -> foodC.equals(f.foodId()));
     }
 
     @Test

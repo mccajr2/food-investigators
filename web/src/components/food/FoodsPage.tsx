@@ -8,6 +8,7 @@ import {
   type FoodExposureResponse,
   type FoodResponse,
   type Liked,
+  type StretchTargetResponse,
   type Texture,
 } from "@/api/types"
 import { FoodIcon, FOOD_ICON_LABELS } from "@/components/food/FoodIcon"
@@ -33,6 +34,12 @@ type Editor =
 type ExposureEditor =
   | { mode: "closed" }
   | { mode: "open"; foodId: string }
+
+type StretchEditor = { mode: "closed" } | { mode: "open" }
+
+type StretchAddMode = "existing" | "invent"
+
+const STRETCH_TARGETS_MAX = 5
 
 /** Library starters, or generate a custom icon from the food name. */
 type IconChoice = "fromName" | FoodIconKey
@@ -134,11 +141,22 @@ export function FoodsPage({
 }: FoodsPageProps) {
   const [client] = useState(() => clientProp ?? new FoodsClient())
   const [foods, setFoods] = useState<FoodResponse[]>([])
+  const [stretchTargets, setStretchTargets] = useState<StretchTargetResponse[]>(
+    [],
+  )
   const [status, setStatus] = useState<Status>({ kind: "loading" })
   const [editor, setEditor] = useState<Editor>({ mode: "closed" })
   const [exposureEditor, setExposureEditor] = useState<ExposureEditor>({
     mode: "closed",
   })
+  const [stretchEditor, setStretchEditor] = useState<StretchEditor>({
+    mode: "closed",
+  })
+  const [stretchAddMode, setStretchAddMode] =
+    useState<StretchAddMode>("existing")
+  const [stretchFoodId, setStretchFoodId] = useState("")
+  const [stretchName, setStretchName] = useState("")
+  const [stretchVariant, setStretchVariant] = useState("")
   const [exposureFoodId, setExposureFoodId] = useState("")
   const [exposureVariant, setExposureVariant] = useState("")
   const [exposureFamiliarity, setExposureFamiliarity] =
@@ -158,9 +176,13 @@ export function FoodsPage({
     async function load() {
       setStatus({ kind: "loading" })
       try {
-        const listed = await client.list()
+        const [listed, targets] = await Promise.all([
+          client.list(),
+          client.listStretchTargets(),
+        ])
         if (!cancelled) {
           setFoods(listed)
+          setStretchTargets(targets)
           setStatus({ kind: "ready" })
         }
       } catch (error) {
@@ -187,6 +209,10 @@ export function FoodsPage({
   )
   const snacks = foods.filter(
     (food) => !food.system && food.sessionEligible === false,
+  )
+  const tastingEligible = useMemo(
+    () => foods.filter((food) => food.sessionEligible !== false),
+    [foods],
   )
   const knownSafes = useMemo(() => {
     const rows: SafeRow[] = []
@@ -222,6 +248,7 @@ export function FoodsPage({
 
   function openCreate() {
     setExposureEditor({ mode: "closed" })
+    setStretchEditor({ mode: "closed" })
     setName("")
     setIconChoice("fromName")
     resetPreferenceFields()
@@ -230,6 +257,7 @@ export function FoodsPage({
 
   function openEdit(food: FoodResponse) {
     setExposureEditor({ mode: "closed" })
+    setStretchEditor({ mode: "closed" })
     setName(food.name)
     if (
       isCustomIconKey(food.iconKey) ||
@@ -252,6 +280,7 @@ export function FoodsPage({
 
   function openExposureEditor(foodId?: string) {
     setEditor({ mode: "closed" })
+    setStretchEditor({ mode: "closed" })
     const initialId = foodId ?? foods[0]?.id ?? ""
     setExposureFoodId(initialId)
     setExposureVariant("")
@@ -261,6 +290,20 @@ export function FoodsPage({
 
   function closeExposureEditor() {
     setExposureEditor({ mode: "closed" })
+  }
+
+  function openStretchEditor() {
+    setEditor({ mode: "closed" })
+    setExposureEditor({ mode: "closed" })
+    setStretchAddMode("existing")
+    setStretchFoodId(tastingEligible[0]?.id ?? "")
+    setStretchName("")
+    setStretchVariant("")
+    setStretchEditor({ mode: "open" })
+  }
+
+  function closeStretchEditor() {
+    setStretchEditor({ mode: "closed" })
   }
 
   function resolveIconKey(trimmedName: string): string {
@@ -390,6 +433,74 @@ export function FoodsPage({
     }
   }
 
+  async function onSaveStretchTarget(event: FormEvent) {
+    event.preventDefault()
+    if (stretchAddMode === "existing" && !stretchFoodId) {
+      return
+    }
+    if (stretchAddMode === "invent" && stretchName.trim() === "") {
+      return
+    }
+    setStatus({ kind: "saving" })
+    try {
+      const created = await client.addStretchTarget(
+        stretchAddMode === "existing"
+          ? { foodId: stretchFoodId, variantKey: stretchVariant }
+          : { name: stretchName.trim(), variantKey: stretchVariant },
+      )
+      setStretchTargets((current) =>
+        [...current, created].sort((a, b) => {
+          const byName = a.foodName.localeCompare(b.foodName, undefined, {
+            sensitivity: "base",
+          })
+          if (byName !== 0) {
+            return byName
+          }
+          return a.variantKey.localeCompare(b.variantKey)
+        }),
+      )
+      // Invent may have created a new tasting food — refresh list so it appears.
+      if (stretchAddMode === "invent") {
+        const listed = await client.list()
+        setFoods(listed)
+      }
+      setStretchEditor({ mode: "closed" })
+      setStatus({ kind: "ready" })
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Could not add stretch target"
+      if (isUnauthorizedMessage(message)) {
+        onUnauthorizedRef.current?.()
+        return
+      }
+      setStatus({ kind: "error", message })
+    }
+  }
+
+  async function onRemoveStretchTarget(foodId: string, variantKey: string) {
+    setStatus({ kind: "saving" })
+    try {
+      await client.removeStretchTarget(foodId, variantKey)
+      const key = normalizeVariantKey(variantKey)
+      setStretchTargets((current) =>
+        current.filter(
+          (row) => !(row.foodId === foodId && row.variantKey === key),
+        ),
+      )
+      setStatus({ kind: "ready" })
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Could not remove stretch target"
+      if (isUnauthorizedMessage(message)) {
+        onUnauthorizedRef.current?.()
+        return
+      }
+      setStatus({ kind: "error", message })
+    }
+  }
+
   return (
     <section aria-labelledby="foods-heading" className="flex flex-col gap-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
@@ -398,10 +509,23 @@ export function FoodsPage({
             Foods
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Starter library, tasting foods, snacks, and known safe presentations.
+            Starter library, tasting foods, snacks, known safes, and stretch
+            targets for Suggest.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => openStretchEditor()}
+            disabled={
+              status.kind === "loading" ||
+              status.kind === "saving" ||
+              stretchTargets.length >= STRETCH_TARGETS_MAX
+            }
+          >
+            Add stretch target
+          </Button>
           <Button
             type="button"
             variant="outline"
@@ -517,6 +641,111 @@ export function FoodsPage({
               type="button"
               variant="outline"
               onClick={closeExposureEditor}
+              disabled={status.kind === "saving"}
+            >
+              Cancel
+            </Button>
+          </div>
+        </form>
+      ) : null}
+
+      {stretchEditor.mode === "open" ? (
+        <form
+          className="flex flex-col gap-4 rounded-lg border border-border bg-card p-4"
+          onSubmit={(event) => void onSaveStretchTarget(event)}
+          aria-label="Add stretch target"
+        >
+          <p className="text-sm text-muted-foreground">
+            Nominate a someday stretch food. Suggest will steer toward intermediate
+            steps, then the destination when pace allows (Approve still required).
+            At most {STRETCH_TARGETS_MAX} active targets.
+          </p>
+          <fieldset className="flex flex-col gap-2" disabled={status.kind === "saving"}>
+            <legend className="text-sm font-medium">How to add</legend>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="radio"
+                name="stretch-add-mode"
+                checked={stretchAddMode === "existing"}
+                onChange={() => setStretchAddMode("existing")}
+              />
+              Pick from tasting foods
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="radio"
+                name="stretch-add-mode"
+                checked={stretchAddMode === "invent"}
+                onChange={() => setStretchAddMode("invent")}
+              />
+              Invent a new food name
+            </label>
+          </fieldset>
+          {stretchAddMode === "existing" ? (
+            <div className="flex flex-col gap-1">
+              <label htmlFor="stretch-food" className="text-sm font-medium">
+                Food
+              </label>
+              <select
+                id="stretch-food"
+                aria-label="Stretch target food"
+                className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                value={stretchFoodId}
+                onChange={(event) => setStretchFoodId(event.target.value)}
+                disabled={status.kind === "saving"}
+                required
+              >
+                {tastingEligible.length === 0 ? (
+                  <option value="">No tasting foods yet</option>
+                ) : (
+                  tastingEligible.map((food) => (
+                    <option key={food.id} value={food.id}>
+                      {food.name}
+                      {food.system ? " (starter)" : ""}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-1">
+              <label htmlFor="stretch-name" className="text-sm font-medium">
+                Food name
+              </label>
+              <Input
+                id="stretch-name"
+                aria-label="Stretch target name"
+                value={stretchName}
+                onChange={(event) => setStretchName(event.target.value)}
+                placeholder="e.g. Ground beef"
+                maxLength={200}
+                required
+                disabled={status.kind === "saving"}
+              />
+            </div>
+          )}
+          <div className="flex flex-col gap-1">
+            <label htmlFor="stretch-variant" className="text-sm font-medium">
+              Brand / prep note
+            </label>
+            <Input
+              id="stretch-variant"
+              aria-label="Stretch brand / prep note"
+              value={stretchVariant}
+              onChange={(event) => setStretchVariant(event.target.value)}
+              placeholder="e.g. taco night (optional)"
+              maxLength={200}
+              disabled={status.kind === "saving"}
+            />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button type="submit" disabled={status.kind === "saving"}>
+              {status.kind === "saving" ? "Saving…" : "Save stretch target"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={closeStretchEditor}
               disabled={status.kind === "saving"}
             >
               Cancel
@@ -740,6 +969,51 @@ export function FoodsPage({
                   disabled={status.kind === "saving"}
                 >
                   Clear safe
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section
+        className="flex flex-col gap-3"
+        aria-labelledby="stretch-targets-heading"
+      >
+        <h3
+          id="stretch-targets-heading"
+          className="text-sm font-medium uppercase tracking-wide text-muted-foreground"
+        >
+          Stretch targets
+        </h3>
+        {stretchTargets.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No stretch destinations yet. Add one so Suggest can pace toward it.
+          </p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {stretchTargets.map((target) => (
+              <li
+                key={`${target.foodId}:${target.variantKey}`}
+                className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 py-2 last:border-b-0"
+              >
+                <div>
+                  <p className="text-sm font-medium">{target.foodName}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {variantLabel(target.variantKey)}
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  aria-label={`Remove stretch ${target.foodName} ${variantLabel(target.variantKey)}`}
+                  onClick={() =>
+                    void onRemoveStretchTarget(target.foodId, target.variantKey)
+                  }
+                  disabled={status.kind === "saving"}
+                >
+                  Remove
                 </Button>
               </li>
             ))}

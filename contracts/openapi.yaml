@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Quickapp API
-  version: 0.15.0
+  version: 0.16.0
   description: >
     Contract-first API for Food Investigators. Documents family-account auth
     (email/password register and login, Bearer session tokens, GET/PATCH
@@ -9,9 +9,11 @@ info:
     catalog (system starters + custom foods, archive, optional snack foods
     excluded from tasting sessions, household exposure profiles per food +
     variant including attempt hooks, optional signup bootstrap of safe
-    exposures, and outcome-driven exposure upserts on session complete), tasting
+    exposures, outcome-driven exposure upserts on session complete, and parent-
+    nominated stretch targets for Suggest path bias), tasting
     sessions (create, list upcoming, history of completed, download history PDF,
-    suggest next with optional adjacent invent food and calm pacing evidence,
+    suggest next with optional adjacent invent food, stretch-target path bias,
+    and calm pacing evidence,
     get, update, cancel, complete with run outcomes, optional parent notes on
     completed sessions), and household Insights (aggregates + dismissible tips).
 servers:
@@ -294,6 +296,137 @@ paths:
                 $ref: "#/components/schemas/ErrorMessage"
               example:
                 message: A food with that name already exists
+  /api/foods/stretch-targets:
+    get:
+      operationId: listStretchTargets
+      summary: List parent-nominated stretch destinations
+      description: >
+        Returns active stretch targets for this household (food + variant),
+        sorted by food name then variant key. Used by Suggest for C-lite path
+        bias; parents manage the queue on Foods.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Active stretch targets (possibly empty)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StretchTargetResponse"
+              example:
+                - id: dddddddd-dddd-dddd-dddd-dddddddddddd
+                  foodId: aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa24
+                  foodName: Broccoli
+                  variantKey: steamed
+                  createdAt: "2026-08-03T18:00:00Z"
+        "401":
+          description: Missing or invalid session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+    post:
+      operationId: addStretchTarget
+      summary: Nominate a stretch destination (existing food or invent by name)
+      description: >
+        Provide either `foodId` (visible tasting food) or `name` (match system
+        or household tasting food by case-insensitive name, else invent a
+        household tasting food with `custom_<slug>` icon — not marked safe).
+        Soft cap of 5 active targets. Duplicate food+variant returns 409.
+        Snacks (`sessionEligible: false`) are rejected.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateStretchTargetRequest"
+            examples:
+              byFoodId:
+                summary: Existing catalog food
+                value:
+                  foodId: aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa24
+                  variantKey: Steamed
+              byName:
+                summary: Invent or match by name
+                value:
+                  name: Ground beef
+                  variantKey: taco night
+      responses:
+        "201":
+          description: Stretch target created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StretchTargetResponse"
+        "400":
+          description: >
+            Cap reached, neither/both foodId and name, snack food, blank name,
+            or other invalid body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+              example:
+                message: At most 5 stretch targets can be active
+        "401":
+          description: Missing or invalid session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+        "404":
+          description: foodId not visible to this household
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+        "409":
+          description: That stretch target is already on the list (or invent name collision)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+              example:
+                message: That stretch target is already on the list
+  /api/foods/stretch-targets/{foodId}:
+    delete:
+      operationId: removeStretchTarget
+      summary: Remove a stretch destination
+      description: >
+        Deletes the active stretch target for `(foodId, variantKey)`.
+        `variantKey` is normalized (trim + case-fold); omit or blank clears the
+        unspecified-presentation row.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/FoodId"
+        - name: variantKey
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 200
+            default: ""
+          description: Brand/prep note; normalized with trim + case-fold
+      responses:
+        "204":
+          description: Stretch target removed
+        "401":
+          description: Missing or invalid session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+        "404":
+          description: Food or stretch target not found for this household
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
   /api/foods/{foodId}:
     put:
       operationId: updateFood
@@ -641,14 +774,18 @@ paths:
         `scheduledOn` (next UTC calendar day without a planned or completed
         session), optional short rationale, calm pacing evidence (`pacingNote` +
         optional `citations` from a curated pack keyed by pace hint), and
-        `source` of `ai` or `heuristic`. When AI is used and the household has at
-        least one safe exposure, at most one slot may be an invent (`foodId` null
-        + `proposedName`); the other must be a catalog safe-anchor food. Invent
-        does not create catalog foods — Approve (client) match-or-creates then
-        uses `POST /api/sessions`. Heuristic never invents. AI is used when
-        completed-session count is Insights-ready (>= 3) and Gemini is configured;
-        otherwise or on invalid picks, heuristic fallback still returns 200.
-        Requires at least two selectable catalog foods.
+        `source` of `ai` or `heuristic`. When the household has stretch targets,
+        Suggest prefers path-shaped invents/candidates toward those destinations
+        and may propose a destination itself only when a simple readiness gate
+        passes (never on pull_back; cool-down after recent hard reject). When AI
+        is used and the household has at least one safe exposure, at most one
+        slot may be an invent (`foodId` null + `proposedName`); the other must
+        be a catalog safe-anchor food. Invent does not create catalog foods —
+        Approve (client) match-or-creates then uses `POST /api/sessions`.
+        Heuristic never invents. AI is used when completed-session count is
+        Insights-ready (>= 3) and Gemini is configured; otherwise or on invalid
+        picks, heuristic fallback still returns 200. Requires at least two
+        selectable catalog foods.
       security:
         - bearerAuth: []
       responses:
@@ -1276,6 +1413,54 @@ components:
           description: >
             Liked value from the latest completed outcome for this key. Null
             until first outcome bump (or if liked was omitted).
+    StretchTargetResponse:
+      type: object
+      required:
+        - id
+        - foodId
+        - foodName
+        - variantKey
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        foodId:
+          type: string
+          format: uuid
+        foodName:
+          type: string
+          description: Display name of the nominated tasting food
+        variantKey:
+          type: string
+          maxLength: 200
+          description: >
+            Normalized brand/prep note (trim + case-fold). Empty string means
+            unspecified presentation.
+          example: taco night
+        createdAt:
+          type: string
+          format: date-time
+    CreateStretchTargetRequest:
+      type: object
+      description: >
+        Nominate with either `foodId` or `name` (not both, not neither).
+      properties:
+        foodId:
+          type: string
+          format: uuid
+          description: Existing visible tasting food; mutually exclusive with `name`
+        name:
+          type: string
+          maxLength: 200
+          description: >
+            Match system/household tasting food by name or invent; mutually
+            exclusive with `foodId`
+        variantKey:
+          type: string
+          maxLength: 200
+          description: Brand/prep note; normalized server-side. Omit or blank for unspecified.
+          example: taco night
     UpsertFoodExposureRequest:
       type: object
       required:

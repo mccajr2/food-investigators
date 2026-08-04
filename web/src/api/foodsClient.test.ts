@@ -246,6 +246,70 @@ describe("FoodsClient", () => {
     ).rejects.toThrow("At most 10 safe foods can be bootstrapped")
   })
 
+  it("lists adds and removes stretch targets", async () => {
+    const target = {
+      id: "dddddddd-dddd-dddd-dddd-dddddddddddd",
+      foodId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa24",
+      foodName: "Broccoli",
+      variantKey: "steamed",
+      createdAt: "2026-08-03T18:00:00Z",
+    }
+    const fetchFn = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify([target]), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(target), {
+          status: 201,
+          headers: { "Content-Type": "application/json" },
+        }),
+      )
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+
+    const client = new FoodsClient("http://localhost:8080", fetchFn, memoryStore())
+    const listed = await client.listStretchTargets()
+    const created = await client.addStretchTarget({
+      foodId: target.foodId,
+      variantKey: "Steamed",
+    })
+    await client.removeStretchTarget(target.foodId, "Steamed")
+
+    expect(listed).toEqual([target])
+    expect(created.foodName).toBe("Broccoli")
+    expect(String(fetchFn.mock.calls[0]?.[0])).toBe(
+      "http://localhost:8080/api/foods/stretch-targets",
+    )
+    expect(String(fetchFn.mock.calls[1]?.[0])).toBe(
+      "http://localhost:8080/api/foods/stretch-targets",
+    )
+    expect((fetchFn.mock.calls[1]?.[1] as RequestInit).method).toBe("POST")
+    expect(String(fetchFn.mock.calls[2]?.[0])).toBe(
+      `http://localhost:8080/api/foods/stretch-targets/${target.foodId}?variantKey=Steamed`,
+    )
+    expect((fetchFn.mock.calls[2]?.[1] as RequestInit).method).toBe("DELETE")
+  })
+
+  it("surfaces stretch target cap errors", async () => {
+    const fetchFn = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({ message: "At most 5 stretch targets can be active" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        },
+      ),
+    )
+    const client = new FoodsClient("http://localhost:8080", fetchFn, memoryStore())
+
+    await expect(
+      client.addStretchTarget({ name: "One too many" }),
+    ).rejects.toThrow("At most 5 stretch targets can be active")
+  })
+
   it("surfaces invalid icon errors", async () => {
     const fetchFn = vi.fn().mockResolvedValue(
       new Response(JSON.stringify({ message: "Invalid icon key" }), {

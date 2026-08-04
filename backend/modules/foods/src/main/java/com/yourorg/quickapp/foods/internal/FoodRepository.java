@@ -22,6 +22,9 @@ interface FoodRepository extends JpaRepository<Food, UUID> {
 
     Optional<Food> findFirstByHouseholdIdIsNullAndNameIgnoreCase(String name);
 
+    Optional<Food> findFirstByHouseholdIdAndArchivedAtIsNullAndNameIgnoreCase(
+            UUID householdId, String name);
+
     /**
      * True when a system starter or an active household food already uses this
      * name (case-insensitive). Archived household foods do not block reuse.

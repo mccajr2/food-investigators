@@ -13,9 +13,31 @@ final class HeuristicSuggestionPicker {
         if (brief.candidates().size() < 2) {
             return Optional.empty();
         }
-        SuggestionCandidate first = brief.candidates().get(0);
-        SuggestionCandidate second = brief.candidates().get(1);
-        for (SuggestionCandidate candidate : brief.candidates()) {
+
+        SuggestionCandidate destination = StretchPathSupport.findReadyDestinationCandidate(brief);
+        SuggestionCandidate safeAnchor = StretchPathSupport.findSafeAnchorCandidate(brief);
+        if (destination != null
+                && safeAnchor != null
+                && !destination.foodId().equals(safeAnchor.foodId())) {
+            List<LlmFoodPick> foods = new ArrayList<>(2);
+            foods.add(new LlmFoodPick(safeAnchor.foodId(), Familiarity.safe));
+            foods.add(
+                    new LlmFoodPick(
+                            destination.foodId(),
+                            SuggestionBriefBuilder.defaultFamiliarity(
+                                    destination, brief.paceHint())));
+            return Optional.of(
+                    new LlmSuggestionChoice(
+                            List.copyOf(foods),
+                            "A step toward "
+                                    + destination.name()
+                                    + " — safe anchor plus that stretch when you're ready."));
+        }
+
+        List<SuggestionCandidate> ordered = StretchPathSupport.pathBiasedCandidates(brief);
+        SuggestionCandidate first = ordered.get(0);
+        SuggestionCandidate second = ordered.get(1);
+        for (SuggestionCandidate candidate : ordered) {
             if (!candidate.foodId().equals(first.foodId())) {
                 second = candidate;
                 break;
@@ -41,8 +63,13 @@ final class HeuristicSuggestionPicker {
                     case "pull_back" ->
                             "Keeping it gentle — lean on familiar foods for a bit.";
                     case "gentle_stretch" ->
-                            "Steady rhythm with a gentle stretch when you're ready.";
-                    default -> "A calm next night from foods that often work for you.";
+                            brief.stretchTargets().isEmpty()
+                                    ? "Steady rhythm with a gentle stretch when you're ready."
+                                    : "Steady rhythm with a mild step toward your stretch target.";
+                    default ->
+                            brief.stretchTargets().isEmpty()
+                                    ? "A calm next night from foods that often work for you."
+                                    : "A calm next night steered toward your stretch target.";
                 };
         return Optional.of(new LlmSuggestionChoice(List.copyOf(foods), rationale));
     }

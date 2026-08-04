@@ -118,6 +118,20 @@ class GeminiSuggestionLlmClient implements SuggestionLlmPort {
                 node.put("foodName", safe.foodName());
                 node.put("variantKey", safe.variantKey());
             }
+            ArrayNode stretchTargets = payload.putArray("stretchTargets");
+            for (var target : brief.stretchTargets()) {
+                ObjectNode node = stretchTargets.addObject();
+                node.put("foodId", target.foodId().toString());
+                node.put("foodName", target.foodName());
+                node.put("variantKey", target.variantKey());
+            }
+            ArrayNode readyDestinations = payload.putArray("readyStretchDestinations");
+            for (var target : brief.readyStretchDestinations()) {
+                ObjectNode node = readyDestinations.addObject();
+                node.put("foodId", target.foodId().toString());
+                node.put("foodName", target.foodName());
+                node.put("variantKey", target.variantKey());
+            }
             boolean mayInvent = !brief.safeExposures().isEmpty();
             String inventRules =
                     mayInvent
@@ -131,6 +145,17 @@ class GeminiSuggestionLlmClient implements SuggestionLlmPort {
                             : """
                             Do NOT invent foods. Choose exactly TWO distinct foods from candidates only \
                             (use foodId values). There are no safe exposures yet.
+                            """;
+            String stretchRules =
+                    brief.stretchTargets().isEmpty()
+                            ? ""
+                            : """
+                            Parent stretchTargets are destinations. When inventing or picking a stretch slot, \
+                            prefer an intermediate step toward a stretchTarget grounded in safeExposures \
+                            (same flavor/texture neighborhood), not a random other profile. \
+                            You may propose a stretchTarget destination itself ONLY if it appears in \
+                            readyStretchDestinations (and use its foodId when on the candidate list). \
+                            On paceHint pull_back, never propose a stretchTarget destination.
                             """;
             PacingEvidencePack.Entry pacing = PacingEvidencePack.forHint(brief.paceHint());
             ArrayNode evidenceBullets = payload.putArray("pacingEvidenceBullets");
@@ -147,6 +172,7 @@ class GeminiSuggestionLlmClient implements SuggestionLlmPort {
                     You help a parent plan a calm two-food tasting night for a picky eater.
                     %s
                     %s
+                    %s
                     Assign familiarity for each: safe, familiar_but_new, truly_new, or retrying.
                     Respect paceHint: pull_back = stay gentle; gentle_stretch = one mild stretch OK; steady = balanced.
                     Reply with JSON only. Catalog pick: {"foodId":"...","familiarity":"..."}. \
@@ -154,7 +180,7 @@ class GeminiSuggestionLlmClient implements SuggestionLlmPort {
                     Shape: {"foods":[pick1,pick2],"rationale":"one short calm sentence"}
                     Context:
                     """
-                            .formatted(inventRules, evidenceRules)
+                            .formatted(inventRules, stretchRules, evidenceRules)
                     + jsonMapper.writeValueAsString(payload);
         } catch (Exception ex) {
             throw new IllegalStateException("Failed to build Gemini prompt", ex);

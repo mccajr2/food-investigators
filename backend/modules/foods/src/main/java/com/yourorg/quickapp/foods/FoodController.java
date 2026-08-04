@@ -82,6 +82,30 @@ public class FoodController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/stretch-targets")
+    public List<StretchTargetResponse> listStretchTargets(
+            @AuthenticationPrincipal AccountPrincipal principal) {
+        return foodService.listStretchTargets(requireHouseholdId(principal));
+    }
+
+    @PostMapping("/stretch-targets")
+    public ResponseEntity<StretchTargetResponse> addStretchTarget(
+            @AuthenticationPrincipal AccountPrincipal principal,
+            @Valid @RequestBody CreateStretchTargetRequest request) {
+        StretchTargetResponse created =
+                foodService.addStretchTarget(requireHouseholdId(principal), request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    }
+
+    @DeleteMapping("/stretch-targets/{foodId}")
+    public ResponseEntity<Void> removeStretchTarget(
+            @AuthenticationPrincipal AccountPrincipal principal,
+            @PathVariable("foodId") UUID foodId,
+            @RequestParam(name = "variantKey", defaultValue = "") String variantKey) {
+        foodService.removeStretchTarget(requireHouseholdId(principal), foodId, variantKey);
+        return ResponseEntity.noContent().build();
+    }
+
     private static UUID requireHouseholdId(AccountPrincipal principal) {
         if (principal == null || principal.householdId() == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);

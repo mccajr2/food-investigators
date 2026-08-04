@@ -1,7 +1,7 @@
 # Product roadmap
 
 Status: active  
-Updated: 2026-08-03
+Updated: 2026-08-04
 
 Living backlog for this product repo. **One roadmap ↔ many specs** (1:1 by
 kebab-case id). `/roadmap` updates and re-ranks; `/spec <id>` fleshes out the
@@ -53,17 +53,16 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | stretch-food-targets | active | 2026-08-03 · enhancement | Nominate stretch destinations on Foods; C-lite path-biased Suggest (approve still required) |
-| 2 | stretch-pathway | planned | 2026-08-03 · re-rank split | Stronger intermediate ladder + path progress + stricter destination readiness |
-| 3 | disliked-prep-rotation | planned | 2026-07-28 · enhancement | Suggest distinct preps of a disliked food (~3 over weeks), then longer rest |
-| 4 | welcome-orientation | planned | 2026-07-29 · enhancement | Dismissible welcome: why Food Investigators + Plan/Run/Insights lay of the land + pacing |
-| 5 | beta-backend-hosting | planned | 2026-07-29 · enhancement | Neon Postgres + Render backend + UptimeRobot keep-alive for beta |
-| 6 | beta-web-hosting | planned | 2026-07-29 · enhancement | Render web front pointed at prod API |
-| 7 | ci-cd-production | planned | 2026-07-29 · enhancement | After tests on `main`, auto-deploy backend + web to Render |
-| 8 | milestone-badges | planned | 2026-07-28 · enhancement | Celebration badges (e.g. first liked new food; 5/10/25 new foods) |
-| 9 | run-outcome-contract | planned | 2026-07-30 · enhancement | Harden run/outcome contract (document or promote encodings; deprecate unused fields) before native Run |
-| 10 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
-| 11 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
+| 1 | stretch-pathway | planned | 2026-08-03 · re-rank split | Stronger intermediate ladder + path progress + stricter destination readiness |
+| 2 | disliked-prep-rotation | planned | 2026-07-28 · enhancement | Suggest distinct preps of a disliked food (~3 over weeks), then longer rest |
+| 3 | welcome-orientation | planned | 2026-07-29 · enhancement | Dismissible welcome: why Food Investigators + Plan/Run/Insights lay of the land + pacing |
+| 4 | beta-backend-hosting | planned | 2026-07-29 · enhancement | Neon Postgres + Render backend + UptimeRobot keep-alive for beta |
+| 5 | beta-web-hosting | planned | 2026-07-29 · enhancement | Render web front pointed at prod API |
+| 6 | ci-cd-production | planned | 2026-07-29 · enhancement | After tests on `main`, auto-deploy backend + web to Render |
+| 7 | milestone-badges | planned | 2026-07-28 · enhancement | Celebration badges (e.g. first liked new food; 5/10/25 new foods) |
+| 8 | run-outcome-contract | planned | 2026-07-30 · enhancement | Harden run/outcome contract (document or promote encodings; deprecate unused fields) before native Run |
+| 9 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
+| 10 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
 
 Status values: `parking` · `planned` · `active` · `done` · `cancelled`  
 Added: `YYYY-MM-DD · initial` | `enhancement` | `re-rank split`
@@ -97,12 +96,13 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Branch | Spec |
 |----|--------|------|
-| stretch-food-targets | `stretch-food-targets` | [active](specs/active/stretch-food-targets.md) |
+| — | — | — |
 
 ## Done
 
 | Id | Completed | Spec |
 |----|-----------|------|
+| stretch-food-targets | 2026-08-04 | [archive](specs/archive/stretch-food-targets.md) |
 | suggestion-pacing-evidence | 2026-08-03 | [archive](specs/archive/suggestion-pacing-evidence.md) |
 | suggestion-adjacent-foods | 2026-08-03 | [archive](specs/archive/suggestion-adjacent-foods.md) |
 | plan-food-autocomplete | 2026-08-03 | [archive](specs/archive/plan-food-autocomplete.md) |
@@ -239,3 +239,4 @@ Only notable events (first carve-up, major re-rank, cancelled theme) — not eve
 | 2026-08-03 | suggestion-pacing-evidence shipped (curated pack by paceHint; OpenAPI 0.15.0 pacingNote/citations; Plan Suggest UI). Next up: `stretch-food-targets`. |
 | 2026-08-03 | Re-rank: welcome → hosting stack before `milestone-badges` (beta path ahead of celebration). Next up unchanged: `stretch-food-targets`. |
 | 2026-08-03 | Specced `stretch-food-targets` (C-lite: Foods nominate + path-biased Suggest). Split fuller ladder to `stretch-pathway` (rank 2). |
+| 2026-08-04 | stretch-food-targets shipped (Foods stretch-target CRUD; C-lite path-biased Suggest; OpenAPI 0.16.0). Next up: `stretch-pathway`. |

@@ -115,6 +115,38 @@ class SessionSuggestionApiIntegrationTest {
     }
 
     @Test
+    void heuristicPairsSafeAnchorWithReadyStretchDestination() throws Exception {
+        String broccoli = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa24";
+        String token = register("suggest-stretch-" + System.nanoTime() + "@example.com");
+        planAndComplete(token, day(0), APPLES, STRAWBERRIES);
+        planAndComplete(token, day(1), STRAWBERRIES, BLUEBERRIES);
+        planAndComplete(token, day(2), BLUEBERRIES, APPLES);
+        upsertSafeExposure(token, APPLES);
+
+        mockMvc.perform(
+                        post("/api/foods/stretch-targets")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"foodId\":\"%s\"}".formatted(broccoli)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.foodName").value("Broccoli"));
+
+        MvcResult suggested =
+                mockMvc.perform(
+                                get("/api/sessions/suggestions/next")
+                                        .header("Authorization", "Bearer " + token))
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.source").value("heuristic"))
+                        .andExpect(jsonPath("$.foods.length()").value(2))
+                        .andReturn();
+        String body = suggested.getResponse().getContentAsString();
+        Assertions.assertThat(body).contains(broccoli);
+        Assertions.assertThat(body).contains(APPLES);
+        Assertions.assertThat(body).containsIgnoringCase("Broccoli");
+        Assertions.assertThat(body).containsIgnoringCase("step toward");
+    }
+
+    @Test
     void suggestReturnsPacingPackForPullBackGentleStretchAndSteady() throws Exception {
         PacingEvidencePack.Entry steady = PacingEvidencePack.forHint("steady");
         PacingEvidencePack.Entry gentle = PacingEvidencePack.forHint("gentle_stretch");
