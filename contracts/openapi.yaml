@@ -1,11 +1,12 @@
 openapi: 3.0.3
 info:
   title: Quickapp API
-  version: 0.16.0
+  version: 0.17.0
   description: >
     Contract-first API for Food Investigators. Documents family-account auth
     (email/password register and login, Bearer session tokens, GET/PATCH
-    /api/auth/me with optional household childDisplayName), the household food
+    /api/auth/me with optional household childDisplayName, and dismissible
+    household welcome orientation), the household food
     catalog (system starters + custom foods, archive, optional snack foods
     excluded from tasting sessions, household exposure profiles per food +
     variant including attempt hooks, optional signup bootstrap of safe
@@ -100,6 +101,29 @@ paths:
       responses:
         "204":
           description: Signed out
+        "401":
+          description: Missing or invalid session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+  /api/auth/welcome-orientation/dismiss:
+    post:
+      operationId: dismissWelcomeOrientation
+      summary: Dismiss the one-shot welcome orientation for this household
+      description: >
+        Persists dismissal on the household so the welcome panel does not
+        reappear on other devices or browsers. Idempotent (repeat dismiss
+        returns 200 with welcomeOrientationDismissed true).
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Welcome dismissed (or already dismissed)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
         "401":
           description: Missing or invalid session
           content:
@@ -1254,6 +1278,7 @@ components:
         - id
         - email
         - householdId
+        - welcomeOrientationDismissed
       properties:
         id:
           type: string
@@ -1274,6 +1299,13 @@ components:
             unset. Single-child beta field on the household (multi-child may
             later migrate this).
           example: Alex
+        welcomeOrientationDismissed:
+          type: boolean
+          description: >
+            True once the household has dismissed the one-shot welcome
+            orientation panel; false until then (including for existing
+            households that have never seen it).
+          example: false
     UpdateMeRequest:
       type: object
       properties:

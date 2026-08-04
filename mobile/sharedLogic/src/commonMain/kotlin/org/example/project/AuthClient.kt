@@ -25,6 +25,7 @@ data class UserResponse(
     val email: String,
     val householdId: String,
     val childDisplayName: String? = null,
+    val welcomeOrientationDismissed: Boolean = false,
 )
 
 @Serializable
@@ -137,6 +138,21 @@ class AuthClient(
                 header(HttpHeaders.Authorization, "Bearer $token")
                 contentType(ContentType.Application.Json)
                 setBody(body)
+            }
+        if (!response.status.isSuccess()) {
+            if (response.status.value == 401) {
+                tokens.clearToken()
+            }
+            throw AuthException(readError(response))
+        }
+        return response.body()
+    }
+
+    suspend fun dismissWelcomeOrientation(): UserResponse {
+        val token = tokens.getToken() ?: throw AuthException("Not signed in")
+        val response =
+            httpClient.post("$baseUrl/api/auth/welcome-orientation/dismiss") {
+                header(HttpHeaders.Authorization, "Bearer $token")
             }
         if (!response.status.isSuccess()) {
             if (response.status.value == 401) {

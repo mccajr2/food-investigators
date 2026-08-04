@@ -95,12 +95,13 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Branch | Spec |
 |----|--------|------|
-| welcome-orientation | `welcome-orientation` | [active](specs/active/welcome-orientation.md) |
+| — | — | — |
 
 ## Done
 
 | Id | Completed | Spec |
 |----|-----------|------|
+| welcome-orientation | 2026-08-05 | [archive](specs/archive/welcome-orientation.md) |
 | stretch-food-targets | 2026-08-04 | [archive](specs/archive/stretch-food-targets.md) |
 | suggestion-pacing-evidence | 2026-08-03 | [archive](specs/archive/suggestion-pacing-evidence.md) |
 | suggestion-adjacent-foods | 2026-08-03 | [archive](specs/archive/suggestion-adjacent-foods.md) |
@@ -240,3 +241,4 @@ Only notable events (first carve-up, major re-rank, cancelled theme) — not eve
 | 2026-08-03 | Specced `stretch-food-targets` (C-lite: Foods nominate + path-biased Suggest). Split fuller ladder to `stretch-pathway` (rank 2). |
 | 2026-08-04 | stretch-food-targets shipped (Foods stretch-target CRUD; C-lite path-biased Suggest; OpenAPI 0.16.0). Next up: `stretch-pathway`. |
 | 2026-08-04 | Re-rank: promote `welcome-orientation` to active (beta lay-of-land). Specced (household server dismiss + AuthShell panel). |
+| 2026-08-05 | welcome-orientation shipped (AuthShell welcome panel; household dismiss; OpenAPI 0.17.0 / Flyway V17 after stretch took 0.16/V16). Next up: `stretch-pathway` (or soft-beta hosting after #54). |

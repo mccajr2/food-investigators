@@ -1,6 +1,6 @@
 # Spec: welcome-orientation
 
-Status: in-progress  
+Status: done  
 Created: 2026-07-29  
 Parent: [docs/roadmap.md](../../roadmap.md)  
 Added: 2026-07-29 · enhancement  
@@ -82,7 +82,8 @@ so a new browser or device does not replay the same intro.
   - Include on register, login, and `GET /api/auth/me` (same schema).
 - New authenticated endpoint, e.g. `POST /api/auth/welcome-orientation/dismiss`
   — idempotent **200** (repeat dismiss is fine). Sets the household timestamp.
-- OpenAPI version bump from **0.15.0**; sync web + mobile sharedLogic DTOs /
+- OpenAPI version bump to **0.17.0** (after stretch took 0.16.0); Flyway
+  `V17__household_welcome_orientation.sql`; sync web + mobile sharedLogic DTOs /
   clients.
 - No sessions/foods module changes.
 
@@ -96,33 +97,33 @@ so a new browser or device does not replay the same intro.
 
 ## Acceptance criteria
 
-- [ ] Authenticated parent whose household has not dismissed sees the welcome
+- [x] Authenticated parent whose household has not dismissed sees the welcome
       panel after sign-in / register / session restore.
-- [ ] Welcome copy matches the tone above: selective-eating stress + hard-to-
+- [x] Welcome copy matches the tone above: selective-eating stress + hard-to-
       get help → calm home “investigating” with curiosity/games → better why-
       language; lay of the land Plan → Run → History/Insights; Suggest as
       guidance (Approve still required) — short panel, not a multi-step tour or
       personal history dump.
-- [ ] Dismiss persists on the household server-side; subsequent `/me` (and
+- [x] Dismiss persists on the household server-side; subsequent `/me` (and
       login) returns `welcomeOrientationDismissed: true`; panel does not reappear
       in a fresh browser session for that household.
-- [ ] Dismiss is idempotent; never blocks navigation or other signed-in views.
-- [ ] OpenAPI documents the new field + dismiss path; version bump; web +
+- [x] Dismiss is idempotent; never blocks navigation or other signed-in views.
+- [x] OpenAPI documents the new field + dismiss path; version bump; web +
       mobile DTOs/clients synced.
-- [ ] Unit + IT for accounts dismiss / `UserResponse`; web component/AuthShell
+- [x] Unit + IT for accounts dismiss / `UserResponse`; web component/AuthShell
       coverage; ModularityTests pass.
-- [ ] No `product-tour` spotlights, no native welcome UI, no Plan/Run/Insights
+- [x] No `product-tour` spotlights, no native welcome UI, no Plan/Run/Insights
       catalog behavior changes.
 
 ## Tasks
 
-- [ ] Backend (accounts): household dismiss column + service; extend
+- [x] Backend (accounts): household dismiss column + service; extend
       `UserResponse`; dismiss endpoint; unit + IT.
-- [ ] Contract: OpenAPI `UserResponse.welcomeOrientationDismissed` + dismiss
+- [x] Contract: OpenAPI `UserResponse.welcomeOrientationDismissed` + dismiss
       path; version bump; web + mobile DTO/client sync.
-- [ ] Web: welcome panel in AuthShell; dismiss wiring; loading/error; component
+- [x] Web: welcome panel in AuthShell; dismiss wiring; loading/error; component
       + AuthShell tests.
-- [ ] Docs: archive on `/pr` after ship.
+- [x] Docs: archive on `/pr` after ship.
 
 ## Open questions
 

@@ -27,6 +27,9 @@ class OpenApiContractTest {
         assertThat(yaml).contains("AuthResponse");
         assertThat(yaml).contains("childDisplayName");
         assertThat(yaml).contains("maxLength: 40");
+        assertThat(yaml).contains("/api/auth/welcome-orientation/dismiss");
+        assertThat(yaml).contains("operationId: dismissWelcomeOrientation");
+        assertThat(yaml).contains("welcomeOrientationDismissed");
         assertThat(yaml).contains("bearerAuth");
 
         assertThat(yaml).doesNotContain("/api/greeting");
@@ -106,7 +109,7 @@ class OpenApiContractTest {
         assertThat(yaml).contains("PacingCitation");
         assertThat(yaml).contains("calm pacing evidence");
         assertThat(yaml).contains("stretch-target path bias");
-        assertThat(yaml).contains("version: 0.16.0");
+        assertThat(yaml).contains("version: 0.17.0");
         assertThat(yaml).contains("CreateSessionRequest");
         assertThat(yaml).contains("UpdateSessionRequest");
         assertThat(yaml).contains("CompleteSessionRequest");

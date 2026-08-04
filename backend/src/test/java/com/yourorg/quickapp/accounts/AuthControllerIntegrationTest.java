@@ -46,6 +46,7 @@ class AuthControllerIntegrationTest {
                         .andExpect(jsonPath("$.user.email").value(email))
                         .andExpect(jsonPath("$.user.householdId").isString())
                         .andExpect(jsonPath("$.user.childDisplayName").isEmpty())
+                        .andExpect(jsonPath("$.user.welcomeOrientationDismissed").value(false))
                         .andReturn();
 
         String registerToken = tokenFrom(registerResult);
@@ -92,7 +93,8 @@ class AuthControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email").value(email))
                 .andExpect(jsonPath("$.householdId").isString())
-                .andExpect(jsonPath("$.childDisplayName").isEmpty());
+                .andExpect(jsonPath("$.childDisplayName").isEmpty())
+                .andExpect(jsonPath("$.welcomeOrientationDismissed").value(false));
 
         mockMvc.perform(get("/api/auth/me")).andExpect(status().isUnauthorized());
 
@@ -162,6 +164,56 @@ class AuthControllerIntegrationTest {
                 .andExpect(jsonPath("$.message").value("Invalid request"));
 
         mockMvc.perform(patch("/api/auth/me").contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void dismissWelcomeOrientationPersistsAndIsIdempotent() throws Exception {
+        String email = "welcome-" + System.nanoTime() + "@example.com";
+
+        MvcResult registerResult =
+                mockMvc.perform(
+                                post("/api/auth/register")
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(
+                                                """
+                                                {"email":"%s","password":"password1"}
+                                                """
+                                                        .formatted(email)))
+                        .andExpect(status().isCreated())
+                        .andExpect(jsonPath("$.user.welcomeOrientationDismissed").value(false))
+                        .andReturn();
+        String token = tokenFrom(registerResult);
+
+        mockMvc.perform(
+                        post("/api/auth/welcome-orientation/dismiss")
+                                .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.welcomeOrientationDismissed").value(true))
+                .andExpect(jsonPath("$.email").value(email));
+
+        mockMvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.welcomeOrientationDismissed").value(true));
+
+        mockMvc.perform(
+                        post("/api/auth/welcome-orientation/dismiss")
+                                .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.welcomeOrientationDismissed").value(true));
+
+        mockMvc.perform(
+                        post("/api/auth/login")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                                        {"email":"%s","password":"password1"}
+                                        """
+                                                .formatted(email)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.user.welcomeOrientationDismissed").value(true));
+
+        mockMvc.perform(post("/api/auth/welcome-orientation/dismiss"))
                 .andExpect(status().isUnauthorized());
     }
 

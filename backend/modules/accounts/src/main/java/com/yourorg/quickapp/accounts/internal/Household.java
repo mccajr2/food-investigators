@@ -24,12 +24,25 @@ class Household {
     @Column(name = "child_display_name", length = 40)
     private String childDisplayName;
 
+    /** When non-null, the household has dismissed the one-shot welcome orientation. */
+    @Column(name = "welcome_orientation_dismissed_at")
+    private Instant welcomeOrientationDismissedAt;
+
     protected Household() {}
 
     Household(UUID id, Instant createdAt, String childDisplayName) {
+        this(id, createdAt, childDisplayName, null);
+    }
+
+    Household(
+            UUID id,
+            Instant createdAt,
+            String childDisplayName,
+            Instant welcomeOrientationDismissedAt) {
         this.id = id;
         this.createdAt = createdAt;
         this.childDisplayName = childDisplayName;
+        this.welcomeOrientationDismissedAt = welcomeOrientationDismissedAt;
     }
 
     UUID getId() {
@@ -42,5 +55,20 @@ class Household {
 
     void setChildDisplayName(String childDisplayName) {
         this.childDisplayName = childDisplayName;
+    }
+
+    boolean isWelcomeOrientationDismissed() {
+        return welcomeOrientationDismissedAt != null;
+    }
+
+    Instant getWelcomeOrientationDismissedAt() {
+        return welcomeOrientationDismissedAt;
+    }
+
+    /** Idempotent: first dismiss wins; later calls leave the original timestamp. */
+    void dismissWelcomeOrientation(Instant at) {
+        if (welcomeOrientationDismissedAt == null) {
+            welcomeOrientationDismissedAt = at;
+        }
     }
 }

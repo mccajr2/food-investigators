@@ -70,6 +70,7 @@ class AccountServiceTest {
 
         assertThat(response.user().email()).isEqualTo("parent@example.com");
         assertThat(response.user().childDisplayName()).isNull();
+        assertThat(response.user().welcomeOrientationDismissed()).isFalse();
         assertThat(response.token()).hasSize(64);
 
         ArgumentCaptor<Household> householdCaptor = ArgumentCaptor.forClass(Household.class);
@@ -179,5 +180,41 @@ class AccountServiceTest {
 
         assertThatThrownBy(() -> service.updateMe(userId, "a".repeat(41)))
                 .isInstanceOf(InvalidChildDisplayNameException.class);
+    }
+
+    @Test
+    void dismissWelcomeOrientationIsIdempotent() {
+        UUID householdId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+        UserAccount user =
+                new UserAccount(userId, householdId, "parent@example.com", "hashed", now);
+        Household household = new Household(householdId, now, null);
+        when(users.findById(userId)).thenReturn(Optional.of(user));
+        when(households.findById(householdId)).thenReturn(Optional.of(household));
+        when(households.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        UserResponse first = service.dismissWelcomeOrientation(userId);
+        assertThat(first.welcomeOrientationDismissed()).isTrue();
+        assertThat(household.getWelcomeOrientationDismissedAt()).isEqualTo(now);
+
+        UserResponse second = service.dismissWelcomeOrientation(userId);
+        assertThat(second.welcomeOrientationDismissed()).isTrue();
+        assertThat(household.getWelcomeOrientationDismissedAt()).isEqualTo(now);
+    }
+
+    @Test
+    void meReportsWelcomeOrientationDismissed() {
+        UUID householdId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+        UserAccount user =
+                new UserAccount(userId, householdId, "parent@example.com", "hashed", now);
+        when(users.findById(userId)).thenReturn(Optional.of(user));
+        when(households.findById(householdId))
+                .thenReturn(Optional.of(new Household(householdId, now, "Sam", now)));
+
+        UserResponse response = service.me(userId);
+
+        assertThat(response.welcomeOrientationDismissed()).isTrue();
+        assertThat(response.childDisplayName()).isEqualTo("Sam");
     }
 }

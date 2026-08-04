@@ -61,6 +61,12 @@ public class AuthController {
         return accountService.updateMe(principal.userId(), request.childDisplayName());
     }
 
+    @PostMapping("/welcome-orientation/dismiss")
+    public UserResponse dismissWelcomeOrientation(Authentication authentication) {
+        AccountPrincipal principal = requirePrincipal(authentication);
+        return accountService.dismissWelcomeOrientation(principal.userId());
+    }
+
     private static boolean rememberMe(Boolean value) {
         return value == null || value;
     }
