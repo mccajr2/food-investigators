@@ -4,6 +4,7 @@ import { FoodsClient, SessionsClient } from "@/api"
 import type {
   Familiarity,
   FoodResponse,
+  PacingCitation,
   SessionFoodRequest,
   SessionResponse,
   SessionSuggestionResponse,
@@ -42,6 +43,8 @@ type SuggestDraft = {
   slot2: FoodSlot
   rationale: string | null
   source: SuggestionSource
+  pacingNote: string | null
+  citations: PacingCitation[]
 }
 
 type Status =
@@ -135,6 +138,10 @@ function suggestionToDraft(suggestion: SessionSuggestionResponse): SuggestDraft 
     slot2: suggestedFoodToSlot(second),
     rationale: suggestion.rationale?.trim() ? suggestion.rationale.trim() : null,
     source: suggestion.source,
+    pacingNote: suggestion.pacingNote?.trim()
+      ? suggestion.pacingNote.trim()
+      : null,
+    citations: suggestion.citations ?? [],
   }
 }
 
@@ -682,6 +689,30 @@ export function PlanPage({
               <p className="mt-1 text-sm text-muted-foreground">
                 {suggestDraft.rationale}
               </p>
+            ) : null}
+            {suggestDraft.pacingNote ? (
+              <div
+                className="mt-2 flex flex-col gap-1"
+                data-testid="suggest pacing evidence"
+              >
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Why this pace
+                </p>
+                <p className="text-sm text-foreground">{suggestDraft.pacingNote}</p>
+                {suggestDraft.citations.length > 0 ? (
+                  <ul className="mt-1 list-disc space-y-0.5 pl-4 text-xs text-muted-foreground">
+                    {suggestDraft.citations.map((citation) => (
+                      <li key={`${citation.title}-${citation.source}`}>
+                        <span className="font-medium text-foreground/80">
+                          {citation.title}
+                        </span>
+                        {" — "}
+                        {citation.source}
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </div>
             ) : null}
           </div>
 

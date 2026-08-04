@@ -102,4 +102,47 @@ class GeminiSuggestionLlmClientTest {
         assertThat(choice.get().foods().get(1).proposedVariantNote()).isEqualTo("spears");
         assertThat(choice.get().foods().get(1).familiarity()).isEqualTo(Familiarity.truly_new);
     }
+
+    @Test
+    void promptIncludesPacingEvidenceBulletsAndNoClinicalInventInstruction() {
+        GeminiSuggestionLlmClient client =
+                new GeminiSuggestionLlmClient(
+                        new GeminiProperties("key", "gemini-3.5-flash", ""), jsonMapper);
+        SuggestionBrief brief =
+                new SuggestionBrief(
+                        3,
+                        "pull_back",
+                        List.of(),
+                        List.of(),
+                        2,
+                        0,
+                        1,
+                        1,
+                        1,
+                        List.of(
+                                new SuggestionCandidate(
+                                        UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa01"),
+                                        "Apples",
+                                        "apple",
+                                        null,
+                                        "safe_anchor"),
+                                new SuggestionCandidate(
+                                        UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa02"),
+                                        "Berries",
+                                        "blueberry",
+                                        null,
+                                        "not_recent")),
+                        List.of());
+
+        String prompt = client.promptFor(brief);
+
+        PacingEvidencePack.Entry expected = PacingEvidencePack.forHint("pull_back");
+        assertThat(prompt).contains("pacingEvidenceBullets");
+        assertThat(prompt).contains(expected.pacingNote());
+        for (String bullet : expected.promptBullets()) {
+            assertThat(prompt).contains(bullet);
+        }
+        assertThat(prompt).containsIgnoringCase("clinical");
+        assertThat(prompt).doesNotContain("ARFID");
+    }
 }

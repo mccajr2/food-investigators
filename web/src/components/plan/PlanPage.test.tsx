@@ -92,6 +92,14 @@ const sampleSuggestion: SessionSuggestionResponse = {
   ],
   rationale: "A calm next night from foods that often work for you.",
   source: "heuristic",
+  pacingNote:
+    "Keep a calm, balanced night — foods that often work, without rushing.",
+  citations: [
+    {
+      title: "Calm tasting rhythm",
+      source: "Family mealtime and exposure guidance for picky eating",
+    },
+  ],
 };
 
 function mockSessionsClient(
@@ -959,6 +967,15 @@ describe("PlanPage", () => {
         /A calm next night from foods that often work for you/,
       ),
     ).toBeInTheDocument();
+    const pacing = within(form).getByTestId("suggest pacing evidence");
+    expect(pacing).toHaveTextContent(/Why this pace/);
+    expect(pacing).toHaveTextContent(
+      /Keep a calm, balanced night — foods that often work, without rushing/,
+    );
+    expect(pacing).toHaveTextContent(/Calm tasting rhythm/);
+    expect(pacing).toHaveTextContent(
+      /Family mealtime and exposure guidance for picky eating/,
+    );
     expect(form.querySelector('input[type="date"]')).toBeNull();
     expect(within(form).getByRole("grid")).toBeInTheDocument();
     expect(
@@ -1018,6 +1035,35 @@ describe("PlanPage", () => {
 
     expect(screen.queryByRole("form", { name: "Suggested next night" })).toBeNull();
     expect(create).not.toHaveBeenCalled();
+  });
+
+  it("shows pacing note distinctly from rationale and hides citations when empty", async () => {
+    const user = userEvent.setup();
+    renderPlan(
+      mockSessionsClient({
+        suggestNext: vi.fn().mockResolvedValue({
+          ...sampleSuggestion,
+          pacingNote: "Ease off brand-new foods for a bit.",
+          citations: [],
+        }),
+      }),
+    );
+
+    await screen.findByRole("heading", { name: "Plan" });
+    await user.click(
+      screen.getByRole("button", { name: "Suggest next night" }),
+    );
+    const form = await screen.findByRole("form", {
+      name: "Suggested next night",
+    });
+    expect(
+      within(form).getByText(
+        /A calm next night from foods that often work for you/,
+      ),
+    ).toBeInTheDocument();
+    const pacing = within(form).getByTestId("suggest pacing evidence");
+    expect(pacing).toHaveTextContent(/Ease off brand-new foods for a bit/);
+    expect(within(pacing).queryByRole("list")).toBeNull();
   });
 
   it("shows invent slot, swaps to catalog, and dismisses without invent writes", async () => {

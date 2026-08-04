@@ -229,12 +229,22 @@ export type SuggestedSessionFood = {
   proposedVariantNote?: string | null
 }
 
+/** Calm parent-facing pacing citation (plain-language source label). */
+export type PacingCitation = {
+  title: string
+  source: string
+}
+
 /** Draft proposal from GET /api/sessions/suggestions/next — not a persisted session. */
 export type SessionSuggestionResponse = {
   scheduledOn: string
   foods: [SuggestedSessionFood, SuggestedSessionFood] | SuggestedSessionFood[]
   rationale?: string | null
   source: SuggestionSource
+  /** Curated "why this pace" line — distinct from `rationale`. */
+  pacingNote?: string | null
+  /** Short citations supporting `pacingNote`; may be empty. */
+  citations?: PacingCitation[]
 }
 
 export type InsightTip = {

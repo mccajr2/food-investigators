@@ -89,7 +89,8 @@ class GeminiSuggestionLlmClient implements SuggestionLlmPort {
         return root;
     }
 
-    private String promptFor(SuggestionBrief brief) {
+    /** Visible for unit tests — builds the user prompt text. */
+    String promptFor(SuggestionBrief brief) {
         try {
             ObjectNode payload = jsonMapper.createObjectNode();
             payload.put("completedSessionCount", brief.completedSessionCount());
@@ -131,8 +132,20 @@ class GeminiSuggestionLlmClient implements SuggestionLlmPort {
                             Do NOT invent foods. Choose exactly TWO distinct foods from candidates only \
                             (use foodId values). There are no safe exposures yet.
                             """;
+            PacingEvidencePack.Entry pacing = PacingEvidencePack.forHint(brief.paceHint());
+            ArrayNode evidenceBullets = payload.putArray("pacingEvidenceBullets");
+            for (String bullet : pacing.promptBullets()) {
+                evidenceBullets.add(bullet);
+            }
+            payload.put("pacingNote", pacing.pacingNote());
+            String evidenceRules =
+                    """
+                    Follow pacingEvidenceBullets for this paceHint. Keep rationale calm and parent-led. \
+                    Do NOT invent clinical labels, disorders, or treatment plans.
+                    """;
             return """
                     You help a parent plan a calm two-food tasting night for a picky eater.
+                    %s
                     %s
                     Assign familiarity for each: safe, familiar_but_new, truly_new, or retrying.
                     Respect paceHint: pull_back = stay gentle; gentle_stretch = one mild stretch OK; steady = balanced.
@@ -141,7 +154,7 @@ class GeminiSuggestionLlmClient implements SuggestionLlmPort {
                     Shape: {"foods":[pick1,pick2],"rationale":"one short calm sentence"}
                     Context:
                     """
-                            .formatted(inventRules)
+                            .formatted(inventRules, evidenceRules)
                     + jsonMapper.writeValueAsString(payload);
         } catch (Exception ex) {
             throw new IllegalStateException("Failed to build Gemini prompt", ex);

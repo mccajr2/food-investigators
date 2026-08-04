@@ -7,4 +7,11 @@ public record SessionSuggestionResponse(
         LocalDate scheduledOn,
         List<SuggestedSessionFood> foods,
         String rationale,
-        SuggestionSource source) {}
+        SuggestionSource source,
+        String pacingNote,
+        List<PacingCitation> citations) {
+
+    public SessionSuggestionResponse {
+        citations = citations == null ? List.of() : List.copyOf(citations);
+    }
+}

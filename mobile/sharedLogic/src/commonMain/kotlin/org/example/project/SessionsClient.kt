@@ -105,6 +105,12 @@ data class SuggestedSessionFood(
     val proposedVariantNote: String? = null,
 )
 
+@Serializable
+data class PacingCitation(
+    val title: String,
+    val source: String,
+)
+
 /** Draft from GET /api/sessions/suggestions/next — not a persisted session. */
 @Serializable
 data class SessionSuggestionResponse(
@@ -112,6 +118,10 @@ data class SessionSuggestionResponse(
     val foods: List<SuggestedSessionFood>,
     val rationale: String? = null,
     val source: String,
+    /** Curated "why this pace" line — distinct from `rationale`. */
+    val pacingNote: String? = null,
+    /** Short citations supporting `pacingNote`; may be empty. */
+    val citations: List<PacingCitation> = emptyList(),
 )
 
 class SessionsException(message: String) : Exception(message)

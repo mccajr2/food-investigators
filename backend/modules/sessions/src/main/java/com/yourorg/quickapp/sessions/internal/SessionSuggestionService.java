@@ -160,9 +160,15 @@ public class SessionSuggestionService {
         if (slot1 == null || slot2 == null) {
             return Optional.empty();
         }
+        PacingEvidencePack.Entry pacing = PacingEvidencePack.forHint(brief.paceHint());
         return Optional.of(
                 new SessionSuggestionResponse(
-                        scheduledOn, List.of(slot1, slot2), choice.rationale(), source));
+                        scheduledOn,
+                        List.of(slot1, slot2),
+                        choice.rationale(),
+                        source,
+                        pacing.pacingNote(),
+                        pacing.citations()));
     }
 
     /**

@@ -171,6 +171,52 @@ describe("SessionsClient", () => {
     expect(new Headers(init.headers).get("Authorization")).toBe("Bearer tok")
   })
 
+  it("parses pacingNote and citations on suggestion", async () => {
+    const suggestion = {
+      scheduledOn: "2026-07-16",
+      foods: [
+        {
+          foodId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa04",
+          name: "Apples",
+          iconKey: "apple",
+          familiarity: "safe" as const,
+        },
+        {
+          foodId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa05",
+          name: "Strawberries",
+          iconKey: "strawberry",
+          familiarity: "familiar_but_new" as const,
+        },
+      ],
+      rationale: "A calm next night from foods that often work for you.",
+      source: "heuristic" as const,
+      pacingNote:
+        "Keep a calm, balanced night — foods that often work, without rushing.",
+      citations: [
+        {
+          title: "Calm tasting rhythm",
+          source: "Family mealtime and exposure guidance for picky eating",
+        },
+      ],
+    }
+    const fetchFn = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify(suggestion), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    )
+    const client = new SessionsClient(
+      "http://localhost:8080",
+      fetchFn,
+      memoryStore(),
+    )
+
+    const result = await client.suggestNext()
+
+    expect(result.pacingNote).toBe(suggestion.pacingNote)
+    expect(result.citations).toEqual(suggestion.citations)
+  })
+
   it("parses optional iconUrl on session and suggestion foods", async () => {
     const sessionWithUrl: SessionResponse = {
       ...sampleSession,
