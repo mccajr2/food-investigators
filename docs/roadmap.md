@@ -55,14 +55,13 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 |------|-----|--------|-------|---------|
 | 1 | stretch-pathway | planned | 2026-08-03 · re-rank split | Stronger intermediate ladder + path progress + stricter destination readiness |
 | 2 | disliked-prep-rotation | planned | 2026-07-28 · enhancement | Suggest distinct preps of a disliked food (~3 over weeks), then longer rest |
-| 3 | welcome-orientation | planned | 2026-07-29 · enhancement | Dismissible welcome: why Food Investigators + Plan/Run/Insights lay of the land + pacing |
-| 4 | beta-backend-hosting | planned | 2026-07-29 · enhancement | Neon Postgres + Render backend + UptimeRobot keep-alive for beta |
-| 5 | beta-web-hosting | planned | 2026-07-29 · enhancement | Render web front pointed at prod API |
-| 6 | ci-cd-production | planned | 2026-07-29 · enhancement | After tests on `main`, auto-deploy backend + web to Render |
-| 7 | milestone-badges | planned | 2026-07-28 · enhancement | Celebration badges (e.g. first liked new food; 5/10/25 new foods) |
-| 8 | run-outcome-contract | planned | 2026-07-30 · enhancement | Harden run/outcome contract (document or promote encodings; deprecate unused fields) before native Run |
-| 9 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
-| 10 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
+| 3 | beta-backend-hosting | planned | 2026-07-29 · enhancement | Neon Postgres + Render backend + UptimeRobot keep-alive for beta |
+| 4 | beta-web-hosting | planned | 2026-07-29 · enhancement | Render web front pointed at prod API |
+| 5 | ci-cd-production | planned | 2026-07-29 · enhancement | After tests on `main`, auto-deploy backend + web to Render |
+| 6 | milestone-badges | planned | 2026-07-28 · enhancement | Celebration badges (e.g. first liked new food; 5/10/25 new foods) |
+| 7 | run-outcome-contract | planned | 2026-07-30 · enhancement | Harden run/outcome contract (document or promote encodings; deprecate unused fields) before native Run |
+| 8 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
+| 9 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
 
 Status values: `parking` · `planned` · `active` · `done` · `cancelled`  
 Added: `YYYY-MM-DD · initial` | `enhancement` | `re-rank split`
@@ -96,7 +95,7 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Branch | Spec |
 |----|--------|------|
-| — | — | — |
+| welcome-orientation | `welcome-orientation` | [active](specs/active/welcome-orientation.md) |
 
 ## Done
 
@@ -240,3 +239,4 @@ Only notable events (first carve-up, major re-rank, cancelled theme) — not eve
 | 2026-08-03 | Re-rank: welcome → hosting stack before `milestone-badges` (beta path ahead of celebration). Next up unchanged: `stretch-food-targets`. |
 | 2026-08-03 | Specced `stretch-food-targets` (C-lite: Foods nominate + path-biased Suggest). Split fuller ladder to `stretch-pathway` (rank 2). |
 | 2026-08-04 | stretch-food-targets shipped (Foods stretch-target CRUD; C-lite path-biased Suggest; OpenAPI 0.16.0). Next up: `stretch-pathway`. |
+| 2026-08-04 | Re-rank: promote `welcome-orientation` to active (beta lay-of-land). Specced (household server dismiss + AuthShell panel). |
