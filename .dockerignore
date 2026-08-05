@@ -1,0 +1,15 @@
+.git
+.github
+.cursor
+**/.gradle
+**/build
+**/node_modules
+web
+mobile
+docs
+*.md
+!README.md
+agent-transcripts
+.env
+backend/.env
+**/.DS_Store

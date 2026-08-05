@@ -1,7 +1,7 @@
 # Product roadmap
 
 Status: active  
-Updated: 2026-08-05 · soft-beta path + supply-chain
+Updated: 2026-08-05 · beta-backend-hosting shipped
 
 Living backlog for this product repo. **One roadmap ↔ many specs** (1:1 by
 kebab-case id). `/roadmap` updates and re-ranks; `/spec <id>` fleshes out the
@@ -131,21 +131,20 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | beta-backend-hosting | active | 2026-07-29 · enhancement | Neon Postgres + Render backend + UptimeRobot keep-alive (prod lane; document local vs prod) |
-| 2 | beta-web-hosting | planned | 2026-07-29 · enhancement | Render web front pointed at prod API (VITE_API_BASE_URL / CORS) |
-| 3 | soft-beta-ritual-polish | planned | 2026-08-04 · enhancement | Soft-beta UX gate: safe+stretch coach, one-tap Approve, Exit warn, Insights→Suggest, hide demoted History |
-| 4 | contracts-ci-paths | planned | 2026-08-04 · enhancement | Path-filter CI so `contracts/**` changes run OpenAPI checks |
-| 5 | secrets-scan-ci | planned | 2026-08-05 · enhancement | CI secret scanning (e.g. gitleaks) so keys/passwords never land on GitHub |
-| 6 | milestone-badges | planned | 2026-07-28 · enhancement | Celebration badges (formal-beta progress signal) |
-| 7 | reward-surprise-nudge | planned | 2026-08-04 · enhancement | Cheap game variety: Surprise-first / avoid repeating last pick |
-| 8 | dependency-vuln-ci | planned | 2026-08-05 · enhancement | Dependabot + CI vuln scan (npm/Gradle/Trivy) for known CVEs |
-| 9 | dependency-license-ci | planned | 2026-08-05 · enhancement | Fail CI on disallowed dependency licenses (copyleft allowlist) |
-| 10 | ci-cd-production | planned | 2026-07-29 · enhancement | After tests on `main`, auto-deploy backend + web to Render |
-| 11 | authshell-split | planned | 2026-08-04 · enhancement | Split AuthShell into ApiProvider + AuthGate + AppShell |
-| 12 | run-outcome-contract | planned | 2026-07-30 · enhancement | Harden run/outcome contract before native Run / more clients |
-| 13 | disliked-prep-rotation | planned | 2026-07-28 · enhancement | Suggest distinct preps of a disliked food (~3 over weeks), then longer rest |
-| 14 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web habit sticks); needs paid Apple signing |
-| 15 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on template games (after formal beta; not soft-beta gate) |
+| 1 | beta-web-hosting | planned | 2026-07-29 · enhancement | Render web front pointed at prod API (VITE_API_BASE_URL / CORS) |
+| 2 | soft-beta-ritual-polish | planned | 2026-08-04 · enhancement | Soft-beta UX gate: safe+stretch coach, one-tap Approve, Exit warn, Insights→Suggest, hide demoted History |
+| 3 | contracts-ci-paths | planned | 2026-08-04 · enhancement | Path-filter CI so `contracts/**` changes run OpenAPI checks |
+| 4 | secrets-scan-ci | planned | 2026-08-05 · enhancement | CI secret scanning (e.g. gitleaks) so keys/passwords never land on GitHub |
+| 5 | milestone-badges | planned | 2026-07-28 · enhancement | Celebration badges (formal-beta progress signal) |
+| 6 | reward-surprise-nudge | planned | 2026-08-04 · enhancement | Cheap game variety: Surprise-first / avoid repeating last pick |
+| 7 | dependency-vuln-ci | planned | 2026-08-05 · enhancement | Dependabot + CI vuln scan (npm/Gradle/Trivy) for known CVEs |
+| 8 | dependency-license-ci | planned | 2026-08-05 · enhancement | Fail CI on disallowed dependency licenses (copyleft allowlist) |
+| 9 | ci-cd-production | planned | 2026-07-29 · enhancement | After tests on `main`, auto-deploy backend + web to Render |
+| 10 | authshell-split | planned | 2026-08-04 · enhancement | Split AuthShell into ApiProvider + AuthGate + AppShell |
+| 11 | run-outcome-contract | planned | 2026-07-30 · enhancement | Harden run/outcome contract before native Run / more clients |
+| 12 | disliked-prep-rotation | planned | 2026-07-28 · enhancement | Suggest distinct preps of a disliked food (~3 over weeks), then longer rest |
+| 13 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web habit sticks); needs paid Apple signing |
+| 14 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on template games (after formal beta; not soft-beta gate) |
 
 Status values: `parking` · `planned` · `active` · `done` · `cancelled`  
 Added: `YYYY-MM-DD · initial` | `enhancement` | `re-rank split`
@@ -184,12 +183,13 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Branch | Spec |
 |----|--------|------|
-| beta-backend-hosting | `beta-backend-hosting` | [active](specs/active/beta-backend-hosting.md) |
+| — | — | — |
 
 ## Done
 
 | Id | Completed | Spec |
 |----|-----------|------|
+| beta-backend-hosting | 2026-08-05 | [archive](specs/archive/beta-backend-hosting.md) |
 | welcome-orientation | 2026-08-05 | [archive](specs/archive/welcome-orientation.md) |
 | stretch-food-targets | 2026-08-04 | [archive](specs/archive/stretch-food-targets.md) |
 | suggestion-pacing-evidence | 2026-08-03 | [archive](specs/archive/suggestion-pacing-evidence.md) |
@@ -332,3 +332,4 @@ Only notable events (first carve-up, major re-rank, cancelled theme) — not eve
 | 2026-08-04 | Re-rank: promote `welcome-orientation` to active (beta lay-of-land). Specced (household server dismiss + AuthShell panel). |
 | 2026-08-05 | welcome-orientation shipped (AuthShell welcome panel; household dismiss; OpenAPI 0.17.0 / Flyway V17 after stretch took 0.16/V16). |
 | 2026-08-05 | Soft→formal beta path: hosting → ritual polish → contracts CI → secrets scan; formal = badges → surprise → vuln/license CI → CI/CD → AuthShell → outcome contract. Park stretch-pathway + telemetry + outing spots. Next up: `beta-backend-hosting`. |
+| 2026-08-05 | beta-backend-hosting shipped (Actuator health, Docker/Render, Neon env docs, CORS allowlist). Operator checklist in docs/beta/backend-hosting.md. Next up: `beta-web-hosting`. |

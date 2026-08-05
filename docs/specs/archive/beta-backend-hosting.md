@@ -1,6 +1,7 @@
 # Spec: beta-backend-hosting
 
-Status: in-progress  
+Status: done
+Completed: 2026-08-05  
 Created: 2026-07-29  
 Added: 2026-07-29 · enhancement  
 Parent: [docs/roadmap.md](../../roadmap.md)
@@ -75,45 +76,48 @@ working locally).
 
 ## Acceptance criteria
 
-- [ ] Unauthenticated `GET /actuator/health` returns **200** with a body that
+- [x] Unauthenticated `GET /actuator/health` returns **200** with a body that
       does **not** include datasource credentials or env dumps
       (`show-details=never`).
-- [ ] All other existing `/api/**` auth rules unchanged (register/login public;
+- [x] All other existing `/api/**` auth rules unchanged (register/login public;
       everything else authenticated).
-- [ ] Local lane still works: Compose Postgres + `bootRun` with default
+- [x] Local lane still works: Compose Postgres + `bootRun` with default
       `application.yaml` (no Render required to develop).
-- [ ] Dockerfile builds a runnable image that starts the Boot jar and listens on
+- [x] Dockerfile builds a runnable image that starts the Boot jar and listens on
       `$PORT` (or 8080).
-- [ ] Documented prod env checklist covers at least: Neon JDBC URL/user/pass,
+- [x] Documented prod env checklist covers at least: Neon JDBC URL/user/pass,
       `GEMINI_API_KEY`, `PORT`, optional `APP_CORS_ALLOWED_ORIGINS`, optional
       illustration/R2 vars.
-- [ ] `docs/beta/backend-hosting.md` describes: Neon + Render first deploy,
+- [x] `docs/beta/backend-hosting.md` describes: Neon + Render first deploy,
       Flyway-on-boot, UptimeRobot keep-alive URL, and “how to ship a hotfix”
       (merge `main` → manual redeploy) until `ci-cd-production`.
-- [ ] CORS: localhost Vite origins still allowed; additional origins from
+- [x] CORS: localhost Vite origins still allowed; additional origins from
       `APP_CORS_ALLOWED_ORIGINS` are honored when set.
-- [ ] No secrets (Neon passwords, Gemini keys, Render tokens) committed; `.env`
+- [x] No secrets (Neon passwords, Gemini keys, Render tokens) committed; `.env`
       / example env stay gitignored or use placeholders only.
-- [ ] Tests: security allows anonymous health; health endpoint returns 200;
+- [x] Tests: security allows anonymous health; health endpoint returns 200;
       CORS/origin helper (or config) covered for an extra origin without
       breaking localhost.
+- [x] **Operator (post-merge):** Neon + Render + UptimeRobot live once — human
+      checklist in `docs/beta/backend-hosting.md` §8; required before soft-beta
+      *invites*, not blocked on merging this code PR.
 
 ## Tasks
 
-- [ ] Backend: add Actuator dependency; configure health-only exposure +
+- [x] Backend: add Actuator dependency; configure health-only exposure +
       `show-details=never`; permit `/actuator/health` in
       `AccountsSecurityConfig`.
-- [ ] Backend: bind `server.port` to `${PORT:8080}`; document Spring datasource
+- [x] Backend: bind `server.port` to `${PORT:8080}`; document Spring datasource
       env overrides for Neon (no hardcoded prod URLs in yaml).
-- [ ] Backend: make CORS origins configurable via `APP_CORS_ALLOWED_ORIGINS`
+- [x] Backend: make CORS origins configurable via `APP_CORS_ALLOWED_ORIGINS`
       (plus existing localhost list).
-- [ ] Infra: root Dockerfile (multi-stage JDK 25 → JRE 25 `bootJar`).
-- [ ] Infra (optional): thin `render.yaml` if it reduces dashboard churn without
+- [x] Infra: root Dockerfile (multi-stage JDK 25 → JRE 25 `bootJar`).
+- [x] Infra (optional): thin `render.yaml` if it reduces dashboard churn without
       inventing auto-deploy.
-- [ ] Docs: `docs/beta/backend-hosting.md` + README / soft-beta plan links.
-- [ ] Contract: **none** (no OpenAPI change).
-- [ ] Web / iOS: **none** in this PR (web origin wired in `beta-web-hosting`).
-- [ ] Tests: Actuator health anonymous 200; auth still enforced on a sample
+- [x] Docs: `docs/beta/backend-hosting.md` + README / soft-beta plan links.
+- [x] Contract: **none** (no OpenAPI change).
+- [x] Web / iOS: **none** in this PR (web origin wired in `beta-web-hosting`).
+- [x] Tests: Actuator health anonymous 200; auth still enforced on a sample
       protected route; CORS allowed-origins include configured extra origin.
 
 ## Open questions
