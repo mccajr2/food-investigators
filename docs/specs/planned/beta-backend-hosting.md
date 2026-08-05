@@ -25,4 +25,7 @@ Postgres and UptimeRobot keep-alive so the service stays warm for light beta use
 
 - Stack already named in AGENTS.md: Render + Neon + UptimeRobot.
 - Secrets, env, migrations, and a smoke health check belong in `/spec`.
-- Depends on polish + welcome being “good enough” for beta; ranked after them.
+- **Next up** for soft beta (after welcome shipped). Pair with `beta-web-hosting`.
+- `/spec` must define **local vs prod**: Compose Postgres locally; Neon in prod;
+  no secrets in git; document Flyway on boot and health/keep-alive.
+- Do not block on stretch depth or new games.

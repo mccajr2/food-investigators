@@ -24,4 +24,7 @@ Manual deploys to Render will drift and slow beta fixes. After tests pass on
 - Today’s workflows only test (path-filtered); deploy was deferred in
   `path-filtered-ci`.
 - Gate deploy on green web + backend checks; secrets via GitHub Actions.
-- Ranked after both hosting slices exist.
+- Ranked after both hosting slices exist; pairs with clear local vs prod lanes
+  (see roadmap Environments) and optional later `staging-environment`.
+- Prefer after `dependency-vuln-ci` / `dependency-license-ci` so broken deps
+  don’t auto-deploy — or fail-open with Dependabot until those ship.
