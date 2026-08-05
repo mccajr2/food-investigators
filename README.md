@@ -61,6 +61,8 @@ iOS for this slice; sharedLogic still builds).
 | [AGENTS.md](AGENTS.md) | Constitution for humans and coding agents |
 | [docs/using-as-template.md](docs/using-as-template.md) | Template → new app, rename checklist |
 | [docs/roadmap.md](docs/roadmap.md) | Product backlog — carve-up, re-rank, Next up |
+| [docs/beta/local-smoke-test.md](docs/beta/local-smoke-test.md) | Manual local smoke checklist (signup → Run → PDF) |
+| [docs/beta/soft-beta-friends-plan.md](docs/beta/soft-beta-friends-plan.md) | Soft beta plan for 2–3 coached friends |
 | [docs/architecture.md](docs/architecture.md) | SDD workflow, module patterns, how to add features |
 | [docs/specs/](docs/specs/) | Planned stubs, active, and archived feature specs |
 | [contracts/openapi.yaml](contracts/openapi.yaml) | API source of truth |

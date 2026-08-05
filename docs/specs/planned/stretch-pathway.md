@@ -11,6 +11,10 @@ to flesh out Approach, Acceptance Criteria, and Tasks before any code.
 If fleshing out reveals more than one PR-sized slice, stop and `/roadmap` **split**
 (`Added: … · re-rank split`) — do not grow this stub into a mega-spec.
 
+**Parking for soft beta.** Prefer learning from shipped C-lite
+`stretch-food-targets` first; promote only after soft/formal beta evidence says
+the ladder needs to be stricter.
+
 ## Problem
 
 `stretch-food-targets` ships a parent-nominated destination and C-lite Suggest
@@ -30,7 +34,7 @@ one-shot invent toward the name.
 
 ## Notes
 
-- Depends on `stretch-food-targets` (queue + brief hooks) shipping first.
+- Depends on `stretch-food-targets` (queue + brief hooks) — already shipped.
 - May deepen Gemini/heuristic path reasoning, persist suggested intermediates,
   and/or surface “path to X” progress on Foods or Insights.
 - Keep parent-led: Suggest→Approve only.

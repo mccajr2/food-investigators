@@ -24,3 +24,6 @@ local Vite server. Host the web client on Render pointed at the beta API.
 
 - After `beta-backend-hosting`; wire `VITE_API_BASE_URL` (or equivalent) to prod API.
 - CORS / cookie / auth cookie domain details at `/spec`.
+- Document **local** (`npm run dev` → proxy/localhost API) vs **prod** (built
+  assets + prod API URL) so soft-beta fixes are not tested only against laptop
+  Postgres.

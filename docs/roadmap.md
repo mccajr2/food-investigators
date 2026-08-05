@@ -1,7 +1,7 @@
 # Product roadmap
 
 Status: active  
-Updated: 2026-08-04
+Updated: 2026-08-05 · soft-beta path + supply-chain
 
 Living backlog for this product repo. **One roadmap ↔ many specs** (1:1 by
 kebab-case id). `/roadmap` updates and re-ranks; `/spec <id>` fleshes out the
@@ -27,11 +27,11 @@ snacks count as safe). The designed path uses that safe set to recommend
 **adjacent** next foods/presentations — including ones not yet on the household
 list — paced to progress; tries that don’t land become retrying. Parents may
 also **nominate stretch targets** (specific foods for someday); the app
-steers Suggest toward **intermediate steps** on the path to those destinations
-and proposes the target itself only when pace and progress make it a calm
-next try — still parent-led Suggest→Approve, never an owned calendar. Later
-slices deepen the pathway ladder, prep retries, and a short welcome before a
-hosted beta MVP (Render + Neon + keep-alive).
+steers Suggest toward intermediate steps and proposes the destination only when
+pace makes it a calm next try — still parent-led Suggest→Approve. A short
+welcome explains why the product exists. Next: host a **soft (coached) beta**,
+learn habit under stress, then a **more formal beta** before deeper Suggest /
+native Run work.
 
 ## Product non-goals
 
@@ -46,6 +46,84 @@ hosted beta MVP (Render + Neon + keep-alive).
 - Printable *upcoming* wall calendar as a v1 must-have (history print for doctor
   comes first)
 - Sound as a run-survey sense (taste / texture / smell / look only)
+- Shipping new mini-game *engines* (or Nintendo-like clones) before soft beta —
+  Catch / Cross / Match + Surprise are enough; variety nudges later if kids ask
+- Guaranteeing AI-generated code is free of training-data / copyleft claims via
+  a scanner — **no free tool reliably does that**; manage risk with review +
+  dependency license policy (see Beta path)
+
+## Beta path (soft → formal)
+
+Operational gates (not every line is a `/spec` id). Ship ranked **Upcoming**
+slices in order; run the human gates when the checklist says so.
+
+### Environments (local → prod)
+
+Keep a **clear two-lane path** through soft beta (no Kubernetes required):
+
+| Lane | App | Data | Config |
+|------|-----|------|--------|
+| **Local** | `bootRun` + `npm run dev` | Docker Compose Postgres | `.env` / local profiles — never commit secrets |
+| **Prod (soft beta)** | Render API + Render static/web | Neon Postgres | Render/Neon env vars + GitHub Actions secrets for deploy |
+
+Formal beta adds `ci-cd-production` (auto-deploy on green `main`). Optional
+**staging** stays parked until cold invites need a dress rehearsal
+(`staging-environment`). Hosting specs must document: migrations, health
+checks, CORS/API base URL, and “how to promote a fix.”
+
+### Soft beta (coached) — goal: habit under stress
+
+Invite **2–5 families** you can coach for **3–4 weeks**. Learning question:
+do they keep Plan → Run ~2×/week?
+
+**Ship before invite (Upcoming ranks 1–5):**
+
+1. `beta-backend-hosting` — Neon + Render API + keep-alive (**prod lane**)  
+2. `beta-web-hosting` — Render web → prod API  
+3. `soft-beta-ritual-polish` — safe+stretch coaching, one-tap Approve, Run Exit
+   warn/soft-save, Insights→Suggest CTA, hide demoted History fields  
+4. `contracts-ci-paths` — include `contracts/**` in CI  
+5. `secrets-scan-ci` — block accidental secrets (API keys, passwords) in PRs  
+
+**Also before invite (ops, not a backlog id):** #52 stretch + #53 welcome are
+merged; enable GitHub Dependabot alerts (free; no spec required); coaching
+script + smoke test —
+[docs/beta/soft-beta-friends-plan.md](beta/soft-beta-friends-plan.md),
+[docs/beta/local-smoke-test.md](beta/local-smoke-test.md).
+
+**Telemetry:** skip product analytics for soft beta — coached notes are enough.
+Park `product-telemetry` until formal / uncoachable scale.
+
+**During soft beta:** note Suggest trust, Run finish/Exit, Insights use, PDF
+share — re-rank after, not from architect preference.
+
+**Do not block soft beta on:** new game engines, stretch pathway depth,
+AuthShell mega-split, OpenAPI codegen, native iOS Run, license/vuln CI suites,
+outing recommendations.
+
+### Supply chain & compliance (honest limits)
+
+| Risk | Free / practical approach | Roadmap id |
+|------|---------------------------|------------|
+| **Secrets in git** | gitleaks (or TruffleHog) in CI + GitHub secret scanning if public | `secrets-scan-ci` |
+| **Vulnerable deps** | Dependabot + `npm audit` / Trivy or OWASP dependency-check in CI | `dependency-vuln-ci` |
+| **Reciprocal / copyleft in libraries** | Allowlist scan (e.g. npm `license-checker` + Gradle license report); fail on GPL/AGPL unless approved | `dependency-license-ci` |
+| **AI code “copied from the internet”** | **No free scanner proves this.** Mitigate: don’t paste proprietary code into prompts; review sensitive PRs; dependency license policy above covers *libraries*, not model regurgitation | (process, not a feature) |
+
+### Formal beta — goal: colder invite / team-ready
+
+After soft-beta learnings (and any hotfix polish from feedback):
+
+6. `milestone-badges` — visible progress after Insights unlock  
+7. `reward-surprise-nudge` — cheap variety (Surprise-first / don’t-repeat-last)  
+8. `dependency-vuln-ci` — automated vulnerability callouts in CI  
+9. `dependency-license-ci` — fail build on disallowed dependency licenses  
+10. `ci-cd-production` — auto-deploy on green `main`  
+11. `authshell-split` — ApiProvider / AuthGate / AppShell  
+12. `run-outcome-contract` — harden encodings before native Run / more clients  
+
+Then product depth from evidence: stretch pathway / prep rotation → native Run
+→ AI game variants. Later: `product-telemetry`, outing spots (parking).
 
 ## Upcoming (ranked)
 
@@ -53,18 +131,25 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | stretch-pathway | planned | 2026-08-03 · re-rank split | Stronger intermediate ladder + path progress + stricter destination readiness |
-| 2 | disliked-prep-rotation | planned | 2026-07-28 · enhancement | Suggest distinct preps of a disliked food (~3 over weeks), then longer rest |
-| 3 | beta-backend-hosting | planned | 2026-07-29 · enhancement | Neon Postgres + Render backend + UptimeRobot keep-alive for beta |
-| 4 | beta-web-hosting | planned | 2026-07-29 · enhancement | Render web front pointed at prod API |
-| 5 | ci-cd-production | planned | 2026-07-29 · enhancement | After tests on `main`, auto-deploy backend + web to Render |
-| 6 | milestone-badges | planned | 2026-07-28 · enhancement | Celebration badges (e.g. first liked new food; 5/10/25 new foods) |
-| 7 | run-outcome-contract | planned | 2026-07-30 · enhancement | Harden run/outcome contract (document or promote encodings; deprecate unused fields) before native Run |
-| 8 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web); needs paid Apple signing for durable install |
-| 9 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on top of template games for more variety |
+| 1 | beta-backend-hosting | planned | 2026-07-29 · enhancement | Neon Postgres + Render backend + UptimeRobot keep-alive (prod lane; document local vs prod) |
+| 2 | beta-web-hosting | planned | 2026-07-29 · enhancement | Render web front pointed at prod API (VITE_API_BASE_URL / CORS) |
+| 3 | soft-beta-ritual-polish | planned | 2026-08-04 · enhancement | Soft-beta UX gate: safe+stretch coach, one-tap Approve, Exit warn, Insights→Suggest, hide demoted History |
+| 4 | contracts-ci-paths | planned | 2026-08-04 · enhancement | Path-filter CI so `contracts/**` changes run OpenAPI checks |
+| 5 | secrets-scan-ci | planned | 2026-08-05 · enhancement | CI secret scanning (e.g. gitleaks) so keys/passwords never land on GitHub |
+| 6 | milestone-badges | planned | 2026-07-28 · enhancement | Celebration badges (formal-beta progress signal) |
+| 7 | reward-surprise-nudge | planned | 2026-08-04 · enhancement | Cheap game variety: Surprise-first / avoid repeating last pick |
+| 8 | dependency-vuln-ci | planned | 2026-08-05 · enhancement | Dependabot + CI vuln scan (npm/Gradle/Trivy) for known CVEs |
+| 9 | dependency-license-ci | planned | 2026-08-05 · enhancement | Fail CI on disallowed dependency licenses (copyleft allowlist) |
+| 10 | ci-cd-production | planned | 2026-07-29 · enhancement | After tests on `main`, auto-deploy backend + web to Render |
+| 11 | authshell-split | planned | 2026-08-04 · enhancement | Split AuthShell into ApiProvider + AuthGate + AppShell |
+| 12 | run-outcome-contract | planned | 2026-07-30 · enhancement | Harden run/outcome contract before native Run / more clients |
+| 13 | disliked-prep-rotation | planned | 2026-07-28 · enhancement | Suggest distinct preps of a disliked food (~3 over weeks), then longer rest |
+| 14 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web habit sticks); needs paid Apple signing |
+| 15 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on template games (after formal beta; not soft-beta gate) |
 
 Status values: `parking` · `planned` · `active` · `done` · `cancelled`  
 Added: `YYYY-MM-DD · initial` | `enhancement` | `re-rank split`
+
 
 ## Parking lot
 
@@ -72,6 +157,10 @@ Unranked ideas. Promote into **Upcoming** with `/roadmap` (re-rank).
 
 | Id | Added | Summary |
 |----|-------|---------|
+| product-telemetry | 2026-08-05 · enhancement | Privacy-light usage signals (e.g. Suggest/Run/Insights funnels); skip soft beta — coached notes first |
+| outing-spot-recommendations | 2026-08-05 · enhancement | Plan a trip/outing: find/recommend spots friendly to picky eaters (maps/places; after core ritual sticks) |
+| staging-environment | 2026-08-05 · enhancement | Optional staging Render/Neon dress rehearsal before cold formal invites |
+| stretch-pathway | 2026-08-03 · re-rank split | Stronger intermediate ladder + path progress (after soft/formal beta evidence; C-lite stretch shipped) |
 | pacing-citation-library | 2026-08-03 · enhancement | Richer tagged pacing citation library beyond the small Suggest pack; parked while shipping curated static pack |
 | on-demand-food-illustrations | 2026-07-30 · re-rank split | Online AI for custom food stickers; **parked 2026-07-31** (Gemini image quota / beta cost) — resume later; do not merge WIP branch |
 | log-past-session | 2026-07-29 · enhancement | Explicit “log a past night” for vacation / away-from-iPad backfill (after `early-run-date-snap`) |
@@ -241,4 +330,5 @@ Only notable events (first carve-up, major re-rank, cancelled theme) — not eve
 | 2026-08-03 | Specced `stretch-food-targets` (C-lite: Foods nominate + path-biased Suggest). Split fuller ladder to `stretch-pathway` (rank 2). |
 | 2026-08-04 | stretch-food-targets shipped (Foods stretch-target CRUD; C-lite path-biased Suggest; OpenAPI 0.16.0). Next up: `stretch-pathway`. |
 | 2026-08-04 | Re-rank: promote `welcome-orientation` to active (beta lay-of-land). Specced (household server dismiss + AuthShell panel). |
-| 2026-08-05 | welcome-orientation shipped (AuthShell welcome panel; household dismiss; OpenAPI 0.17.0 / Flyway V17 after stretch took 0.16/V16). Next up: `stretch-pathway` (or soft-beta hosting after #54). |
+| 2026-08-05 | welcome-orientation shipped (AuthShell welcome panel; household dismiss; OpenAPI 0.17.0 / Flyway V17 after stretch took 0.16/V16). |
+| 2026-08-05 | Soft→formal beta path: hosting → ritual polish → contracts CI → secrets scan; formal = badges → surprise → vuln/license CI → CI/CD → AuthShell → outcome contract. Park stretch-pathway + telemetry + outing spots. Next up: `beta-backend-hosting`. |
