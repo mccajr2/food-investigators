@@ -196,6 +196,6 @@ changed.
 - [x] SPA rewrite `/*` → `/index.html`
 - [x] Web URL recorded: `https://________________.onrender.com`
 - [x] API `APP_CORS_ALLOWED_ORIGINS` includes that exact origin; API restarted
-- [ ] Signup/login works from the hosted URL (laptop)
+- [x] Signup/login works from the hosted URL (laptop)
 - [ ] Spot-check on iPad Safari (optional but recommended for Run)
-- [ ] API UptimeRobot still on health only (no web monitor required)
+- [x] API UptimeRobot still on health only (no web monitor required)

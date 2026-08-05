@@ -254,4 +254,4 @@ pause the monitor is expected.
 - [x] Service URL recorded: `https://________________.onrender.com`
 - [x] `curl …/actuator/health` → `{"status":"UP"}`
 - [x] UptimeRobot monitor every 5 minutes on that health URL → Up
-- [ ] (Later) `APP_CORS_ALLOWED_ORIGINS` set when `beta-web-hosting` ships
+- [x] `APP_CORS_ALLOWED_ORIGINS` set for the web Static Site origin
