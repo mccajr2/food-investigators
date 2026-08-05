@@ -1,0 +1,28 @@
+# Optional Render Blueprint for the soft-beta API.
+# Create/link the service in the Render dashboard from this file, then fill
+# sync:false secrets in the UI. Does not auto-deploy from GitHub Actions
+# (see ci-cd-production later).
+
+services:
+  - type: web
+    name: food-investigators-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: PORT
+        value: "8080"
+      - key: SPRING_DATASOURCE_URL
+        sync: false
+      - key: SPRING_DATASOURCE_USERNAME
+        sync: false
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: APP_CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: APP_CALENDAR_ZONE
+        value: America/New_York

@@ -62,6 +62,7 @@ iOS for this slice; sharedLogic still builds).
 | [docs/using-as-template.md](docs/using-as-template.md) | Template → new app, rename checklist |
 | [docs/roadmap.md](docs/roadmap.md) | Product backlog — carve-up, re-rank, Next up |
 | [docs/beta/local-smoke-test.md](docs/beta/local-smoke-test.md) | Manual local smoke checklist (signup → Run → PDF) |
+| [docs/beta/backend-hosting.md](docs/beta/backend-hosting.md) | Soft-beta API: Neon + Render + Gemini key + UptimeRobot (URLs/ports) |
 | [docs/beta/soft-beta-friends-plan.md](docs/beta/soft-beta-friends-plan.md) | Soft beta plan for 2–3 coached friends |
 | [docs/architecture.md](docs/architecture.md) | SDD workflow, module patterns, how to add features |
 | [docs/specs/](docs/specs/) | Planned stubs, active, and archived feature specs |

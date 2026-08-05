@@ -12,6 +12,7 @@ dependencies {
     implementation(project(":foods"))
     implementation(project(":sessions"))
     implementation(libs.spring.boot.starter.web)
+    implementation(libs.spring.boot.starter.actuator)
     implementation(libs.spring.boot.starter.data.jpa)
     implementation(libs.spring.boot.starter.flyway)
     implementation(libs.spring.boot.starter.security)
@@ -29,6 +30,10 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
+    archiveFileName.set("app.jar")
 }
 
 // Load backend/.env into the bootRun process (gitignored local secrets).

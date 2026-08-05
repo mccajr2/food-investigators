@@ -28,7 +28,7 @@ or App Store install.
 |------|-------|
 | Local [smoke test](local-smoke-test.md) green on the build you’ll host | ☐ |
 | Merge open ship PRs; Flyway / OpenAPI clashes resolved | ☐ |
-| `beta-backend-hosting` live (Neon + Render + keep-alive) | ☐ |
+| `beta-backend-hosting` live (Neon + Render + keep-alive) — follow [backend-hosting.md](backend-hosting.md) | ☐ |
 | `beta-web-hosting` live (web → prod API) | ☐ |
 | Prefer also: `soft-beta-ritual-polish` (Approve / Exit / Insights bridge / History) — if not shipped, coach around the sharp edges below | ☐ |
 | You have a URL + one test account that works on your phone | ☐ |

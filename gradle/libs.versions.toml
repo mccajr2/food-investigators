@@ -12,6 +12,7 @@ spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-star
 spring-boot-starter-data-jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa" }
 spring-boot-starter-flyway = { module = "org.springframework.boot:spring-boot-starter-flyway" }
 spring-boot-starter-security = { module = "org.springframework.boot:spring-boot-starter-security" }
+spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator" }
 spring-boot-starter-validation = { module = "org.springframework.boot:spring-boot-starter-validation" }
 spring-boot-testcontainers = { module = "org.springframework.boot:spring-boot-testcontainers" }
 postgresql = { module = "org.postgresql:postgresql" }
