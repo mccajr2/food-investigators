@@ -131,7 +131,7 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | beta-web-hosting | planned | 2026-07-29 · enhancement | Render web front pointed at prod API (VITE_API_BASE_URL / CORS) |
+| 1 | beta-web-hosting | active | 2026-07-29 · enhancement | Render web front pointed at prod API (VITE_API_BASE_URL / CORS) |
 | 2 | soft-beta-ritual-polish | planned | 2026-08-04 · enhancement | Soft-beta UX gate: safe+stretch coach, one-tap Approve, Exit warn, Insights→Suggest, hide demoted History |
 | 3 | contracts-ci-paths | planned | 2026-08-04 · enhancement | Path-filter CI so `contracts/**` changes run OpenAPI checks |
 | 4 | secrets-scan-ci | planned | 2026-08-05 · enhancement | CI secret scanning (e.g. gitleaks) so keys/passwords never land on GitHub |
@@ -183,7 +183,7 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Branch | Spec |
 |----|--------|------|
-| — | — | — |
+| beta-web-hosting | `beta-web-hosting` | [active](specs/active/beta-web-hosting.md) |
 
 ## Done
 
