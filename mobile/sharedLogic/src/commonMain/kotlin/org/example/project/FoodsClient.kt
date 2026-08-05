@@ -82,6 +82,22 @@ data class BootstrapSafesRequest(
     val items: List<BootstrapSafeItemRequest>,
 )
 
+@Serializable
+data class StretchTargetResponse(
+    val id: String,
+    val foodId: String,
+    val foodName: String,
+    val variantKey: String,
+    val createdAt: String,
+)
+
+@Serializable
+data class CreateStretchTargetRequest(
+    val foodId: String? = null,
+    val name: String? = null,
+    val variantKey: String? = null,
+)
+
 class FoodsException(message: String) : Exception(message)
 
 class FoodsClient(
@@ -218,6 +234,55 @@ class FoodsClient(
             }
         val response =
             httpClient.delete("$baseUrl/api/foods/$foodId/exposures$encoded") {
+                header(HttpHeaders.Authorization, bearerOrThrow())
+            }
+        clearTokenIfUnauthorized(response)
+        if (!response.status.isSuccess()) {
+            throw FoodsException(readError(response))
+        }
+    }
+
+    suspend fun listStretchTargets(): List<StretchTargetResponse> {
+        val response = authorizedGet("$baseUrl/api/foods/stretch-targets")
+        if (!response.status.isSuccess()) {
+            throw FoodsException(readError(response))
+        }
+        return response.body()
+    }
+
+    suspend fun addStretchTarget(
+        foodId: String? = null,
+        name: String? = null,
+        variantKey: String? = null,
+    ): StretchTargetResponse {
+        val response =
+            httpClient.post("$baseUrl/api/foods/stretch-targets") {
+                header(HttpHeaders.Authorization, bearerOrThrow())
+                contentType(ContentType.Application.Json)
+                setBody(
+                    CreateStretchTargetRequest(
+                        foodId = foodId,
+                        name = name,
+                        variantKey = variantKey,
+                    ),
+                )
+            }
+        clearTokenIfUnauthorized(response)
+        if (!response.status.isSuccess()) {
+            throw FoodsException(readError(response))
+        }
+        return response.body()
+    }
+
+    suspend fun removeStretchTarget(foodId: String, variantKey: String = "") {
+        val encoded =
+            if (variantKey.isEmpty()) {
+                ""
+            } else {
+                "?variantKey=" + variantKey.encodeURLParameter()
+            }
+        val response =
+            httpClient.delete("$baseUrl/api/foods/stretch-targets/$foodId$encoded") {
                 header(HttpHeaders.Authorization, bearerOrThrow())
             }
         clearTokenIfUnauthorized(response)

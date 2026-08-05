@@ -1,7 +1,7 @@
 # Product roadmap
 
 Status: active  
-Updated: 2026-08-03
+Updated: 2026-08-04
 
 Living backlog for this product repo. **One roadmap ↔ many specs** (1:1 by
 kebab-case id). `/roadmap` updates and re-ranks; `/spec <id>` fleshes out the
@@ -27,10 +27,11 @@ snacks count as safe). The designed path uses that safe set to recommend
 **adjacent** next foods/presentations — including ones not yet on the household
 list — paced to progress; tries that don’t land become retrying. Parents may
 also **nominate stretch targets** (specific foods for someday); the app
-figures out when they’re ready enough to propose for a session, but pace stays
-parent-led — Suggest→Approve, never an owned calendar. Later slices deepen prep
-retries, science-backed pacing, and a short welcome before a hosted beta MVP
-(Render + Neon + keep-alive).
+steers Suggest toward **intermediate steps** on the path to those destinations
+and proposes the target itself only when pace and progress make it a calm
+next try — still parent-led Suggest→Approve, never an owned calendar. Later
+slices deepen the pathway ladder, prep retries, and a short welcome before a
+hosted beta MVP (Render + Neon + keep-alive).
 
 ## Product non-goals
 
@@ -52,7 +53,7 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | stretch-food-targets | planned | 2026-08-03 · enhancement | Parent nominates stretch foods; Suggest proposes when ready (approve still required) |
+| 1 | stretch-pathway | planned | 2026-08-03 · re-rank split | Stronger intermediate ladder + path progress + stricter destination readiness |
 | 2 | disliked-prep-rotation | planned | 2026-07-28 · enhancement | Suggest distinct preps of a disliked food (~3 over weeks), then longer rest |
 | 3 | welcome-orientation | planned | 2026-07-29 · enhancement | Dismissible welcome: why Food Investigators + Plan/Run/Insights lay of the land + pacing |
 | 4 | beta-backend-hosting | planned | 2026-07-29 · enhancement | Neon Postgres + Render backend + UptimeRobot keep-alive for beta |
@@ -101,6 +102,7 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Completed | Spec |
 |----|-----------|------|
+| stretch-food-targets | 2026-08-04 | [archive](specs/archive/stretch-food-targets.md) |
 | suggestion-pacing-evidence | 2026-08-03 | [archive](specs/archive/suggestion-pacing-evidence.md) |
 | suggestion-adjacent-foods | 2026-08-03 | [archive](specs/archive/suggestion-adjacent-foods.md) |
 | plan-food-autocomplete | 2026-08-03 | [archive](specs/archive/plan-food-autocomplete.md) |
@@ -236,3 +238,5 @@ Only notable events (first carve-up, major re-rank, cancelled theme) — not eve
 | 2026-08-03 | Specced `suggestion-pacing-evidence` (curated pacing pack + Suggest pacingNote/citations). Parked richer library as `pacing-citation-library`. |
 | 2026-08-03 | suggestion-pacing-evidence shipped (curated pack by paceHint; OpenAPI 0.15.0 pacingNote/citations; Plan Suggest UI). Next up: `stretch-food-targets`. |
 | 2026-08-03 | Re-rank: welcome → hosting stack before `milestone-badges` (beta path ahead of celebration). Next up unchanged: `stretch-food-targets`. |
+| 2026-08-03 | Specced `stretch-food-targets` (C-lite: Foods nominate + path-biased Suggest). Split fuller ladder to `stretch-pathway` (rank 2). |
+| 2026-08-04 | stretch-food-targets shipped (Foods stretch-target CRUD; C-lite path-biased Suggest; OpenAPI 0.16.0). Next up: `stretch-pathway`. |

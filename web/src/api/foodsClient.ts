@@ -4,9 +4,11 @@ import { defaultBrowserTokenStore, type TokenStore } from "@/api/tokenStore"
 import type {
   BootstrapSafesRequest,
   CreateFoodRequest,
+  CreateStretchTargetRequest,
   ErrorMessage,
   FoodExposureResponse,
   FoodResponse,
+  StretchTargetResponse,
   UpdateFoodRequest,
   UpsertFoodExposureRequest,
 } from "@/api/types"
@@ -113,6 +115,53 @@ export class FoodsClient {
     const response = await this.authorized(path, { method: "DELETE" })
     if (!response.ok) {
       throw new Error(await readErrorMessage(response, "Clear exposure failed"))
+    }
+  }
+
+  async listStretchTargets(): Promise<StretchTargetResponse[]> {
+    const response = await this.authorized("/api/foods/stretch-targets")
+    if (!response.ok) {
+      throw new Error(
+        await readErrorMessage(response, "List stretch targets failed"),
+      )
+    }
+    return (await response.json()) as StretchTargetResponse[]
+  }
+
+  async addStretchTarget(
+    request: CreateStretchTargetRequest,
+  ): Promise<StretchTargetResponse> {
+    const response = await this.authorized("/api/foods/stretch-targets", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(request),
+    })
+    if (!response.ok) {
+      throw new Error(
+        await readErrorMessage(response, "Add stretch target failed"),
+      )
+    }
+    return (await response.json()) as StretchTargetResponse
+  }
+
+  async removeStretchTarget(
+    foodId: string,
+    variantKey: string = "",
+  ): Promise<void> {
+    const params = new URLSearchParams()
+    if (variantKey !== "") {
+      params.set("variantKey", variantKey)
+    }
+    const query = params.toString()
+    const path =
+      query.length > 0
+        ? `/api/foods/stretch-targets/${foodId}?${query}`
+        : `/api/foods/stretch-targets/${foodId}`
+    const response = await this.authorized(path, { method: "DELETE" })
+    if (!response.ok) {
+      throw new Error(
+        await readErrorMessage(response, "Remove stretch target failed"),
+      )
     }
   }
 

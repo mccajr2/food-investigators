@@ -231,6 +231,74 @@ class FoodsClientTest {
         }
 
     @Test
+    fun stretchTargetsListAddRemoveHitExpectedPaths() =
+        runTest {
+            val store = InMemoryTokenStore()
+            store.saveToken("tok", rememberMe = true)
+            val paths = mutableListOf<String>()
+            val engine =
+                MockEngine { request ->
+                    val query =
+                        request.url.encodedQuery.let { if (it.isEmpty()) "" else "?$it" }
+                    paths += "${request.method.value} ${request.url.encodedPath}$query"
+                    when {
+                        request.method == HttpMethod.Get ->
+                            respond(
+                                content =
+                                    """
+                                    [{"id":"dddddddd-dddd-dddd-dddd-dddddddddddd",
+                                      "foodId":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa24",
+                                      "foodName":"Broccoli",
+                                      "variantKey":"steamed",
+                                      "createdAt":"2026-08-03T18:00:00Z"}]
+                                    """.trimIndent(),
+                                status = HttpStatusCode.OK,
+                                headers = headersOf(HttpHeaders.ContentType, "application/json"),
+                            )
+                        request.method == HttpMethod.Post ->
+                            respond(
+                                content =
+                                    """
+                                    {"id":"dddddddd-dddd-dddd-dddd-dddddddddddd",
+                                     "foodId":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa24",
+                                     "foodName":"Broccoli",
+                                     "variantKey":"steamed",
+                                     "createdAt":"2026-08-03T18:00:00Z"}
+                                    """.trimIndent(),
+                                status = HttpStatusCode.Created,
+                                headers = headersOf(HttpHeaders.ContentType, "application/json"),
+                            )
+                        else ->
+                            respond(
+                                content = "",
+                                status = HttpStatusCode.NoContent,
+                            )
+                    }
+                }
+
+            val client = FoodsClient("http://localhost:8080", httpClient(engine), store)
+            val listed = client.listStretchTargets()
+            val created =
+                client.addStretchTarget(
+                    foodId = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa24",
+                    variantKey = "Steamed",
+                )
+            client.removeStretchTarget("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa24", "Steamed")
+
+            assertEquals(1, listed.size)
+            assertEquals("Broccoli", listed[0].foodName)
+            assertEquals("Broccoli", created.foodName)
+            assertEquals(
+                listOf(
+                    "GET /api/foods/stretch-targets",
+                    "POST /api/foods/stretch-targets",
+                    "DELETE /api/foods/stretch-targets/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa24?variantKey=Steamed",
+                ),
+                paths,
+            )
+        }
+
+    @Test
     fun createUpdateArchiveHitExpectedPaths() =
         runTest {
             val store = InMemoryTokenStore()

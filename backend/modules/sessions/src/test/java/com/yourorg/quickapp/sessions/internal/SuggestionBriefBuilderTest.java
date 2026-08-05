@@ -43,6 +43,36 @@ class SuggestionBriefBuilderTest {
     }
 
     @Test
+    void shortlistPinsSafeExposureFoodsEvenWhenNotRecentRankIsFull() {
+        List<CatalogFood> selectable = new ArrayList<>();
+        for (int i = 0; i < 25; i++) {
+            selectable.add(
+                    new CatalogFood(
+                            UUID.fromString(
+                                    String.format("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa%02d", i + 1)),
+                            "Food " + i,
+                            "apple",
+                            null));
+        }
+        UUID safeId = selectable.get(24).id();
+        TastingSession recent = completed(LocalDate.of(2026, 7, 14), selectable.get(0).id());
+        InsightsResponse insights = emptyInsights(3);
+
+        SuggestionBrief brief =
+                SuggestionBriefBuilder.build(
+                        List.of(recent),
+                        selectable,
+                        insights,
+                        List.of(
+                                new com.yourorg.quickapp.foods.SafeExposureSnapshot(
+                                        safeId, "Food 24", "")),
+                        List.of());
+
+        assertThat(brief.candidates()).hasSize(SuggestionBrief.MAX_CANDIDATES);
+        assertThat(brief.candidates().stream().map(SuggestionCandidate::foodId)).contains(safeId);
+    }
+
+    @Test
     void paceHintPullBackWhenSlowDownTipPresent() {
         InsightsResponse insights =
                 new InsightsResponse(

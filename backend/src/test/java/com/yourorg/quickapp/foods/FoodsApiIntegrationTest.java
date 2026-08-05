@@ -606,6 +606,102 @@ class FoodsApiIntegrationTest {
                 .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("10")));
     }
 
+    @Test
+    void stretchTargetsListAddInventRemoveCapAndAuth() throws Exception {
+        String token = register("stretch-" + System.nanoTime() + "@example.com");
+        String broccoliId = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa24";
+
+        mockMvc.perform(get("/api/foods/stretch-targets")).andExpect(status().isUnauthorized());
+
+        mockMvc.perform(get("/api/foods/stretch-targets").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
+
+        mockMvc.perform(
+                        post("/api/foods/stretch-targets")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                                        {"foodId":"%s","variantKey":"  Steamed  "}
+                                        """
+                                                .formatted(broccoliId)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.foodId").value(broccoliId))
+                .andExpect(jsonPath("$.foodName").value("Broccoli"))
+                .andExpect(jsonPath("$.variantKey").value("steamed"));
+
+        mockMvc.perform(
+                        post("/api/foods/stretch-targets")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                                        {"name":"Ground beef","variantKey":"taco night"}
+                                        """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.foodName").value("Ground beef"))
+                .andExpect(jsonPath("$.variantKey").value("taco night"))
+                .andExpect(jsonPath("$.foodId").isString());
+
+        mockMvc.perform(get("/api/foods").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.name == 'Ground beef')].sessionEligible").value(true))
+                .andExpect(jsonPath("$[?(@.name == 'Ground beef')].exposures.length()").value(0));
+
+        mockMvc.perform(get("/api/foods/stretch-targets").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].foodName").value("Broccoli"))
+                .andExpect(jsonPath("$[1].foodName").value("Ground beef"));
+
+        mockMvc.perform(
+                        post("/api/foods/stretch-targets")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                                        {"foodId":"%s","variantKey":"steamed"}
+                                        """
+                                                .formatted(broccoliId)))
+                .andExpect(status().isConflict())
+                .andExpect(
+                        jsonPath("$.message")
+                                .value("That stretch target is already on the list"));
+
+        mockMvc.perform(
+                        delete("/api/foods/stretch-targets/" + broccoliId)
+                                .header("Authorization", "Bearer " + token)
+                                .param("variantKey", "Steamed"))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/foods/stretch-targets").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].foodName").value("Ground beef"));
+
+        for (int i = 0; i < 4; i++) {
+            mockMvc.perform(
+                            post("/api/foods/stretch-targets")
+                                    .header("Authorization", "Bearer " + token)
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(
+                                            """
+                                            {"name":"Stretch food %d"}
+                                            """
+                                                    .formatted(i)))
+                    .andExpect(status().isCreated());
+        }
+
+        mockMvc.perform(
+                        post("/api/foods/stretch-targets")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"name\":\"One too many\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("5")));
+    }
+
     private String register(String email) throws Exception {
         MvcResult result =
                 mockMvc.perform(

@@ -4,6 +4,7 @@ import com.yourorg.quickapp.foods.CatalogFood;
 import com.yourorg.quickapp.foods.FoodCatalog;
 import com.yourorg.quickapp.foods.SafeExposureSnapshot;
 import com.yourorg.quickapp.foods.SnackPreferenceSnapshot;
+import com.yourorg.quickapp.foods.StretchTargetSnapshot;
 import com.yourorg.quickapp.sessions.CalendarProperties;
 import com.yourorg.quickapp.sessions.Familiarity;
 import com.yourorg.quickapp.sessions.InsufficientSuggestionCatalogException;
@@ -71,8 +72,10 @@ public class SessionSuggestionService {
         InsightsResponse insights = InsightsCalculator.compute(completed, snacks, Set.of());
         List<CatalogFood> selectable = foodCatalog.listSelectable(householdId);
         List<SafeExposureSnapshot> safeExposures = foodCatalog.listSafeExposures(householdId);
+        List<StretchTargetSnapshot> stretchTargets = foodCatalog.listStretchTargets(householdId);
         SuggestionBrief brief =
-                SuggestionBriefBuilder.build(completed, selectable, insights, safeExposures);
+                SuggestionBriefBuilder.build(
+                        completed, selectable, insights, safeExposures, stretchTargets);
         if (brief.candidates().size() < 2) {
             throw new InsufficientSuggestionCatalogException(
                     "Need at least two session-eligible foods to suggest a night");
@@ -114,6 +117,9 @@ public class SessionSuggestionService {
             LocalDate scheduledOn,
             SuggestionSource source) {
         if (choice.foods() == null || choice.foods().size() != 2) {
+            return Optional.empty();
+        }
+        if (StretchPathSupport.proposesUnreadyDestination(choice, brief)) {
             return Optional.empty();
         }
         LlmFoodPick first = normalizePick(choice.foods().get(0), candidates);

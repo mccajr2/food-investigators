@@ -2,6 +2,7 @@ package com.yourorg.quickapp.sessions.internal;
 
 import com.yourorg.quickapp.foods.CatalogFood;
 import com.yourorg.quickapp.foods.SafeExposureSnapshot;
+import com.yourorg.quickapp.foods.StretchTargetSnapshot;
 import com.yourorg.quickapp.sessions.Familiarity;
 import com.yourorg.quickapp.sessions.InsightsResponse;
 import com.yourorg.quickapp.sessions.Liked;
@@ -23,7 +24,8 @@ final class SuggestionBriefBuilder {
             List<TastingSession> completedNewestFirst,
             List<CatalogFood> selectable,
             InsightsResponse insights,
-            List<SafeExposureSnapshot> safeExposures) {
+            List<SafeExposureSnapshot> safeExposures,
+            List<StretchTargetSnapshot> stretchTargets) {
         Set<UUID> recentFoodIds = recentFoodIds(completedNewestFirst, 3);
         Set<UUID> likedNoFoodIds = likedNoFoodIds(completedNewestFirst);
 
@@ -39,9 +41,6 @@ final class SuggestionBriefBuilder {
                 Comparator.comparingInt(SuggestionBriefBuilder::hintPriority)
                         .thenComparing(SuggestionCandidate::name, String.CASE_INSENSITIVE_ORDER));
 
-        List<SuggestionCandidate> shortlist =
-                ranked.stream().limit(SuggestionBrief.MAX_CANDIDATES).toList();
-
         List<SafeExposureSnapshot> boundedSafes =
                 safeExposures == null
                         ? List.of()
@@ -49,7 +48,15 @@ final class SuggestionBriefBuilder {
                                 .limit(SuggestionBrief.MAX_SAFE_EXPOSURES)
                                 .toList();
 
+        List<SuggestionCandidate> shortlist = shortlistWithPinnedSafes(ranked, boundedSafes);
+
+        List<StretchTargetSnapshot> targets =
+                stretchTargets == null ? List.of() : List.copyOf(stretchTargets);
+
         String paceHint = paceHint(insights);
+        List<StretchTargetSnapshot> ready =
+                StretchPathSupport.readyDestinations(
+                        paceHint, targets, boundedSafes, completedNewestFirst);
 
         return new SuggestionBrief(
                 insights.completedSessionCount(),
@@ -62,15 +69,74 @@ final class SuggestionBriefBuilder {
                 insights.ateEnoughYes(),
                 insights.ateEnoughNo(),
                 shortlist,
-                boundedSafes);
+                boundedSafes,
+                targets,
+                ready);
     }
 
-    /** Back-compat overload used by older tests — empty safe exposures. */
+    /**
+     * Keep the ranked shortlist, but always reserve room for foods that have a
+     * safe exposure so invent/stretch-destination pairing can find an anchor.
+     */
+    static List<SuggestionCandidate> shortlistWithPinnedSafes(
+            List<SuggestionCandidate> ranked, List<SafeExposureSnapshot> boundedSafes) {
+        if (ranked.size() <= SuggestionBrief.MAX_CANDIDATES) {
+            return List.copyOf(ranked);
+        }
+        Set<UUID> safeIds = new HashSet<>();
+        for (SafeExposureSnapshot safe : boundedSafes) {
+            safeIds.add(safe.foodId());
+        }
+        List<SuggestionCandidate> pinned = new ArrayList<>();
+        for (SuggestionCandidate candidate : ranked) {
+            if (safeIds.contains(candidate.foodId())) {
+                pinned.add(candidate);
+            }
+        }
+        List<SuggestionCandidate> result = new ArrayList<>();
+        Set<UUID> seen = new HashSet<>();
+        for (SuggestionCandidate candidate : ranked) {
+            if (result.size() >= SuggestionBrief.MAX_CANDIDATES - Math.min(pinned.size(), 5)) {
+                break;
+            }
+            if (seen.add(candidate.foodId())) {
+                result.add(candidate);
+            }
+        }
+        for (SuggestionCandidate candidate : pinned) {
+            if (result.size() >= SuggestionBrief.MAX_CANDIDATES) {
+                break;
+            }
+            if (seen.add(candidate.foodId())) {
+                result.add(candidate);
+            }
+        }
+        // If still short (few ranked), fill from ranked.
+        for (SuggestionCandidate candidate : ranked) {
+            if (result.size() >= SuggestionBrief.MAX_CANDIDATES) {
+                break;
+            }
+            if (seen.add(candidate.foodId())) {
+                result.add(candidate);
+            }
+        }
+        return List.copyOf(result);
+    }
+
+    /** Back-compat overload used by older tests — empty safe exposures / stretch targets. */
     static SuggestionBrief build(
             List<TastingSession> completedNewestFirst,
             List<CatalogFood> selectable,
             InsightsResponse insights) {
-        return build(completedNewestFirst, selectable, insights, List.of());
+        return build(completedNewestFirst, selectable, insights, List.of(), List.of());
+    }
+
+    static SuggestionBrief build(
+            List<TastingSession> completedNewestFirst,
+            List<CatalogFood> selectable,
+            InsightsResponse insights,
+            List<SafeExposureSnapshot> safeExposures) {
+        return build(completedNewestFirst, selectable, insights, safeExposures, List.of());
     }
 
     static String paceHint(InsightsResponse insights) {

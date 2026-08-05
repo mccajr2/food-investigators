@@ -11,7 +11,9 @@ import static org.mockito.Mockito.when;
 import com.yourorg.quickapp.foods.BootstrapSafeItemRequest;
 import com.yourorg.quickapp.foods.BootstrapSafesRequest;
 import com.yourorg.quickapp.foods.CreateFoodRequest;
+import com.yourorg.quickapp.foods.CreateStretchTargetRequest;
 import com.yourorg.quickapp.foods.DuplicateFoodNameException;
+import com.yourorg.quickapp.foods.DuplicateStretchTargetException;
 import com.yourorg.quickapp.foods.ExposureSource;
 import com.yourorg.quickapp.foods.FoodExposureResponse;
 import com.yourorg.quickapp.foods.FoodFamiliarity;
@@ -23,8 +25,10 @@ import com.yourorg.quickapp.foods.FoodTexture;
 import com.yourorg.quickapp.foods.InvalidBootstrapSafesException;
 import com.yourorg.quickapp.foods.InvalidFoodIconKeyException;
 import com.yourorg.quickapp.foods.InvalidFoodPreferenceException;
+import com.yourorg.quickapp.foods.InvalidStretchTargetException;
 import com.yourorg.quickapp.foods.SessionCompletedEvent;
 import com.yourorg.quickapp.foods.SessionCompletedFood;
+import com.yourorg.quickapp.foods.StretchTargetResponse;
 import com.yourorg.quickapp.foods.SystemFoodImmutableException;
 import com.yourorg.quickapp.foods.UpdateFoodRequest;
 import com.yourorg.quickapp.foods.UpsertFoodExposureRequest;
@@ -53,6 +57,9 @@ class FoodServiceTest {
     private HouseholdFoodExposureRepository exposures;
 
     @Mock
+    private HouseholdStretchTargetRepository stretchTargets;
+
+    @Mock
     private FoodIllustrationStore illustrations;
 
     private FoodService service;
@@ -61,7 +68,13 @@ class FoodServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new FoodService(foods, exposures, illustrations, Clock.fixed(now, ZoneOffset.UTC));
+        service =
+                new FoodService(
+                        foods,
+                        exposures,
+                        stretchTargets,
+                        illustrations,
+                        Clock.fixed(now, ZoneOffset.UTC));
         org.mockito.Mockito.lenient()
                 .when(illustrations.findPublicUrl(any()))
                 .thenReturn(Optional.empty());
@@ -76,6 +89,9 @@ class FoodServiceTest {
                 .thenReturn(List.of());
         org.mockito.Mockito.lenient()
                 .when(exposures.save(any()))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        org.mockito.Mockito.lenient()
+                .when(stretchTargets.save(any()))
                 .thenAnswer(invocation -> invocation.getArgument(0));
     }
 
@@ -701,5 +717,124 @@ class FoodServiceTest {
         assertThat(captor.getAllValues())
                 .extracting(HouseholdFoodExposure::getFamiliarity)
                 .containsExactly(FoodFamiliarity.safe, FoodFamiliarity.retrying);
+    }
+
+    @Test
+    void addStretchTargetByFoodIdPersistsWithoutSafeExposure() {
+        Food food = Food.household(householdId, "Ground beef", "custom_ground_beef", now);
+        when(stretchTargets.countByHouseholdId(householdId)).thenReturn(0L);
+        when(foods.findById(food.getId())).thenReturn(Optional.of(food));
+        when(stretchTargets.findByHouseholdIdAndFoodIdAndVariantKey(
+                        householdId, food.getId(), "taco night"))
+                .thenReturn(Optional.empty());
+
+        StretchTargetResponse created =
+                service.addStretchTarget(
+                        householdId,
+                        new CreateStretchTargetRequest(food.getId(), null, "  Taco Night  "));
+
+        assertThat(created.foodId()).isEqualTo(food.getId());
+        assertThat(created.foodName()).isEqualTo("Ground beef");
+        assertThat(created.variantKey()).isEqualTo("taco night");
+        assertThat(created.createdAt()).isEqualTo(now);
+        verify(exposures, never()).save(any());
+        ArgumentCaptor<HouseholdStretchTarget> captor =
+                ArgumentCaptor.forClass(HouseholdStretchTarget.class);
+        verify(stretchTargets).save(captor.capture());
+        assertThat(captor.getValue().getVariantKey()).isEqualTo("taco night");
+    }
+
+    @Test
+    void addStretchTargetByNameInventsHouseholdFood() {
+        when(stretchTargets.countByHouseholdId(householdId)).thenReturn(0L);
+        when(foods.findFirstByHouseholdIdIsNullAndNameIgnoreCase("Ground beef"))
+                .thenReturn(Optional.empty());
+        when(foods.findFirstByHouseholdIdAndArchivedAtIsNullAndNameIgnoreCase(
+                        householdId, "Ground beef"))
+                .thenReturn(Optional.empty());
+        when(foods.existsVisibleName(householdId, "Ground beef", null)).thenReturn(false);
+        when(foods.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(stretchTargets.findByHouseholdIdAndFoodIdAndVariantKey(
+                        eq(householdId), any(), eq("")))
+                .thenReturn(Optional.empty());
+
+        StretchTargetResponse created =
+                service.addStretchTarget(
+                        householdId, new CreateStretchTargetRequest(null, "Ground beef", null));
+
+        assertThat(created.foodName()).isEqualTo("Ground beef");
+        assertThat(created.variantKey()).isEqualTo("");
+        ArgumentCaptor<Food> foodCaptor = ArgumentCaptor.forClass(Food.class);
+        verify(foods).save(foodCaptor.capture());
+        assertThat(foodCaptor.getValue().isSessionEligible()).isTrue();
+        verify(exposures, never()).save(any());
+    }
+
+    @Test
+    void addStretchTargetRejectsWhenCapReached() {
+        when(stretchTargets.countByHouseholdId(householdId)).thenReturn(5L);
+
+        assertThatThrownBy(
+                        () ->
+                                service.addStretchTarget(
+                                        householdId,
+                                        new CreateStretchTargetRequest(
+                                                null, "Something", null)))
+                .isInstanceOf(InvalidStretchTargetException.class)
+                .hasMessageContaining("5");
+        verify(foods, never()).save(any());
+    }
+
+    @Test
+    void addStretchTargetRejectsDuplicate() {
+        Food food = Food.system(UUID.randomUUID(), "Broccoli", "broccoli", now);
+        when(stretchTargets.countByHouseholdId(householdId)).thenReturn(1L);
+        when(foods.findById(food.getId())).thenReturn(Optional.of(food));
+        when(stretchTargets.findByHouseholdIdAndFoodIdAndVariantKey(
+                        householdId, food.getId(), ""))
+                .thenReturn(
+                        Optional.of(
+                                HouseholdStretchTarget.create(
+                                        householdId, food.getId(), "", now)));
+
+        assertThatThrownBy(
+                        () ->
+                                service.addStretchTarget(
+                                        householdId,
+                                        new CreateStretchTargetRequest(food.getId(), null, "")))
+                .isInstanceOf(DuplicateStretchTargetException.class);
+    }
+
+    @Test
+    void addStretchTargetRejectsSnackFood() {
+        Food snack = Food.household(householdId, "Goldfish", "custom_goldfish", now);
+        snack.setSessionEligible(false, now);
+        when(stretchTargets.countByHouseholdId(householdId)).thenReturn(0L);
+        when(foods.findById(snack.getId())).thenReturn(Optional.of(snack));
+
+        assertThatThrownBy(
+                        () ->
+                                service.addStretchTarget(
+                                        householdId,
+                                        new CreateStretchTargetRequest(snack.getId(), null, null)))
+                .isInstanceOf(InvalidStretchTargetException.class)
+                .hasMessageContaining("tasting");
+    }
+
+    @Test
+    void removeStretchTargetDeletesRow() {
+        Food food = Food.system(UUID.randomUUID(), "Broccoli", "broccoli", now);
+        when(foods.findById(food.getId())).thenReturn(Optional.of(food));
+        when(stretchTargets.findByHouseholdIdAndFoodIdAndVariantKey(
+                        householdId, food.getId(), "steamed"))
+                .thenReturn(
+                        Optional.of(
+                                HouseholdStretchTarget.create(
+                                        householdId, food.getId(), "steamed", now)));
+
+        service.removeStretchTarget(householdId, food.getId(), "  Steamed ");
+
+        verify(stretchTargets)
+                .deleteByHouseholdIdAndFoodIdAndVariantKey(householdId, food.getId(), "steamed");
     }
 }

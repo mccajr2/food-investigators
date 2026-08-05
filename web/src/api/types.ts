@@ -106,6 +106,21 @@ export type UpsertFoodExposureRequest = {
   familiarity: Familiarity
 }
 
+export type StretchTargetResponse = {
+  id: string
+  foodId: string
+  foodName: string
+  variantKey: string
+  createdAt: string
+}
+
+/** Provide either foodId or name (not both). */
+export type CreateStretchTargetRequest = {
+  foodId?: string
+  name?: string
+  variantKey?: string
+}
+
 export type BootstrapSafeItemRequest = {
   name: string
   variantKey?: string

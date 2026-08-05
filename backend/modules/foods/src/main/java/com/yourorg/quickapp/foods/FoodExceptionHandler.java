@@ -25,10 +25,21 @@ public class FoodExceptionHandler {
         return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
     }
 
+    @ExceptionHandler(InvalidStretchTargetException.class)
+    ResponseEntity<Map<String, String>> invalidStretchTarget(InvalidStretchTargetException ex) {
+        return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
+    }
+
     @ExceptionHandler(DuplicateFoodNameException.class)
     ResponseEntity<Map<String, String>> duplicateName(DuplicateFoodNameException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(Map.of("message", "A food with that name already exists"));
+    }
+
+    @ExceptionHandler(DuplicateStretchTargetException.class)
+    ResponseEntity<Map<String, String>> duplicateStretchTarget(DuplicateStretchTargetException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of("message", "That stretch target is already on the list"));
     }
 
     @ExceptionHandler(SystemFoodImmutableException.class)

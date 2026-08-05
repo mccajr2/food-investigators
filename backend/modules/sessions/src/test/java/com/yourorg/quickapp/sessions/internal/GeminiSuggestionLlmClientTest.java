@@ -45,6 +45,8 @@ class GeminiSuggestionLlmClientTest {
                                                 "blueberry",
                                                 null,
                                                 "not_recent")),
+                                List.of(),
+                                List.of(),
                                 List.of()));
 
         assertThat(result).isEmpty();
@@ -132,6 +134,8 @@ class GeminiSuggestionLlmClientTest {
                                         "blueberry",
                                         null,
                                         "not_recent")),
+                        List.of(),
+                        List.of(),
                         List.of());
 
         String prompt = client.promptFor(brief);
@@ -144,5 +148,41 @@ class GeminiSuggestionLlmClientTest {
         }
         assertThat(prompt).containsIgnoringCase("clinical");
         assertThat(prompt).doesNotContain("ARFID");
+    }
+
+    @Test
+    void promptIncludesStretchTargetsAndPathRulesWhenPresent() {
+        GeminiSuggestionLlmClient client =
+                new GeminiSuggestionLlmClient(
+                        new GeminiProperties("key", "gemini-3.5-flash", ""), jsonMapper);
+        UUID beef = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa18");
+        UUID apple = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa01");
+        SuggestionBrief brief =
+                new SuggestionBrief(
+                        3,
+                        "gentle_stretch",
+                        List.of(),
+                        List.of(),
+                        2,
+                        0,
+                        0,
+                        2,
+                        0,
+                        List.of(
+                                new SuggestionCandidate(apple, "Apples", "apple", null, "safe_anchor"),
+                                new SuggestionCandidate(beef, "Carrot", "carrot", null, "not_recent")),
+                        List.of(new com.yourorg.quickapp.foods.SafeExposureSnapshot(apple, "Apples", "")),
+                        List.of(
+                                new com.yourorg.quickapp.foods.StretchTargetSnapshot(
+                                        beef, "Ground beef", "taco")),
+                        List.of());
+
+        String prompt = client.promptFor(brief);
+
+        assertThat(prompt).contains("stretchTargets");
+        assertThat(prompt).contains("Ground beef");
+        assertThat(prompt).contains("readyStretchDestinations");
+        assertThat(prompt).containsIgnoringCase("intermediate");
+        assertThat(prompt).containsIgnoringCase("readyStretchDestinations");
     }
 }

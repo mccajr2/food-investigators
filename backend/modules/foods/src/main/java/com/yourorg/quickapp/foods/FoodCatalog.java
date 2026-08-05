@@ -30,4 +30,10 @@ public interface FoodCatalog {
      * briefs. Includes food display name and normalized variant key (blank = unspecified).
      */
     List<SafeExposureSnapshot> listSafeExposures(UUID householdId);
+
+    /**
+     * Active parent-nominated stretch destinations for suggestion briefs (food +
+     * variant), sorted by food name then variant key.
+     */
+    List<StretchTargetSnapshot> listStretchTargets(UUID householdId);
 }

@@ -12,6 +12,7 @@ import com.yourorg.quickapp.foods.FoodLiked;
 import com.yourorg.quickapp.foods.FoodTexture;
 import com.yourorg.quickapp.foods.SafeExposureSnapshot;
 import com.yourorg.quickapp.foods.SnackPreferenceSnapshot;
+import com.yourorg.quickapp.foods.StretchTargetSnapshot;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +34,9 @@ class JpaFoodCatalogTest {
     private HouseholdFoodExposureRepository exposures;
 
     @Mock
+    private HouseholdStretchTargetRepository stretchTargets;
+
+    @Mock
     private FoodIllustrationStore illustrations;
 
     private JpaFoodCatalog catalog;
@@ -41,7 +45,7 @@ class JpaFoodCatalogTest {
 
     @BeforeEach
     void setUp() {
-        catalog = new JpaFoodCatalog(foods, exposures, illustrations);
+        catalog = new JpaFoodCatalog(foods, exposures, stretchTargets, illustrations);
     }
 
     @Test
@@ -176,5 +180,24 @@ class JpaFoodCatalogTest {
         when(foods.findAllById(any())).thenReturn(List.of(theirs));
 
         assertThat(catalog.listSafeExposures(householdId)).isEmpty();
+    }
+
+    @Test
+    void listStretchTargetsReturnsSortedSnapshots() {
+        Food broccoli = Food.system(UUID.randomUUID(), "Broccoli", "broccoli", now);
+        Food beef = Food.household(householdId, "Ground beef", "custom_ground_beef", now);
+        when(stretchTargets.findByHouseholdId(householdId))
+                .thenReturn(
+                        List.of(
+                                HouseholdStretchTarget.create(
+                                        householdId, beef.getId(), "taco", now),
+                                HouseholdStretchTarget.create(
+                                        householdId, broccoli.getId(), "", now)));
+        when(foods.findAllById(any())).thenReturn(List.of(broccoli, beef));
+
+        assertThat(catalog.listStretchTargets(householdId))
+                .containsExactly(
+                        new StretchTargetSnapshot(broccoli.getId(), "Broccoli", ""),
+                        new StretchTargetSnapshot(beef.getId(), "Ground beef", "taco"));
     }
 }
