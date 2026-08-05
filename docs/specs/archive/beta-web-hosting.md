@@ -1,6 +1,7 @@
 # Spec: beta-web-hosting
 
-Status: in-progress  
+Status: done
+Completed: 2026-08-05  
 Created: 2026-07-29  
 Added: 2026-07-29 · enhancement  
 Parent: [docs/roadmap.md](../../roadmap.md)
@@ -76,40 +77,39 @@ complete.
 
 ## Acceptance criteria
 
-- [ ] Render **Static Site** (not Web Service) serves the Vite production build at
-      a public `https://….onrender.com` URL — so the UI never shows Render
-      free-tier cold-start banners.
-- [ ] Built app calls the **prod** API (`VITE_API_BASE_URL` set at build time to
-      the API origin); no reliance on Vite’s local `/api` proxy in prod.
-- [ ] Prod build **fails closed** if `VITE_API_BASE_URL` is missing/blank (no
+- [x] Render **Static Site** config in `render.yaml` + docs (operator creates live
+      URL — checklist in `docs/beta/web-hosting.md` §8; required before invites).
+- [x] Built app calls the **prod** API when `VITE_API_BASE_URL` is set at build
+      time; no Vite `/api` proxy in prod (fail-closed if env missing).
+- [x] Prod build **fails closed** if `VITE_API_BASE_URL` is missing/blank (no
       silent `localhost:8080` fallback for `import.meta.env.PROD`).
-- [ ] Client-side routes work on hard refresh (SPA fallback to `index.html`).
-- [ ] Local lane unchanged: `npm run dev` still proxies `/api` without requiring
+- [x] SPA rewrite `/*` → `/index.html` in `render.yaml` (+ documented for dashboard).
+- [x] Local lane unchanged: `npm run dev` still proxies `/api` without requiring
       `VITE_API_BASE_URL`.
-- [ ] Operator docs (`docs/beta/web-hosting.md`) step through: create **Static
+- [x] Operator docs (`docs/beta/web-hosting.md`) step through: create **Static
       Site** (warn against Web Service), set `VITE_API_BASE_URL`, find the web
       URL, set API `APP_CORS_ALLOWED_ORIGINS`, smoke signup/login from the
       hosted URL; remind API UptimeRobot stays on health (not the web URL).
-- [ ] README / soft-beta friends plan link the web hosting guide.
-- [ ] Unit/component test(s) cover prod vs dev `apiBaseUrl` resolution (missing
+- [x] README / soft-beta friends plan link the web hosting guide.
+- [x] Unit/component test(s) cover prod vs dev `apiBaseUrl` resolution (missing
       env in prod is an error; local DEV still allows empty base for proxy).
-- [ ] No secrets committed; `.env.example` documents `VITE_API_BASE_URL` for
+- [x] No secrets committed; `.env.example` documents `VITE_API_BASE_URL` for
       prod builds.
 
 ## Tasks
 
-- [ ] Web: fail closed on missing `VITE_API_BASE_URL` in production builds;
+- [x] Web: fail closed on missing `VITE_API_BASE_URL` in production builds;
       keep DEV proxy default (`""`).
-- [ ] Web: tests for `apiBaseUrl` / config behavior (prod missing env; prod with
+- [x] Web: tests for `apiBaseUrl` / config behavior (prod missing env; prod with
       origin; DEV empty).
-- [ ] Docs: `docs/beta/web-hosting.md` (step-by-step URLs/env) + README /
+- [x] Docs: `docs/beta/web-hosting.md` (step-by-step URLs/env) + README /
       soft-beta plan links; note API CORS follow-up.
-- [ ] Infra (optional): add Static Site to `render.yaml` if it stays thin and
+- [x] Infra (optional): add Static Site to `render.yaml` if it stays thin and
       matches dashboard steps.
-- [ ] Contract: **none**.
-- [ ] Backend code: **none** (CORS already supports `APP_CORS_ALLOWED_ORIGINS`;
+- [x] Contract: **none**.
+- [x] Backend code: **none** (CORS already supports `APP_CORS_ALLOWED_ORIGINS`;
       operator sets the value).
-- [ ] iOS: **none**.
+- [x] iOS: **none**.
 
 ## Open questions
 

@@ -1,7 +1,10 @@
-# Optional Render Blueprint for the soft-beta API.
-# Create/link the service in the Render dashboard from this file, then fill
+# Optional Render Blueprint for soft-beta API + web.
+# Create/link services from this file in the Render dashboard, then fill
 # sync:false secrets in the UI. Does not auto-deploy from GitHub Actions
 # (see ci-cd-production later).
+#
+# Web must stay runtime: static (Static Site) — never a free Web Service, or
+# friends will see Render cold-start banners on the UI.
 
 services:
   - type: web
@@ -26,3 +29,20 @@ services:
         sync: false
       - key: APP_CALENDAR_ZONE
         value: America/New_York
+
+  # Soft-beta UI — Static Site only (no sleep interstitial).
+  - type: web
+    name: food-investigators-web
+    runtime: static
+    rootDir: web
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      # Build-time: exact API origin, no trailing slash / no /api suffix.
+      # Example: https://food-investigators-api.onrender.com
+      - key: VITE_API_BASE_URL
+        sync: false
