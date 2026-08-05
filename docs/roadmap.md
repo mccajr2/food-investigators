@@ -131,7 +131,7 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | beta-backend-hosting | planned | 2026-07-29 · enhancement | Neon Postgres + Render backend + UptimeRobot keep-alive (prod lane; document local vs prod) |
+| 1 | beta-backend-hosting | active | 2026-07-29 · enhancement | Neon Postgres + Render backend + UptimeRobot keep-alive (prod lane; document local vs prod) |
 | 2 | beta-web-hosting | planned | 2026-07-29 · enhancement | Render web front pointed at prod API (VITE_API_BASE_URL / CORS) |
 | 3 | soft-beta-ritual-polish | planned | 2026-08-04 · enhancement | Soft-beta UX gate: safe+stretch coach, one-tap Approve, Exit warn, Insights→Suggest, hide demoted History |
 | 4 | contracts-ci-paths | planned | 2026-08-04 · enhancement | Path-filter CI so `contracts/**` changes run OpenAPI checks |
@@ -184,7 +184,7 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Branch | Spec |
 |----|--------|------|
-| — | — | — |
+| beta-backend-hosting | `beta-backend-hosting` | [active](specs/active/beta-backend-hosting.md) |
 
 ## Done
 
