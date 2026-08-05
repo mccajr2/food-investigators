@@ -78,6 +78,7 @@ function mockClient(
     logout: vi.fn(),
     me: vi.fn(),
     updateMe: vi.fn(),
+    dismissWelcomeOrientation: vi.fn(),
     ...overrides,
   } as AuthClient
 }
@@ -123,6 +124,7 @@ describe("AuthShell", () => {
         email: "parent@example.com",
         householdId: "22222222-2222-2222-2222-222222222222",
         childDisplayName: null,
+        welcomeOrientationDismissed: true,
       },
     })
 
@@ -169,6 +171,7 @@ describe("AuthShell", () => {
         email: "new@example.com",
         householdId: "22222222-2222-2222-2222-222222222222",
         childDisplayName: null,
+        welcomeOrientationDismissed: true,
       },
     })
     const bootstrapSafes = vi.fn()
@@ -231,6 +234,7 @@ describe("AuthShell", () => {
         email: "new@example.com",
         householdId: "22222222-2222-2222-2222-222222222222",
         childDisplayName: null,
+        welcomeOrientationDismissed: true,
       },
     })
     const bootstrapSafes = vi.fn().mockResolvedValue([])
@@ -280,6 +284,7 @@ describe("AuthShell", () => {
         email: "new@example.com",
         householdId: "22222222-2222-2222-2222-222222222222",
         childDisplayName: null,
+        welcomeOrientationDismissed: true,
       },
     })
     const bootstrapSafes = vi
@@ -315,6 +320,7 @@ describe("AuthShell", () => {
         email: "new@example.com",
         householdId: "22222222-2222-2222-2222-222222222222",
         childDisplayName: "Alex",
+        welcomeOrientationDismissed: true,
       },
     })
 
@@ -354,12 +360,14 @@ describe("AuthShell", () => {
         email: "parent@example.com",
         householdId: "22222222-2222-2222-2222-222222222222",
         childDisplayName: "Riley",
+        welcomeOrientationDismissed: true,
       })
       .mockResolvedValueOnce({
         id: "11111111-1111-1111-1111-111111111111",
         email: "parent@example.com",
         householdId: "22222222-2222-2222-2222-222222222222",
         childDisplayName: null,
+        welcomeOrientationDismissed: true,
       })
     const login = vi.fn().mockResolvedValue({
       token: "tok",
@@ -368,6 +376,7 @@ describe("AuthShell", () => {
         email: "parent@example.com",
         householdId: "22222222-2222-2222-2222-222222222222",
         childDisplayName: null,
+        welcomeOrientationDismissed: true,
       },
     })
 
@@ -435,6 +444,7 @@ describe("AuthShell", () => {
       email: "saved@example.com",
       householdId: "22222222-2222-2222-2222-222222222222",
       childDisplayName: null,
+      welcomeOrientationDismissed: true,
     })
 
     const list = vi.fn().mockResolvedValue([])
@@ -469,6 +479,7 @@ describe("AuthShell", () => {
       email: "saved@example.com",
       householdId: "22222222-2222-2222-2222-222222222222",
       childDisplayName: null,
+      welcomeOrientationDismissed: true,
     })
     vi.spyOn(AuthClient.prototype, "getStoredToken").mockReturnValue("existing")
 
@@ -492,5 +503,127 @@ describe("AuthShell", () => {
     expect(listCalls).toBeLessThanOrEqual(2)
     expect(upcomingCalls).toBeLessThanOrEqual(2)
     expect(meCalls).toBeLessThanOrEqual(2)
+  })
+
+  it("shows welcome after sign-in when not dismissed and hides after Got it", async () => {
+    const user = userEvent.setup()
+    const login = vi.fn().mockResolvedValue({
+      token: "tok",
+      user: {
+        id: "11111111-1111-1111-1111-111111111111",
+        email: "parent@example.com",
+        householdId: "22222222-2222-2222-2222-222222222222",
+        childDisplayName: null,
+        welcomeOrientationDismissed: false,
+      },
+    })
+    const dismissWelcomeOrientation = vi.fn().mockResolvedValue({
+      id: "11111111-1111-1111-1111-111111111111",
+      email: "parent@example.com",
+      householdId: "22222222-2222-2222-2222-222222222222",
+      childDisplayName: null,
+      welcomeOrientationDismissed: true,
+    })
+
+    renderShell({ login, dismissWelcomeOrientation })
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: "Sign in" }),
+      ).toBeInTheDocument()
+    })
+    await user.type(screen.getByLabelText("Email"), "parent@example.com")
+    await user.type(screen.getByLabelText("Password"), "password1")
+    await user.click(screen.getByRole("button", { name: "Sign in" }))
+
+    expect(
+      await screen.findByRole("heading", {
+        name: "Welcome to Food Investigators",
+      }),
+    ).toBeInTheDocument()
+    // App stays usable — Plan is still there under the welcome.
+    expect(screen.getByRole("heading", { name: "Plan" })).toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "Got it" }))
+    await waitFor(() => {
+      expect(dismissWelcomeOrientation).toHaveBeenCalledOnce()
+    })
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("heading", {
+          name: "Welcome to Food Investigators",
+        }),
+      ).not.toBeInTheDocument()
+    })
+  })
+
+  it("keeps welcome open and shows an error when dismiss fails", async () => {
+    const user = userEvent.setup()
+    const login = vi.fn().mockResolvedValue({
+      token: "tok",
+      user: {
+        id: "11111111-1111-1111-1111-111111111111",
+        email: "parent@example.com",
+        householdId: "22222222-2222-2222-2222-222222222222",
+        childDisplayName: null,
+        welcomeOrientationDismissed: false,
+      },
+    })
+    const dismissWelcomeOrientation = vi
+      .fn()
+      .mockRejectedValue(new Error("Network down"))
+
+    renderShell({ login, dismissWelcomeOrientation })
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: "Sign in" }),
+      ).toBeInTheDocument()
+    })
+    await user.type(screen.getByLabelText("Email"), "parent@example.com")
+    await user.type(screen.getByLabelText("Password"), "password1")
+    await user.click(screen.getByRole("button", { name: "Sign in" }))
+
+    expect(
+      await screen.findByRole("heading", {
+        name: "Welcome to Food Investigators",
+      }),
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "Got it" }))
+    expect(await screen.findByRole("alert")).toHaveTextContent("Network down")
+    expect(
+      screen.getByRole("heading", { name: "Welcome to Food Investigators" }),
+    ).toBeInTheDocument()
+  })
+
+  it("does not show welcome when household already dismissed", async () => {
+    const user = userEvent.setup()
+    const login = vi.fn().mockResolvedValue({
+      token: "tok",
+      user: {
+        id: "11111111-1111-1111-1111-111111111111",
+        email: "parent@example.com",
+        householdId: "22222222-2222-2222-2222-222222222222",
+        childDisplayName: null,
+        welcomeOrientationDismissed: true,
+      },
+    })
+
+    renderShell({ login })
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: "Sign in" }),
+      ).toBeInTheDocument()
+    })
+    await user.type(screen.getByLabelText("Email"), "parent@example.com")
+    await user.type(screen.getByLabelText("Password"), "password1")
+    await user.click(screen.getByRole("button", { name: "Sign in" }))
+
+    expect(await screen.findByRole("heading", { name: "Plan" })).toBeInTheDocument()
+    expect(
+      screen.queryByRole("heading", { name: "Welcome to Food Investigators" }),
+    ).not.toBeInTheDocument()
   })
 })

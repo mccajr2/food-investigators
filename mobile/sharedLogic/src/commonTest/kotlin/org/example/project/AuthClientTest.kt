@@ -139,6 +139,40 @@ class AuthClientTest {
         }
 
     @Test
+    fun dismissWelcomeOrientationPostsAndReturnsFlag() =
+        runTest {
+            val store = InMemoryTokenStore()
+            store.saveToken("existing", rememberMe = true)
+            var sawPath: String? = null
+            var sawMethod: HttpMethod? = null
+            val engine =
+                MockEngine { request ->
+                    sawPath = request.url.encodedPath
+                    sawMethod = request.method
+                    assertEquals("Bearer existing", request.headers[HttpHeaders.Authorization])
+                    respond(
+                        content =
+                            """
+                            {"id":"11111111-1111-1111-1111-111111111111",
+                             "email":"parent@example.com",
+                             "householdId":"22222222-2222-2222-2222-222222222222",
+                             "childDisplayName":null,
+                             "welcomeOrientationDismissed":true}
+                            """.trimIndent(),
+                        status = HttpStatusCode.OK,
+                        headers = headersOf(HttpHeaders.ContentType, "application/json"),
+                    )
+                }
+
+            val client = AuthClient("http://localhost:8080", httpClient(engine), store)
+            val updated = client.dismissWelcomeOrientation()
+
+            assertTrue(updated.welcomeOrientationDismissed)
+            assertEquals("/api/auth/welcome-orientation/dismiss", sawPath)
+            assertEquals(HttpMethod.Post, sawMethod)
+        }
+
+    @Test
     fun duplicateEmailSurfacesApiMessage() =
         runTest {
             val engine =

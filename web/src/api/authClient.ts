@@ -89,6 +89,19 @@ export class AuthClient {
     return (await response.json()) as UserResponse
   }
 
+  async dismissWelcomeOrientation(): Promise<UserResponse> {
+    const response = await this.authorized(
+      "/api/auth/welcome-orientation/dismiss",
+      { method: "POST" },
+    )
+    if (!response.ok) {
+      throw new Error(
+        await readErrorMessage(response, "Dismiss welcome failed"),
+      )
+    }
+    return (await response.json()) as UserResponse
+  }
+
   private async authorized(
     path: string,
     init: RequestInit = {},

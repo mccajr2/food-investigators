@@ -102,6 +102,17 @@ public class AccountService {
         return toUserResponse(user, household);
     }
 
+    @Transactional
+    public UserResponse dismissWelcomeOrientation(UUID userId) {
+        UserAccount user =
+                users.findById(userId)
+                        .orElseThrow(() -> new IllegalStateException("Authenticated user missing"));
+        Household household = requireHousehold(user);
+        household.dismissWelcomeOrientation(clock.instant());
+        households.save(household);
+        return toUserResponse(user, household);
+    }
+
     @Transactional(readOnly = true)
     public Optional<AccountPrincipal> findPrincipalByToken(String rawToken) {
         Instant now = clock.instant();
@@ -134,7 +145,8 @@ public class AccountService {
                 user.getId(),
                 user.getEmail(),
                 user.getHouseholdId(),
-                household.getChildDisplayName());
+                household.getChildDisplayName(),
+                household.isWelcomeOrientationDismissed());
     }
 
     private static String normalizeEmail(String email) {

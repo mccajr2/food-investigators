@@ -34,6 +34,7 @@ describe("AuthClient", () => {
             email: "parent@example.com",
             householdId: "22222222-2222-2222-2222-222222222222",
             childDisplayName: null,
+            welcomeOrientationDismissed: false,
           },
         }),
         { status: 201, headers: { "Content-Type": "application/json" } },
@@ -68,6 +69,7 @@ describe("AuthClient", () => {
             email: "parent@example.com",
             householdId: "22222222-2222-2222-2222-222222222222",
             childDisplayName: "Alex",
+            welcomeOrientationDismissed: false,
           },
         }),
         { status: 201, headers: { "Content-Type": "application/json" } },
@@ -103,6 +105,7 @@ describe("AuthClient", () => {
             email: "parent@example.com",
             householdId: "22222222-2222-2222-2222-222222222222",
             childDisplayName: null,
+            welcomeOrientationDismissed: false,
           },
         }),
         { status: 200, headers: { "Content-Type": "application/json" } },
@@ -126,6 +129,7 @@ describe("AuthClient", () => {
           email: "parent@example.com",
           householdId: "22222222-2222-2222-2222-222222222222",
           childDisplayName: "Sam",
+          welcomeOrientationDismissed: false,
         }),
         { status: 200, headers: { "Content-Type": "application/json" } },
       ),
@@ -150,6 +154,7 @@ describe("AuthClient", () => {
           email: "parent@example.com",
           householdId: "22222222-2222-2222-2222-222222222222",
           childDisplayName: null,
+          welcomeOrientationDismissed: false,
         }),
         { status: 200, headers: { "Content-Type": "application/json" } },
       ),
@@ -166,6 +171,34 @@ describe("AuthClient", () => {
     expect(init.method).toBe("PATCH")
     expect(new Headers(init.headers).get("Authorization")).toBe("Bearer tok")
     expect(JSON.parse(String(init.body))).toEqual({ childDisplayName: null })
+  })
+
+  it("dismisses welcome orientation with POST", async () => {
+    const store = memoryStore()
+    store.set("tok", true)
+    const fetchFn = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          id: "11111111-1111-1111-1111-111111111111",
+          email: "parent@example.com",
+          householdId: "22222222-2222-2222-2222-222222222222",
+          childDisplayName: null,
+          welcomeOrientationDismissed: true,
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    )
+
+    const client = new AuthClient("http://localhost:8080", fetchFn, store)
+    const updated = await client.dismissWelcomeOrientation()
+
+    expect(updated.welcomeOrientationDismissed).toBe(true)
+    expect(String(fetchFn.mock.calls[0]?.[0])).toBe(
+      "http://localhost:8080/api/auth/welcome-orientation/dismiss",
+    )
+    const init = fetchFn.mock.calls[0]?.[1] as RequestInit
+    expect(init.method).toBe("POST")
+    expect(new Headers(init.headers).get("Authorization")).toBe("Bearer tok")
   })
 
   it("updateMe maps 401 to session expired and clears the token", async () => {

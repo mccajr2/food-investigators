@@ -11,6 +11,7 @@ import {
   SignupSafeFoodsNudge,
   type SignupSafeFoodRow,
 } from "@/components/auth/SignupSafeFoodsNudge"
+import { WelcomeOrientationPanel } from "@/components/auth/WelcomeOrientationPanel"
 import { FoodsPage } from "@/components/food/FoodsPage"
 import { HistoryPage } from "@/components/history/HistoryPage"
 import { InsightsPage } from "@/components/insights/InsightsPage"
@@ -104,6 +105,7 @@ export function AuthShell({
   const [status, setStatus] = useState<Status>({ kind: "bootstrapping" })
   const [profileNameDraft, setProfileNameDraft] = useState("")
   const [profileStatus, setProfileStatus] = useState<Status>({ kind: "idle" })
+  const [welcomeStatus, setWelcomeStatus] = useState<Status>({ kind: "idle" })
 
   useEffect(() => {
     let cancelled = false
@@ -251,6 +253,28 @@ export function AuthShell({
     }
   }
 
+  async function onDismissWelcome() {
+    setWelcomeStatus({ kind: "loading" })
+    try {
+      const updated = await client.dismissWelcomeOrientation()
+      setUser(updated)
+      setWelcomeStatus({ kind: "idle" })
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Something went wrong"
+      if (isSessionExpiredMessage(message)) {
+        setUser(null)
+        setWelcomeStatus({ kind: "idle" })
+        setStatus({
+          kind: "error",
+          message: "Session expired. Please sign in again.",
+        })
+        return
+      }
+      setWelcomeStatus({ kind: "error", message })
+    }
+  }
+
   const onSessionExpired = useCallback(() => {
     setUser(null)
     setStatus({
@@ -315,6 +339,15 @@ export function AuthShell({
           <p role="alert" className="text-sm text-destructive">
             {status.message}
           </p>
+        ) : null}
+        {!user.welcomeOrientationDismissed ? (
+          <WelcomeOrientationPanel
+            dismissing={welcomeStatus.kind === "loading"}
+            error={
+              welcomeStatus.kind === "error" ? welcomeStatus.message : null
+            }
+            onDismiss={() => void onDismissWelcome()}
+          />
         ) : null}
         <nav aria-label="Signed-in sections" className="flex gap-2">
           <Button

@@ -5,6 +5,8 @@ export type UserResponse = {
   householdId: string
   /** Optional household child display first name; null when unset. */
   childDisplayName: string | null
+  /** True after the household dismissed the one-shot welcome panel. */
+  welcomeOrientationDismissed: boolean
 }
 
 export type AuthResponse = {
