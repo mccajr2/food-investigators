@@ -1,8 +1,8 @@
 [versions]
 springBoot = "4.1.0"
-springModulith = "2.0.2"
+springModulith = "2.1.0"
 pdfbox = "3.0.8"
-awsSdk = "2.48.0"
+awsSdk = "2.50.2"
 
 [libraries]
 spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web" }
