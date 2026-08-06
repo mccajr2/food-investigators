@@ -11,8 +11,14 @@ import type {
 import {
   applyPlanSlotChange,
   isEarlyRunNeeded,
+  isStretchFamiliarity,
+  isSuggestDraftUntouched,
+  isTodayOccupied,
   localTodayIsoDate,
+  mergeOccupiedDates,
   PlanPage,
+  SAFE_STRETCH_PLAN_HINT,
+  safeStretchCoachingCopy,
   sameFoodVariantError,
 } from "@/components/plan/PlanPage";
 
@@ -107,7 +113,7 @@ function mockSessionsClient(
 ): SessionsClient {
   return {
     listUpcoming: vi.fn().mockResolvedValue([]),
-    listHistory: vi.fn(),
+    listHistory: vi.fn().mockResolvedValue([]),
     suggestNext: vi.fn(),
     downloadHistoryPdf: vi.fn(),
     get: vi.fn(),
@@ -179,6 +185,64 @@ describe("PlanPage helpers", () => {
     expect(isEarlyRunNeeded("2026-07-20", "2026-07-15")).toBe(true);
     expect(isEarlyRunNeeded("2026-07-15", "2026-07-15")).toBe(false);
     expect(isEarlyRunNeeded("2026-07-14", "2026-07-15")).toBe(false);
+  });
+
+  it("merges planned and completed dates for occupancy", () => {
+    expect(
+      mergeOccupiedDates([{ scheduledOn: "2026-07-20" }], ["2026-07-15"]),
+    ).toEqual(expect.arrayContaining(["2026-07-20", "2026-07-15"]));
+    expect(isTodayOccupied("2026-07-15", ["2026-07-15", "2026-07-20"])).toBe(
+      true,
+    );
+    expect(isTodayOccupied("2026-07-15", ["2026-07-20"])).toBe(false);
+  });
+
+  it("classifies stretch familiarities and coaches safe+stretch mixes", () => {
+    expect(isStretchFamiliarity("safe")).toBe(false);
+    expect(isStretchFamiliarity("familiar_but_new")).toBe(true);
+    expect(isStretchFamiliarity("truly_new")).toBe(true);
+    expect(isStretchFamiliarity("retrying")).toBe(true);
+    expect(safeStretchCoachingCopy("safe", "familiar_but_new")).toMatch(
+      /one safe food and one stretch/i,
+    );
+    expect(safeStretchCoachingCopy("truly_new", "retrying")).toMatch(
+      /Both foods are stretches/i,
+    );
+    expect(safeStretchCoachingCopy("safe", "safe")).toMatch(/Two safe foods/i);
+  });
+
+  it("treats Suggest drafts as untouched only when date and slots match the snapshot", () => {
+    const snapshot = {
+      scheduledOn: "2026-07-16",
+      slot1: {
+        foodId: foods[0].id,
+        familiarity: "safe" as const,
+        variantNote: "",
+        inventName: null,
+      },
+      slot2: {
+        foodId: foods[1].id,
+        familiarity: "familiar_but_new" as const,
+        variantNote: "chips",
+        inventName: null,
+      },
+    };
+    expect(isSuggestDraftUntouched(snapshot, snapshot)).toBe(true);
+    expect(
+      isSuggestDraftUntouched(
+        { ...snapshot, scheduledOn: "2026-07-17" },
+        snapshot,
+      ),
+    ).toBe(false);
+    expect(
+      isSuggestDraftUntouched(
+        {
+          ...snapshot,
+          slot2: { ...snapshot.slot2, variantNote: "rings" },
+        },
+        snapshot,
+      ),
+    ).toBe(false);
   });
 
   it("requires distinct variants when both slots share a food", () => {
@@ -648,6 +712,98 @@ describe("PlanPage", () => {
     );
   });
 
+  it("greys out today when History has a completed night today", async () => {
+    const user = userEvent.setup();
+    const completedToday: SessionResponse = {
+      ...sampleSession,
+      id: "cccccccc-cccc-cccc-cccc-cccccccccccc",
+      scheduledOn: TODAY,
+      status: "completed",
+    };
+    renderPlan(
+      mockSessionsClient({
+        listUpcoming: vi.fn().mockResolvedValue([]),
+        listHistory: vi.fn().mockResolvedValue([completedToday]),
+      }),
+    );
+
+    await screen.findByRole("heading", { name: "Plan" });
+    await user.click(screen.getByRole("button", { name: "Plan a night" }));
+
+    const form = screen.getByRole("form", { name: "Plan a night" });
+    const todayCell = within(form).getByRole("button", { name: /July 15/i });
+    expect(todayCell).toBeDisabled();
+  });
+
+  it("blocks early-run when today already has a completed night", async () => {
+    const user = userEvent.setup();
+    const update = vi.fn();
+    const completedToday: SessionResponse = {
+      ...sampleSession,
+      id: "cccccccc-cccc-cccc-cccc-cccccccccccc",
+      scheduledOn: TODAY,
+      status: "completed",
+    };
+
+    renderPlan(
+      mockSessionsClient({
+        listUpcoming: vi.fn().mockResolvedValue([sampleSession]),
+        listHistory: vi.fn().mockResolvedValue([completedToday]),
+        update,
+      }),
+    );
+
+    expect(await screen.findByText(/Honeycrisp/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Run" }));
+
+    expect(
+      screen.queryByRole("dialog", { name: "Run this night early?" }),
+    ).not.toBeInTheDocument();
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      /Today already has a tasting night/i,
+    );
+    expect(update).not.toHaveBeenCalled();
+    expect(
+      screen.queryByRole("dialog", { name: "Run tasting session" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("blocks early-run when today already has a planned night", async () => {
+    const user = userEvent.setup();
+    const update = vi.fn();
+    const tonight: SessionResponse = {
+      ...sampleSession,
+      id: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+      scheduledOn: TODAY,
+      foods: sampleSession.foods.map((food) =>
+        food.position === 1
+          ? { ...food, variantNote: "Tonight apple" }
+          : food,
+      ),
+    };
+
+    renderPlan(
+      mockSessionsClient({
+        listUpcoming: vi.fn().mockResolvedValue([tonight, sampleSession]),
+        update,
+      }),
+    );
+
+    expect(await screen.findByText(/Tonight apple/)).toBeInTheDocument();
+    expect(screen.getByText(/Honeycrisp/)).toBeInTheDocument();
+    const runButtons = screen.getAllByRole("button", { name: "Run" });
+    expect(runButtons).toHaveLength(2);
+    await user.click(runButtons[1]!);
+
+    expect(
+      screen.queryByRole("dialog", { name: "Run this night early?" }),
+    ).not.toBeInTheDocument();
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      /Today already has a tasting night/i,
+    );
+    expect(update).not.toHaveBeenCalled();
+  });
+
   it("keeps the edited night's own date selectable", async () => {
     const user = userEvent.setup();
     const otherNight: SessionResponse = {
@@ -927,6 +1083,65 @@ describe("PlanPage", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("Not signed in");
   });
 
+  it("shows safe+stretch plan hint and draft coaching after Suggest", async () => {
+    const user = userEvent.setup();
+    renderPlan(
+      mockSessionsClient({
+        suggestNext: vi.fn().mockResolvedValue(sampleSuggestion),
+      }),
+    );
+
+    await screen.findByRole("heading", { name: "Plan" });
+    expect(screen.getByTestId("safe-stretch plan hint")).toHaveTextContent(
+      SAFE_STRETCH_PLAN_HINT,
+    );
+    expect(
+      screen.queryByTestId("safe-stretch draft coaching"),
+    ).not.toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", { name: "Suggest next night" }),
+    );
+
+    const coaching = await screen.findByTestId("safe-stretch draft coaching");
+    expect(coaching).toHaveTextContent(/one safe food and one stretch/i);
+  });
+
+  it("updates draft coaching when both slots are stretches", async () => {
+    const user = userEvent.setup();
+    const twoStretch: SessionSuggestionResponse = {
+      ...sampleSuggestion,
+      foods: [
+        {
+          foodId: foods[0].id,
+          name: "Apples",
+          iconKey: "apple",
+          familiarity: "truly_new",
+        },
+        {
+          foodId: foods[1].id,
+          name: "Strawberries",
+          iconKey: "strawberry",
+          familiarity: "familiar_but_new",
+        },
+      ],
+    };
+    renderPlan(
+      mockSessionsClient({
+        suggestNext: vi.fn().mockResolvedValue(twoStretch),
+      }),
+    );
+
+    await screen.findByRole("heading", { name: "Plan" });
+    await user.click(
+      screen.getByRole("button", { name: "Suggest next night" }),
+    );
+
+    expect(
+      await screen.findByTestId("safe-stretch draft coaching"),
+    ).toHaveTextContent(/Both foods are stretches/i);
+  });
+
   it("maps Suggest catalog variantNote into the draft slot", async () => {
     const user = userEvent.setup();
     const suggestNext = vi.fn().mockResolvedValue({
@@ -957,12 +1172,113 @@ describe("PlanPage", () => {
     const form = await screen.findByRole("form", {
       name: "Suggested next night",
     });
+    expect(within(form).getByTestId("suggest draft summary")).toHaveTextContent(
+      /Apples \(chips\) — Safe/,
+    );
+    await user.click(
+      within(form).getByRole("button", { name: "Edit suggestion" }),
+    );
     expect(within(form).getByLabelText("Food 1 familiarity")).toHaveValue(
       "safe",
     );
     expect(within(form).getByLabelText("Food 1 variant note")).toHaveValue(
       "chips",
     );
+  });
+
+  it("runs Suggest once when autoSuggestKey bumps after load", async () => {
+    const suggestNext = vi.fn().mockResolvedValue(sampleSuggestion)
+    const onAutoSuggestConsumed = vi.fn()
+    render(
+      <PlanPage
+        sessionsClient={mockSessionsClient({ suggestNext })}
+        foodsClient={mockFoodsClient()}
+        todayIso={TODAY}
+        autoSuggestKey={1}
+        onAutoSuggestConsumed={onAutoSuggestConsumed}
+      />,
+    )
+
+    await screen.findByRole("heading", { name: "Plan" })
+    await waitFor(() => {
+      expect(suggestNext).toHaveBeenCalledTimes(1)
+    })
+    expect(onAutoSuggestConsumed).toHaveBeenCalledTimes(1)
+    expect(
+      await screen.findByRole("form", { name: "Suggested next night" }),
+    ).toBeInTheDocument()
+  })
+
+  it("approves an untouched Suggest draft with one primary Approve", async () => {
+    const user = userEvent.setup();
+    const create = vi.fn().mockResolvedValue({
+      ...sampleSession,
+      scheduledOn: "2026-07-16",
+      foods: [
+        {
+          foodId: foods[0].id,
+          name: "Apples",
+          iconKey: "apple",
+          familiarity: "safe",
+          variantNote: null,
+          position: 1,
+        },
+        {
+          foodId: foods[1].id,
+          name: "Strawberries",
+          iconKey: "strawberry",
+          familiarity: "familiar_but_new",
+          variantNote: null,
+          position: 2,
+        },
+      ],
+    });
+    renderPlan(
+      mockSessionsClient({
+        suggestNext: vi.fn().mockResolvedValue(sampleSuggestion),
+        create,
+      }),
+    );
+
+    await screen.findByRole("heading", { name: "Plan" });
+    await user.click(
+      screen.getByRole("button", { name: "Suggest next night" }),
+    );
+
+    const form = await screen.findByRole("form", {
+      name: "Suggested next night",
+    });
+    const summary = within(form).getByTestId("suggest draft summary");
+    expect(summary).toHaveTextContent(/Apples — Safe/);
+    expect(summary).toHaveTextContent(/Strawberries — Familiar but new/);
+    expect(within(form).queryByLabelText("Food 1 familiarity")).toBeNull();
+    expect(within(form).queryByRole("grid")).toBeNull();
+    expect(
+      within(form).getByRole("button", { name: "Edit suggestion" }),
+    ).toBeInTheDocument();
+
+    await user.click(within(form).getByRole("button", { name: "Approve" }));
+
+    await waitFor(() => {
+      expect(create).toHaveBeenCalledWith({
+        scheduledOn: "2026-07-16",
+        foods: [
+          {
+            foodId: foods[0].id,
+            familiarity: "safe",
+            variantNote: null,
+          },
+          {
+            foodId: foods[1].id,
+            familiarity: "familiar_but_new",
+            variantNote: null,
+          },
+        ],
+      });
+    });
+    expect(
+      screen.queryByRole("form", { name: "Suggested next night" }),
+    ).toBeNull();
   });
 
   it("suggests a night, allows swap, and approves via create", async () => {
@@ -1014,6 +1330,11 @@ describe("PlanPage", () => {
     expect(pacing).toHaveTextContent(
       /Family mealtime and exposure guidance for picky eating/,
     );
+
+    await user.click(
+      within(form).getByRole("button", { name: "Edit suggestion" }),
+    );
+    expect(within(form).queryByTestId("suggest draft summary")).toBeNull();
     expect(form.querySelector('input[type="date"]')).toBeNull();
     expect(within(form).getByRole("grid")).toBeInTheDocument();
     expect(
@@ -1145,6 +1466,9 @@ describe("PlanPage", () => {
     const form = await screen.findByRole("form", {
       name: "Suggested next night",
     });
+    await user.click(
+      within(form).getByRole("button", { name: "Edit suggestion" }),
+    );
     expect(within(form).getByTestId("Food 2 invent")).toHaveTextContent(
       /Pickles/,
     );

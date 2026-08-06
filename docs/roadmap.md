@@ -76,12 +76,13 @@ checks, CORS/API base URL, and “how to promote a fix.”
 Invite **2–5 families** you can coach for **3–4 weeks**. Learning question:
 do they keep Plan → Run ~2×/week?
 
-**Ship before invite (Upcoming ranks 1–5):**
+**Ship before invite:**
 
-1. `beta-backend-hosting` — Neon + Render API + keep-alive (**prod lane**)  
-2. `beta-web-hosting` — Render web → prod API  
+1. `beta-backend-hosting` — Neon + Render API + keep-alive (**prod lane**) — **shipped**  
+2. `beta-web-hosting` — Render web → prod API — **shipped**  
 3. `soft-beta-ritual-polish` — safe+stretch coaching, one-tap Approve, Run Exit
-   warn/soft-save, Insights→Suggest CTA, hide demoted History fields  
+   warn, Insights→Suggest CTA, hide demoted History fields, occupied-today —
+   **shipped**  
 4. `contracts-ci-paths` — include `contracts/**` in CI  
 5. `secrets-scan-ci` — block accidental secrets (API keys, passwords) in PRs  
 
@@ -131,19 +132,18 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | soft-beta-ritual-polish | planned | 2026-08-04 · enhancement | Soft-beta UX gate: safe+stretch coach, one-tap Approve, Exit warn, Insights→Suggest, hide demoted History |
-| 2 | contracts-ci-paths | planned | 2026-08-04 · enhancement | Path-filter CI so `contracts/**` changes run OpenAPI checks |
-| 3 | secrets-scan-ci | planned | 2026-08-05 · enhancement | CI secret scanning (e.g. gitleaks) so keys/passwords never land on GitHub |
-| 4 | milestone-badges | planned | 2026-07-28 · enhancement | Celebration badges (formal-beta progress signal) |
-| 5 | reward-surprise-nudge | planned | 2026-08-04 · enhancement | Cheap game variety: Surprise-first / avoid repeating last pick |
-| 6 | dependency-vuln-ci | planned | 2026-08-05 · enhancement | Dependabot + CI vuln scan (npm/Gradle/Trivy) for known CVEs |
-| 7 | dependency-license-ci | planned | 2026-08-05 · enhancement | Fail CI on disallowed dependency licenses (copyleft allowlist) |
-| 8 | ci-cd-production | planned | 2026-07-29 · enhancement | After tests on `main`, auto-deploy backend + web to Render |
-| 9 | authshell-split | planned | 2026-08-04 · enhancement | Split AuthShell into ApiProvider + AuthGate + AppShell |
-| 10 | run-outcome-contract | planned | 2026-07-30 · enhancement | Harden run/outcome contract before native Run / more clients |
-| 11 | disliked-prep-rotation | planned | 2026-07-28 · enhancement | Suggest distinct preps of a disliked food (~3 over weeks), then longer rest |
-| 12 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web habit sticks); needs paid Apple signing |
-| 13 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on template games (after formal beta; not soft-beta gate) |
+| 1 | contracts-ci-paths | planned | 2026-08-04 · enhancement | Path-filter CI so `contracts/**` changes run OpenAPI checks |
+| 2 | secrets-scan-ci | planned | 2026-08-05 · enhancement | CI secret scanning (e.g. gitleaks) so keys/passwords never land on GitHub |
+| 3 | milestone-badges | planned | 2026-07-28 · enhancement | Celebration badges (formal-beta progress signal) |
+| 4 | reward-surprise-nudge | planned | 2026-08-04 · enhancement | Cheap game variety: Surprise-first / avoid repeating last pick |
+| 5 | dependency-vuln-ci | planned | 2026-08-05 · enhancement | Dependabot + CI vuln scan (npm/Gradle/Trivy) for known CVEs |
+| 6 | dependency-license-ci | planned | 2026-08-05 · enhancement | Fail CI on disallowed dependency licenses (copyleft allowlist) |
+| 7 | ci-cd-production | planned | 2026-07-29 · enhancement | After tests on `main`, auto-deploy backend + web to Render |
+| 8 | authshell-split | planned | 2026-08-04 · enhancement | Split AuthShell into ApiProvider + AuthGate + AppShell |
+| 9 | run-outcome-contract | planned | 2026-07-30 · enhancement | Harden run/outcome contract before native Run / more clients |
+| 10 | disliked-prep-rotation | planned | 2026-07-28 · enhancement | Suggest distinct preps of a disliked food (~3 over weeks), then longer rest |
+| 11 | run-tasting-session-ios | planned | 2026-07-15 · re-rank split | Native SwiftUI same ritual (after web habit sticks); needs paid Apple signing |
+| 12 | ai-game-variants | planned | 2026-07-11 · initial | Optional AI skins/levels on template games (after formal beta; not soft-beta gate) |
 
 Status values: `parking` · `planned` · `active` · `done` · `cancelled`  
 Added: `YYYY-MM-DD · initial` | `enhancement` | `re-rank split`
@@ -155,6 +155,7 @@ Unranked ideas. Promote into **Upcoming** with `/roadmap` (re-rank).
 
 | Id | Added | Summary |
 |----|-------|---------|
+| run-exit-soft-save | 2026-08-05 · enhancement | Persist partial Run outcomes on Exit (API); after warn-only in `soft-beta-ritual-polish` if nights still get lost |
 | product-telemetry | 2026-08-05 · enhancement | Privacy-light usage signals (e.g. Suggest/Run/Insights funnels); skip soft beta — coached notes first |
 | outing-spot-recommendations | 2026-08-05 · enhancement | Plan a trip/outing: find/recommend spots friendly to picky eaters (maps/places; after core ritual sticks) |
 | staging-environment | 2026-08-05 · enhancement | Optional staging Render/Neon dress rehearsal before cold formal invites |
@@ -182,12 +183,13 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Branch | Spec |
 |----|--------|------|
-| — | — | — |
+| — | — | (none) |
 
 ## Done
 
 | Id | Completed | Spec |
 |----|-----------|------|
+| soft-beta-ritual-polish | 2026-08-06 | [archive](specs/archive/soft-beta-ritual-polish.md) |
 | suggest-respect-exposure-familiarity | 2026-08-05 | [archive](specs/archive/suggest-respect-exposure-familiarity.md) |
 | beta-web-hosting | 2026-08-05 | [archive](specs/archive/beta-web-hosting.md) |
 | beta-backend-hosting | 2026-08-05 | [archive](specs/archive/beta-backend-hosting.md) |
@@ -337,3 +339,5 @@ Only notable events (first carve-up, major re-rank, cancelled theme) — not eve
 | 2026-08-05 | beta-web-hosting shipped (fail-closed VITE_API_BASE_URL, Static Site in render.yaml, docs/beta/web-hosting.md). Operator checklist for live site + CORS. Next up: `soft-beta-ritual-polish`. |
 | 2026-08-05 | Hotfix ahead of polish: `suggest-respect-exposure-familiarity` (Suggest must honor household exposure familiarity, esp. safe). |
 | 2026-08-05 | suggest-respect-exposure-familiarity shipped (Suggest familiarity from exposures; OpenAPI 0.18.0 `variantNote`). Next up: `soft-beta-ritual-polish`. |
+| 2026-08-06 | Specced `soft-beta-ritual-polish` (web UX gate; Exit **warn-only**). Parked soft-save as `run-exit-soft-save`. |
+| 2026-08-06 | soft-beta-ritual-polish shipped (Plan coaching + one-tap Approve, Run Exit warn, Insights→Suggest, History/PDF hide demoted fields, occupied-today calendar). Next up: `contracts-ci-paths`. |

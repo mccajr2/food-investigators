@@ -13,6 +13,10 @@ type Status =
 type InsightsPageProps = {
   client?: InsightsClient
   onUnauthorized?: () => void
+  /** Switch AuthShell to Plan (no new routes). */
+  onGoToPlan?: () => void
+  /** After Plan is shown, optionally start Suggest (AuthShell bumps Plan). */
+  onSuggestNext?: () => void
 }
 
 const TEXTURE_LABELS: Record<Texture, string> = {
@@ -33,6 +37,8 @@ const READY_THRESHOLD = 3
 export function InsightsPage({
   client: clientProp,
   onUnauthorized,
+  onGoToPlan,
+  onSuggestNext,
 }: InsightsPageProps) {
   const [client] = useState(() => clientProp ?? new InsightsClient())
   const [insights, setInsights] = useState<InsightsResponse | null>(null)
@@ -40,6 +46,13 @@ export function InsightsPage({
   const [dismissingId, setDismissingId] = useState<string | null>(null)
   const onUnauthorizedRef = useRef(onUnauthorized)
   onUnauthorizedRef.current = onUnauthorized
+
+  function onPlanSuggestedNight() {
+    onGoToPlan?.()
+    onSuggestNext?.()
+  }
+
+  const showPlanSuggestCta = onGoToPlan != null || onSuggestNext != null
 
   useEffect(() => {
     let cancelled = false
@@ -97,16 +110,27 @@ export function InsightsPage({
 
   return (
     <section aria-labelledby="insights-heading" className="flex flex-col gap-6">
-      <div>
-        <h2
-          id="insights-heading"
-          className="text-xl font-semibold tracking-tight"
-        >
-          Insights
-        </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Patterns from tasting nights and snacks — gentle tips you can ignore.
-        </p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2
+            id="insights-heading"
+            className="text-xl font-semibold tracking-tight"
+          >
+            Insights
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Patterns from tasting nights and snacks — gentle tips you can ignore.
+          </p>
+        </div>
+        {showPlanSuggestCta ? (
+          <Button
+            type="button"
+            onClick={onPlanSuggestedNight}
+            data-testid="insights plan suggest cta"
+          >
+            Plan a suggested night
+          </Button>
+        ) : null}
       </div>
 
       {status.kind === "loading" ? (
