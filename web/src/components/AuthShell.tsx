@@ -106,6 +106,7 @@ export function AuthShell({
   const [profileNameDraft, setProfileNameDraft] = useState("")
   const [profileStatus, setProfileStatus] = useState<Status>({ kind: "idle" })
   const [welcomeStatus, setWelcomeStatus] = useState<Status>({ kind: "idle" })
+  const [planAutoSuggestKey, setPlanAutoSuggestKey] = useState(0)
 
   useEffect(() => {
     let cancelled = false
@@ -461,6 +462,8 @@ export function AuthShell({
             foodsClient={foodsClient}
             childDisplayName={user.childDisplayName}
             onUnauthorized={onSessionExpired}
+            autoSuggestKey={planAutoSuggestKey}
+            onAutoSuggestConsumed={() => setPlanAutoSuggestKey(0)}
           />
         ) : null}
         {view === "history" ? (
@@ -473,6 +476,8 @@ export function AuthShell({
           <InsightsPage
             client={insightsClient}
             onUnauthorized={onSessionExpired}
+            onGoToPlan={() => setView("plan")}
+            onSuggestNext={() => setPlanAutoSuggestKey((key) => key + 1)}
           />
         ) : null}
         {view === "foods" ? (

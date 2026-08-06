@@ -36,7 +36,7 @@ const completedSession: SessionResponse = {
       position: 2,
       liked: "no",
       texture: null,
-      temperature: "warm",
+      temperature: null,
       smell: null,
       tastes: [],
       whyNote: null,
@@ -110,6 +110,9 @@ describe("HistoryPage", () => {
     )
     expect(within(detail).getAllByText("Like").length).toBe(2)
     expect(within(detail).getByText("Crunchy")).toBeInTheDocument()
+    expect(within(detail).getByText("Cold")).toBeInTheDocument()
+    expect(within(detail).getByText("Temperature")).toBeInTheDocument()
+    expect(within(detail).getByText("Smell")).toBeInTheDocument()
     expect(within(detail).getByText("crunchy")).toBeInTheDocument()
     expect(within(detail).getByText("less peel")).toBeInTheDocument()
     expect(within(detail).getByText("Yes")).toBeInTheDocument()
@@ -121,10 +124,41 @@ describe("HistoryPage", () => {
     )
     expect(within(food2).getAllByText("No").length).toBeGreaterThanOrEqual(1)
     expect(within(food2).getAllByText("Skipped").length).toBeGreaterThan(0)
-    expect(within(food2).getByText("Warm")).toBeInTheDocument()
+    expect(within(food2).queryByText("Temperature")).toBeNull()
+    expect(within(food2).queryByText("Smell")).toBeNull()
+    expect(within(food2).queryByText("Warm")).toBeNull()
 
     expect(within(detail).queryByRole("textbox")).not.toBeInTheDocument()
     expect(screen.queryByLabelText("Parent notes")).not.toBeInTheDocument()
+  })
+
+  it("omits Temperature and Smell rows when null instead of showing Skipped", async () => {
+    const user = userEvent.setup()
+    const demoted: SessionResponse = {
+      ...completedSession,
+      foods: completedSession.foods.map((food) => ({
+        ...food,
+        temperature: null,
+        smell: null,
+      })),
+    }
+    render(
+      <HistoryPage
+        sessionsClient={mockSessionsClient({
+          listHistory: vi.fn().mockResolvedValue([demoted]),
+        })}
+      />,
+    )
+
+    await user.click(await screen.findByRole("button", { name: /Honeycrisp/ }))
+
+    const detail = screen.getByLabelText("Food 1: Apples")
+    expect(within(detail).queryByText("Temperature")).toBeNull()
+    expect(within(detail).queryByText("Smell")).toBeNull()
+    expect(within(detail).queryByText("Cold")).toBeNull()
+    const food2 = screen.getByLabelText("Food 2: Strawberries")
+    expect(within(food2).queryByText("Temperature")).toBeNull()
+    expect(within(food2).queryByText("Smell")).toBeNull()
   })
 
   it("shows parent notes in detail when present", async () => {

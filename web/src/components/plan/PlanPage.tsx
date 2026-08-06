@@ -37,10 +37,14 @@ const FAMILIARITY_OPTIONS: { value: Familiarity; label: string }[] = [
 
 type FoodSlot = SuggestFoodSlot
 
-type SuggestDraft = {
+/** Editable Suggest fields used for untouched / one-tap Approve. */
+export type SuggestDraftSnapshot = {
   scheduledOn: string
   slot1: FoodSlot
   slot2: FoodSlot
+}
+
+type SuggestDraft = SuggestDraftSnapshot & {
   rationale: string | null
   source: SuggestionSource
   pacingNote: string | null
@@ -67,6 +71,13 @@ type PlanPageProps = {
   onUnauthorized?: () => void
   /** ISO date (YYYY-MM-DD) for the calendar min — defaults to local today. */
   todayIso?: string
+  /**
+   * When bumped above 0 (e.g. Insights “Plan a suggested night”), run Suggest
+   * once after Plan finishes loading. Same key is not re-fired.
+   */
+  autoSuggestKey?: number
+  /** Called after an autoSuggestKey request is consumed (AuthShell clears it). */
+  onAutoSuggestConsumed?: () => void
 }
 
 const emptySlot = (): FoodSlot => ({
@@ -75,6 +86,64 @@ const emptySlot = (): FoodSlot => ({
   variantNote: "",
   inventName: null,
 })
+
+/** True when the slot is a stretch ladder rung (not a safe anchor). */
+export function isStretchFamiliarity(familiarity: Familiarity): boolean {
+  return familiarity !== "safe"
+}
+
+/**
+ * Calm Plan coaching from the two draft familiarities — no second Suggest call.
+ */
+export function safeStretchCoachingCopy(
+  first: Familiarity,
+  second: Familiarity,
+): string {
+  const firstStretch = isStretchFamiliarity(first)
+  const secondStretch = isStretchFamiliarity(second)
+  if (firstStretch !== secondStretch) {
+    return "Nice mix — one safe food and one stretch keeps the night calmer."
+  }
+  if (firstStretch && secondStretch) {
+    return "Both foods are stretches. On hard nights, swap one to a safe food so bedtime stays shorter."
+  }
+  return "Two safe foods is a calm night. When you're ready, swap one to a gentle stretch."
+}
+
+/** Always-on Plan tip near Suggest — complements draft-time coaching. */
+export const SAFE_STRETCH_PLAN_HINT =
+  "Aim for one safe food and one stretch (familiar-but-new, truly new, or retrying). Two stretches make Run longer."
+
+export function cloneSuggestDraftSnapshot(
+  draft: SuggestDraftSnapshot,
+): SuggestDraftSnapshot {
+  return {
+    scheduledOn: draft.scheduledOn,
+    slot1: { ...draft.slot1 },
+    slot2: { ...draft.slot2 },
+  }
+}
+
+export function foodSlotsEqual(a: FoodSlot, b: FoodSlot): boolean {
+  return (
+    a.foodId === b.foodId &&
+    a.familiarity === b.familiarity &&
+    a.variantNote === b.variantNote &&
+    (a.inventName ?? null) === (b.inventName ?? null)
+  )
+}
+
+/** True when date + slots still match the Suggest snapshot (untouched). */
+export function isSuggestDraftUntouched(
+  draft: SuggestDraftSnapshot,
+  snapshot: SuggestDraftSnapshot,
+): boolean {
+  return (
+    draft.scheduledOn === snapshot.scheduledOn &&
+    foodSlotsEqual(draft.slot1, snapshot.slot1) &&
+    foodSlotsEqual(draft.slot2, snapshot.slot2)
+  )
+}
 
 /** Local calendar today as YYYY-MM-DD for the Plan calendar min. */
 export function localTodayIsoDate(now: Date = new Date()): string {
@@ -106,6 +175,27 @@ export function isEarlyRunNeeded(
   todayIso: string,
 ): boolean {
   return scheduledOn > todayIso
+}
+
+/** Planned + completed `scheduledOn` values for calendar / occupancy checks. */
+export function mergeOccupiedDates(
+  plannedSessions: readonly { scheduledOn: string }[],
+  completedScheduledOns: readonly string[],
+): string[] {
+  return [
+    ...new Set([
+      ...plannedSessions.map((session) => session.scheduledOn),
+      ...completedScheduledOns,
+    ]),
+  ]
+}
+
+/** True when today already has a planned or completed night (blocks early-run snap). */
+export function isTodayOccupied(
+  todayIso: string,
+  occupiedDates: readonly string[],
+): boolean {
+  return occupiedDates.includes(todayIso)
 }
 
 function suggestedFoodToSlot(food: SuggestedSessionFood): FoodSlot {
@@ -183,16 +273,22 @@ export function PlanPage({
   childDisplayName = null,
   onUnauthorized,
   todayIso,
+  autoSuggestKey = 0,
+  onAutoSuggestConsumed,
 }: PlanPageProps) {
   const [sessionsClient] = useState(
     () => sessionsClientProp ?? new SessionsClient(),
   )
   const [foodsClient] = useState(() => foodsClientProp ?? new FoodsClient())
   const [sessions, setSessions] = useState<SessionResponse[]>([])
+  const [completedDates, setCompletedDates] = useState<string[]>([])
   const [foods, setFoods] = useState<FoodResponse[]>([])
   const [status, setStatus] = useState<Status>({ kind: "loading" })
   const [editor, setEditor] = useState<Editor>({ mode: "closed" })
   const [suggestDraft, setSuggestDraft] = useState<SuggestDraft | null>(null)
+  const [suggestSnapshot, setSuggestSnapshot] =
+    useState<SuggestDraftSnapshot | null>(null)
+  const [suggestPreferEdit, setSuggestPreferEdit] = useState(false)
   const [scheduledOn, setScheduledOn] = useState("")
   const [slot1, setSlot1] = useState<FoodSlot>(emptySlot)
   const [slot2, setSlot2] = useState<FoodSlot>(emptySlot)
@@ -203,6 +299,10 @@ export function PlanPage({
     useState<SessionResponse | null>(null)
   const onUnauthorizedRef = useRef(onUnauthorized)
   onUnauthorizedRef.current = onUnauthorized
+  const onAutoSuggestConsumedRef = useRef(onAutoSuggestConsumed)
+  onAutoSuggestConsumedRef.current = onAutoSuggestConsumed
+  const handledAutoSuggestKeyRef = useRef(0)
+  const suggestNextRef = useRef<() => void>(() => {})
   const minDate = todayIso ?? localTodayIsoDate()
   const selectableFoods = foods.filter((food) => food.sessionEligible !== false)
   const sameFoodSelected =
@@ -213,6 +313,13 @@ export function PlanPage({
   const suggestHasInvent =
     suggestDraft != null &&
     (isInventSlot(suggestDraft.slot1) || isInventSlot(suggestDraft.slot2))
+  const suggestDraftUntouched =
+    suggestDraft != null &&
+    suggestSnapshot != null &&
+    isSuggestDraftUntouched(suggestDraft, suggestSnapshot)
+  const showCompactSuggest =
+    suggestDraft != null && suggestDraftUntouched && !suggestPreferEdit
+
 
   useEffect(() => {
     let cancelled = false
@@ -220,12 +327,16 @@ export function PlanPage({
     async function load() {
       setStatus({ kind: "loading" })
       try {
-        const [listedSessions, listedFoods] = await Promise.all([
+        const [listedSessions, listedHistory, listedFoods] = await Promise.all([
           sessionsClient.listUpcoming(),
+          sessionsClient.listHistory(),
           foodsClient.list(),
         ])
         if (!cancelled) {
           setSessions(listedSessions)
+          setCompletedDates([
+            ...new Set(listedHistory.map((session) => session.scheduledOn)),
+          ])
           setFoods(listedFoods)
           setStatus({ kind: "ready" })
         }
@@ -281,6 +392,8 @@ export function PlanPage({
 
   function dismissSuggestion() {
     setSuggestDraft(null)
+    setSuggestSnapshot(null)
+    setSuggestPreferEdit(false)
     if (status.kind === "error") {
       setStatus({ kind: "ready" })
     }
@@ -299,6 +412,9 @@ export function PlanPage({
     date: string,
     ignoreSessionId?: string,
   ): boolean {
+    if (completedDates.includes(date)) {
+      return true
+    }
     return sessions.some((session) => {
       if (session.scheduledOn !== date) {
         return false
@@ -322,7 +438,10 @@ export function PlanPage({
         })
         return
       }
-      setSuggestDraft(suggestionToDraft(suggestion))
+      const draft = suggestionToDraft(suggestion)
+      setSuggestDraft(draft)
+      setSuggestSnapshot(cloneSuggestDraftSnapshot(draft))
+      setSuggestPreferEdit(false)
       setStatus({ kind: "ready" })
     } catch (error) {
       const message =
@@ -334,6 +453,24 @@ export function PlanPage({
       setStatus({ kind: "error", message })
     }
   }
+  suggestNextRef.current = () => {
+    void onSuggestNext()
+  }
+
+  useEffect(() => {
+    if (autoSuggestKey <= 0) {
+      return
+    }
+    if (autoSuggestKey === handledAutoSuggestKeyRef.current) {
+      return
+    }
+    if (status.kind !== "ready") {
+      return
+    }
+    handledAutoSuggestKeyRef.current = autoSuggestKey
+    onAutoSuggestConsumedRef.current?.()
+    suggestNextRef.current()
+  }, [autoSuggestKey, status.kind])
 
   async function onApproveSuggestion() {
     if (!suggestDraft) {
@@ -419,6 +556,8 @@ export function PlanPage({
         ),
       )
       setSuggestDraft(null)
+      setSuggestSnapshot(null)
+      setSuggestPreferEdit(false)
       setStatus({ kind: "ready" })
     } catch (error) {
       const message = error instanceof Error ? error.message : "Approve failed"
@@ -521,17 +660,31 @@ export function PlanPage({
     status.kind === "loading" ||
     status.kind === "saving" ||
     status.kind === "suggesting"
-  const occupiedDates = sessions.map((session) => session.scheduledOn)
+  const occupiedDates = mergeOccupiedDates(sessions, completedDates)
   const editAllowDate =
     editor.mode === "edit" ? editor.session.scheduledOn : undefined
 
   function onRunComplete(completed: SessionResponse) {
     setRunningSession(null)
     setSessions((current) => current.filter((item) => item.id !== completed.id))
+    setCompletedDates((current) =>
+      current.includes(completed.scheduledOn)
+        ? current
+        : [...current, completed.scheduledOn],
+    )
   }
 
   function requestRun(session: SessionResponse) {
     if (isEarlyRunNeeded(session.scheduledOn, minDate)) {
+      if (isTodayOccupied(minDate, occupiedDates)) {
+        setEarlyRunSession(null)
+        setStatus({
+          kind: "error",
+          message:
+            "Today already has a tasting night, so this future night can’t be recorded as today. Run today’s night instead, or keep this one for its planned date.",
+        })
+        return
+      }
       setEarlyRunSession(session)
       return
     }
@@ -634,6 +787,12 @@ export function PlanPage({
           <p className="mt-1 text-sm text-muted-foreground">
             {planSectionBlurb(childDisplayName)}
           </p>
+          <p
+            className="mt-2 text-sm text-muted-foreground"
+            data-testid="safe-stretch plan hint"
+          >
+            {SAFE_STRETCH_PLAN_HINT}
+          </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button
@@ -679,12 +838,33 @@ export function PlanPage({
         >
           <div className="flex flex-col gap-1">
             <p className="text-sm font-medium">Suggested next night</p>
-            <p className="text-xs text-muted-foreground">
-              Review, swap foods if you like, then approve to add it to Upcoming.
-              {suggestDraft.source === "ai" ? " Drawn with AI help." : null}
-              {suggestHasInvent
-                ? " One food is new — Approve adds it to your catalog."
-                : null}
+            {showCompactSuggest ? (
+              <p className="text-xs text-muted-foreground">
+                Looks good? Approve to add it to Upcoming, or edit if you want to
+                swap foods or the date.
+                {suggestDraft.source === "ai" ? " Drawn with AI help." : null}
+                {suggestHasInvent
+                  ? " One food is new — Approve adds it to your catalog."
+                  : null}
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Review, swap foods if you like, then approve to add it to Upcoming.
+                {suggestDraft.source === "ai" ? " Drawn with AI help." : null}
+                {suggestHasInvent
+                  ? " One food is new — Approve adds it to your catalog."
+                  : null}
+              </p>
+            )}
+            <p
+              className="mt-2 rounded-md bg-muted/60 px-3 py-2 text-sm text-foreground"
+              data-testid="safe-stretch draft coaching"
+              role="status"
+            >
+              {safeStretchCoachingCopy(
+                suggestDraft.slot1.familiarity,
+                suggestDraft.slot2.familiarity,
+              )}
             </p>
             {suggestDraft.rationale ? (
               <p className="mt-1 text-sm text-muted-foreground">
@@ -717,47 +897,78 @@ export function PlanPage({
             ) : null}
           </div>
 
-          <PlanDatePicker
-            aria-label="Suggested date"
-            value={suggestDraft.scheduledOn}
-            minDate={minDate}
-            occupiedDates={occupiedDates}
-            disabled={status.kind === "saving"}
-            onChange={(scheduledOnIso) =>
-              setSuggestDraft({
-                ...suggestDraft,
-                scheduledOn: scheduledOnIso,
-              })
-            }
-          />
+          {showCompactSuggest ? (
+            <div
+              className="flex flex-col gap-2 rounded-md border border-border/60 bg-muted/30 px-3 py-3"
+              data-testid="suggest draft summary"
+            >
+              <p className="text-sm font-medium">
+                {formatDate(suggestDraft.scheduledOn)}
+              </p>
+              <ul className="flex flex-col gap-1 text-sm text-foreground">
+                <li>
+                  {formatSuggestSlotSummary(suggestDraft.slot1, selectableFoods)}
+                </li>
+                <li>
+                  {formatSuggestSlotSummary(suggestDraft.slot2, selectableFoods)}
+                </li>
+              </ul>
+            </div>
+          ) : (
+            <>
+              <PlanDatePicker
+                aria-label="Suggested date"
+                value={suggestDraft.scheduledOn}
+                minDate={minDate}
+                occupiedDates={occupiedDates}
+                disabled={status.kind === "saving"}
+                onChange={(scheduledOnIso) =>
+                  setSuggestDraft({
+                    ...suggestDraft,
+                    scheduledOn: scheduledOnIso,
+                  })
+                }
+              />
 
-          <FoodSlotFields
-            label="Food 1"
-            slot={suggestDraft.slot1}
-            foods={selectableFoods}
-            disabled={status.kind === "saving"}
-            variantRequired={Boolean(suggestSameFoodSelected)}
-            allowInvent
-            onChange={(slot) =>
-              setSuggestDraft({ ...suggestDraft, slot1: slot })
-            }
-          />
-          <FoodSlotFields
-            label="Food 2"
-            slot={suggestDraft.slot2}
-            foods={selectableFoods}
-            disabled={status.kind === "saving"}
-            variantRequired={Boolean(suggestSameFoodSelected)}
-            allowInvent
-            onChange={(slot) =>
-              setSuggestDraft({ ...suggestDraft, slot2: slot })
-            }
-          />
+              <FoodSlotFields
+                label="Food 1"
+                slot={suggestDraft.slot1}
+                foods={selectableFoods}
+                disabled={status.kind === "saving"}
+                variantRequired={Boolean(suggestSameFoodSelected)}
+                allowInvent
+                onChange={(slot) =>
+                  setSuggestDraft({ ...suggestDraft, slot1: slot })
+                }
+              />
+              <FoodSlotFields
+                label="Food 2"
+                slot={suggestDraft.slot2}
+                foods={selectableFoods}
+                disabled={status.kind === "saving"}
+                variantRequired={Boolean(suggestSameFoodSelected)}
+                allowInvent
+                onChange={(slot) =>
+                  setSuggestDraft({ ...suggestDraft, slot2: slot })
+                }
+              />
+            </>
+          )}
 
           <div className="flex flex-wrap gap-2">
             <Button type="submit" disabled={status.kind === "saving"}>
               {status.kind === "saving" ? "Approving…" : "Approve"}
             </Button>
+            {showCompactSuggest ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setSuggestPreferEdit(true)}
+                disabled={status.kind === "saving"}
+              >
+                Edit suggestion
+              </Button>
+            ) : null}
             <Button
               type="button"
               variant="outline"
@@ -1052,6 +1263,19 @@ function familiarityLabel(value: Familiarity): string {
   return (
     FAMILIARITY_OPTIONS.find((option) => option.value === value)?.label ?? value
   )
+}
+
+function formatSuggestSlotSummary(
+  slot: FoodSlot,
+  foods: FoodResponse[],
+): string {
+  const name =
+    slot.inventName?.trim() ||
+    foods.find((food) => food.id === slot.foodId)?.name ||
+    "Food"
+  const note = slot.variantNote.trim()
+  const withNote = note.length > 0 ? `${name} (${note})` : name
+  return `${withNote} — ${familiarityLabel(slot.familiarity)}`
 }
 
 function formatDate(isoDate: string): string {

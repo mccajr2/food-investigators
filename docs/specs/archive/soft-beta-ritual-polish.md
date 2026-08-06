@@ -1,6 +1,6 @@
 # Spec: soft-beta-ritual-polish
 
-Status: in-progress  
+Status: done  
 Created: 2026-08-04  
 Added: 2026-08-04 · enhancement  
 Parent: [docs/roadmap.md](../../roadmap.md)
@@ -76,54 +76,59 @@ occupied dates).
 
 ## Acceptance criteria
 
-- [ ] Plan shows safe+stretch coaching copy visible during Suggest / draft
+- [x] Plan shows safe+stretch coaching copy visible during Suggest / draft
       review (familiarity-aware; not a second Suggest call).
-- [ ] After Suggest, if the draft is **untouched**, parent can Approve with one
+- [x] After Suggest, if the draft is **untouched**, parent can Approve with one
       primary Approve action without re-editing fields; edited drafts keep full
       edit UI.
-- [ ] Run Exit with any in-progress outcome data shows a confirm that warns
+- [x] Run Exit with any in-progress outcome data shows a confirm that warns
       answers will be lost; cancel keeps the run; confirm exits and discards
       (session remains planned).
-- [ ] Run Exit with no outcome data filled exits without a dialog (or with a
+- [x] Run Exit with no outcome data filled exits without a dialog (or with a
       no-op cheap path — document in implement).
-- [ ] Insights has a CTA that navigates to Plan (and can start Suggest or land
+- [x] Insights has a CTA that navigates to Plan (and can start Suggest or land
       on the Suggest control).
-- [ ] History UI does not show Temperature/Smell as “Skipped” when null (rows
+- [x] History UI does not show Temperature/Smell as “Skipped” when null (rows
       omitted).
-- [ ] Therapist PDF omits Temperature/Smell lines when null (no `-` placeholders
+- [x] Therapist PDF omits Temperature/Smell lines when null (no `-` placeholders
       for those two).
-- [ ] After a session is **completed today**, Plan/Suggest calendars show today
+- [x] After a session is **completed today**, Plan/Suggest calendars show today
       as occupied (disabled/gray); parent cannot pick today for a new plan
       without hitting a late API error.
-- [ ] When today is already occupied (planned or completed), clicking **Run** on
+- [x] When today is already occupied (planned or completed), clicking **Run** on
       a **future** planned night does **not** open the early-run confirm that
       snaps to today; parent gets a clear reason (today already has a night).
-- [ ] No OpenAPI version bump; web tests cover coaching, untouched Approve,
+- [x] No OpenAPI version bump; web tests cover coaching, untouched Approve,
       Exit confirm, Insights CTA, History omission, occupied-today calendar +
       early-run block.
-- [ ] Local + hosted web lanes unchanged aside from these UX behaviors.
+- [x] Local + hosted web lanes unchanged aside from these UX behaviors.
 
 ## Tasks
 
-- [ ] Web: Plan safe+stretch coaching UI + test.
-- [ ] Web: Suggest draft snapshot + untouched one-tap Approve UX + test.
-- [ ] Web: Run Exit confirm when outcomes dirty + test.
-- [ ] Web: Insights → Plan/Suggest CTA + AuthShell wiring + test.
-- [ ] Web: History hide null temperature/smell + test.
-- [ ] Web: Occupied dates include completed nights; early-run blocked when
+- [x] Web: Plan safe+stretch coaching UI + test.
+- [x] Web: Suggest draft snapshot + untouched one-tap Approve UX + test.
+- [x] Web: Run Exit confirm when outcomes dirty + test.
+- [x] Web: Insights → Plan/Suggest CTA + AuthShell wiring + test.
+- [x] Web: History hide null temperature/smell + test.
+- [x] Web: Occupied dates include completed nights; early-run blocked when
       today occupied + tests.
-- [ ] Backend: History PDF omit null temperature/smell + test.
-- [ ] Contract: **none**.
-- [ ] iOS: **none**.
+- [x] Backend: History PDF omit null temperature/smell + test.
+- [x] Contract: **none**.
+- [x] iOS: **none**.
 
 ## Open questions
 
 - **Exact coaching copy** — keep calm, non-clinical; iterate in PR review
   without a second spec.
-- **Auto-fire Suggest from Insights CTA** vs navigate-only — prefer navigate +
-  optional auto-Suggest if Plan can do it without surprising side effects;
-  decide in implement (document in PR).
+- **Auto-fire Suggest from Insights CTA** vs navigate-only — **resolved:** CTA
+  calls `onGoToPlan` then `onSuggestNext`; AuthShell switches to Plan and bumps
+  `autoSuggestKey` so Plan runs Suggest once after load (then consumes the key
+  so a later Plan tab visit does not re-fire).
+- **Run Exit clean path (resolved)** — empty survey (no outcome fields set,
+  unused why chips/note) exits with **no dialog**; after complete (reward /
+  parent notes) Exit also skips the discard warn (answers already saved).
 - **Soft-save** deferred to parking `run-exit-soft-save` if nights still get
   lost after warn-only ships.
-- **How to load completed dates** — prefer existing History list (or a narrow
-  date-range call) over a new OpenAPI endpoint; confirm in implement.
+- **How to load completed dates** — **resolved:** Plan loads `listHistory()`
+  alongside upcoming (existing History list; no new OpenAPI endpoint) and merges
+  `scheduledOn` into occupied dates; completing a run also adds that date.

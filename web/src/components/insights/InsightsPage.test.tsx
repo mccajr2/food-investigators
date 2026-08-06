@@ -194,4 +194,34 @@ describe("InsightsPage", () => {
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Not signed in")
   })
+
+  it("calls onGoToPlan and onSuggestNext from Plan a suggested night", async () => {
+    const user = userEvent.setup()
+    const onGoToPlan = vi.fn()
+    const onSuggestNext = vi.fn()
+    render(
+      <InsightsPage
+        client={mockClient()}
+        onGoToPlan={onGoToPlan}
+        onSuggestNext={onSuggestNext}
+      />,
+    )
+
+    await screen.findByRole("heading", { name: "Insights" })
+    await user.click(
+      screen.getByRole("button", { name: "Plan a suggested night" }),
+    )
+
+    expect(onGoToPlan).toHaveBeenCalledTimes(1)
+    expect(onSuggestNext).toHaveBeenCalledTimes(1)
+  })
+
+  it("hides the Plan suggest CTA when callbacks are omitted", async () => {
+    render(<InsightsPage client={mockClient()} />)
+
+    await screen.findByRole("heading", { name: "Insights" })
+    expect(
+      screen.queryByRole("button", { name: "Plan a suggested night" }),
+    ).toBeNull()
+  })
 })

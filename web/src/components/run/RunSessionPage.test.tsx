@@ -1,10 +1,11 @@
-import { render, screen, waitFor } from "@testing-library/react"
+import { render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { describe, expect, it, vi } from "vitest"
 
 import type { SessionsClient } from "@/api"
 import type { SessionResponse } from "@/api/types"
 import {
+  areRunOutcomesDirty,
   buildCompleteRequest,
   previousRunPosition,
   runStepsForFamiliarity,
@@ -76,6 +77,28 @@ async function advanceToWhyStep(
 ) {
   await user.click(screen.getByRole("option", { name: likedLabel }))
 }
+
+describe("areRunOutcomesDirty", () => {
+  it("is clean for initial drafts and dirty once any field is set", () => {
+    const clean = [
+      { position: 1 as const },
+      { position: 2 as const },
+    ] as const
+    expect(areRunOutcomesDirty(clean)).toBe(false)
+    expect(
+      areRunOutcomesDirty([
+        { position: 1, liked: null },
+        { position: 2 },
+      ]),
+    ).toBe(true)
+    expect(
+      areRunOutcomesDirty([
+        { position: 1 },
+        { position: 2, ateEnough: false },
+      ]),
+    ).toBe(true)
+  })
+})
 
 describe("runStepsForFamiliarity", () => {
   it("uses short path for safe and stretch path otherwise", () => {
@@ -1096,6 +1119,59 @@ describe("RunSessionPage", () => {
 
     await user.click(screen.getByRole("button", { name: "Exit" }))
     expect(onExit).toHaveBeenCalled()
+    expect(screen.queryByTestId("run exit confirm")).toBeNull()
+  })
+
+  it("confirms before Exit when an outcome was answered, cancel keeps the run", async () => {
+    const user = userEvent.setup()
+    const onExit = vi.fn()
+
+    render(
+      <RunSessionPage
+        session={sampleSession}
+        sessionsClient={mockSessionsClient()}
+        onComplete={vi.fn()}
+        onExit={onExit}
+      />,
+    )
+
+    await user.click(screen.getByRole("option", { name: "Like" }))
+    expect(screen.getByText(/Why did you like it/)).toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "Exit" }))
+    expect(onExit).not.toHaveBeenCalled()
+    const confirm = screen.getByRole("dialog", { name: "Leave this night?" })
+    expect(confirm).toHaveTextContent(/discards/i)
+
+    await user.click(
+      within(confirm).getByRole("button", { name: "Keep going" }),
+    )
+    expect(onExit).not.toHaveBeenCalled()
+    expect(screen.queryByTestId("run exit confirm")).toBeNull()
+    expect(screen.getByText(/Why did you like it/)).toBeInTheDocument()
+  })
+
+  it("discards and exits after confirming a dirty Exit", async () => {
+    const user = userEvent.setup()
+    const onExit = vi.fn()
+
+    render(
+      <RunSessionPage
+        session={sampleSession}
+        sessionsClient={mockSessionsClient()}
+        onComplete={vi.fn()}
+        onExit={onExit}
+      />,
+    )
+
+    await user.click(screen.getByRole("button", { name: "Skip" }))
+    await user.click(screen.getByRole("button", { name: "Exit" }))
+
+    const confirm = screen.getByRole("dialog", { name: "Leave this night?" })
+    await user.click(
+      within(confirm).getByRole("button", { name: "Leave and discard" }),
+    )
+    expect(onExit).toHaveBeenCalledTimes(1)
   })
 
   it("disables Back on the first step and goes back after advancing", async () => {

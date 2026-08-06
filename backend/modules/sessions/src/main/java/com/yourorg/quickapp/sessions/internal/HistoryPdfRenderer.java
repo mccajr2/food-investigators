@@ -78,17 +78,7 @@ final class HistoryPdfRenderer {
                                 regular,
                                 BODY_SIZE,
                                 "    Variant: " + dash(food.variantNote()));
-                        writer.line(
-                                regular,
-                                BODY_SIZE,
-                                "    Liked: "
-                                        + likedLabel(food.liked())
-                                        + "  Texture: "
-                                        + textureLabel(food.texture())
-                                        + "  Temperature: "
-                                        + temperatureLabel(food.temperature())
-                                        + "  Smell: "
-                                        + smellLabel(food.smell()));
+                        writer.line(regular, BODY_SIZE, sensorySummaryLine(food));
                         writer.line(
                                 regular,
                                 BODY_SIZE,
@@ -126,6 +116,23 @@ final class HistoryPdfRenderer {
             return "From " + from;
         }
         return "Through " + to;
+    }
+
+    /**
+     * Liked + texture always; Temperature / Smell only when non-null (no "-"
+     * placeholders for demoted fields).
+     */
+    static String sensorySummaryLine(SessionFoodResponse food) {
+        StringBuilder line = new StringBuilder();
+        line.append("    Liked: ").append(likedLabel(food.liked()));
+        line.append("  Texture: ").append(textureLabel(food.texture()));
+        if (food.temperature() != null) {
+            line.append("  Temperature: ").append(temperatureLabel(food.temperature()));
+        }
+        if (food.smell() != null) {
+            line.append("  Smell: ").append(smellLabel(food.smell()));
+        }
+        return line.toString();
     }
 
     private static String familiarityLabel(Familiarity value) {

@@ -162,6 +162,96 @@ describe("AuthShell", () => {
     expect(await screen.findByText(/Not enough tasting nights yet/)).toBeInTheDocument()
   })
 
+  it("Insights Plan a suggested night switches to Plan and runs Suggest", async () => {
+    const user = userEvent.setup()
+    const login = vi.fn().mockResolvedValue({
+      token: "tok",
+      user: {
+        id: "11111111-1111-1111-1111-111111111111",
+        email: "parent@example.com",
+        householdId: "22222222-2222-2222-2222-222222222222",
+        childDisplayName: null,
+        welcomeOrientationDismissed: true,
+      },
+    })
+    const foodId = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa04"
+    const foodId2 = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa05"
+    const suggestNext = vi.fn().mockResolvedValue({
+      scheduledOn: "2026-07-16",
+      foods: [
+        {
+          foodId,
+          name: "Apples",
+          iconKey: "apple",
+          familiarity: "safe",
+        },
+        {
+          foodId: foodId2,
+          name: "Strawberries",
+          iconKey: "strawberry",
+          familiarity: "familiar_but_new",
+        },
+      ],
+      rationale: "Calm night.",
+      source: "heuristic",
+    })
+
+    renderShell(
+      { login },
+      {
+        list: vi.fn().mockResolvedValue([
+          {
+            id: foodId,
+            name: "Apples",
+            iconKey: "apple",
+            householdId: null,
+            system: true,
+            sessionEligible: true,
+            exposures: [],
+          },
+          {
+            id: foodId2,
+            name: "Strawberries",
+            iconKey: "strawberry",
+            householdId: null,
+            system: true,
+            sessionEligible: true,
+            exposures: [],
+          },
+        ]),
+      },
+      { suggestNext, listUpcoming: vi.fn().mockResolvedValue([]) },
+    )
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: "Sign in" }),
+      ).toBeInTheDocument()
+    })
+    await user.type(screen.getByLabelText("Email"), "parent@example.com")
+    await user.type(screen.getByLabelText("Password"), "password1")
+    await user.click(screen.getByRole("button", { name: "Sign in" }))
+    await screen.findByRole("heading", { name: "Plan" })
+
+    await user.click(screen.getByRole("tab", { name: "Insights" }))
+    await screen.findByRole("heading", { name: "Insights" })
+    await user.click(
+      screen.getByRole("button", { name: "Plan a suggested night" }),
+    )
+
+    expect(await screen.findByRole("heading", { name: "Plan" })).toBeInTheDocument()
+    expect(screen.getByRole("tab", { name: "Plan" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    )
+    await waitFor(() => {
+      expect(suggestNext).toHaveBeenCalled()
+    })
+    expect(
+      await screen.findByRole("form", { name: "Suggested next night" }),
+    ).toBeInTheDocument()
+  })
+
   it("registers with keep-me-logged-in unchecked", async () => {
     const user = userEvent.setup()
     const register = vi.fn().mockResolvedValue({
@@ -449,13 +539,14 @@ describe("AuthShell", () => {
 
     const list = vi.fn().mockResolvedValue([])
     const listUpcoming = vi.fn().mockResolvedValue([])
+    const listHistory = vi.fn().mockResolvedValue([])
     renderShell(
       {
         getStoredToken: () => "existing",
         me,
       },
       { list },
-      { listUpcoming },
+      { listUpcoming, listHistory },
     )
 
     expect(
@@ -464,6 +555,7 @@ describe("AuthShell", () => {
     expect(await screen.findByRole("heading", { name: "Plan" })).toBeInTheDocument()
     expect(me).toHaveBeenCalledOnce()
     expect(listUpcoming).toHaveBeenCalledOnce()
+    expect(listHistory).toHaveBeenCalledOnce()
     expect(list).toHaveBeenCalledOnce()
   })
 
@@ -473,6 +565,9 @@ describe("AuthShell", () => {
       .mockResolvedValue([])
     const listUpcomingSpy = vi
       .spyOn(SessionsClient.prototype, "listUpcoming")
+      .mockResolvedValue([])
+    const listHistorySpy = vi
+      .spyOn(SessionsClient.prototype, "listHistory")
       .mockResolvedValue([])
     const meSpy = vi.spyOn(AuthClient.prototype, "me").mockResolvedValue({
       id: "11111111-1111-1111-1111-111111111111",
@@ -490,18 +585,22 @@ describe("AuthShell", () => {
     ).toBeInTheDocument()
     await waitFor(() => {
       expect(listUpcomingSpy).toHaveBeenCalled()
+      expect(listHistorySpy).toHaveBeenCalled()
       expect(listSpy).toHaveBeenCalled()
     })
 
     const listCalls = listSpy.mock.calls.length
     const upcomingCalls = listUpcomingSpy.mock.calls.length
+    const historyCalls = listHistorySpy.mock.calls.length
     const meCalls = meSpy.mock.calls.length
     await new Promise((resolve) => setTimeout(resolve, 100))
     expect(listSpy).toHaveBeenCalledTimes(listCalls)
     expect(listUpcomingSpy).toHaveBeenCalledTimes(upcomingCalls)
+    expect(listHistorySpy).toHaveBeenCalledTimes(historyCalls)
     expect(meSpy).toHaveBeenCalledTimes(meCalls)
     expect(listCalls).toBeLessThanOrEqual(2)
     expect(upcomingCalls).toBeLessThanOrEqual(2)
+    expect(historyCalls).toBeLessThanOrEqual(2)
     expect(meCalls).toBeLessThanOrEqual(2)
   })
 
