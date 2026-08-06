@@ -1,6 +1,6 @@
 # Spec: contracts-ci-paths
 
-Status: in-progress  
+Status: done  
 Created: 2026-08-04  
 Added: 2026-08-04 · enhancement  
 Parent: [docs/roadmap.md](../../roadmap.md)
@@ -41,26 +41,26 @@ prefer not adding new docs unless needed for the AC.
 
 ## Acceptance criteria
 
-- [ ] `.github/workflows/backend.yml` `push` and `pull_request` `paths` include
+- [x] `.github/workflows/backend.yml` `push` and `pull_request` `paths` include
       `contracts/**`.
-- [ ] A PR that only touches `contracts/**` (and/or this workflow file) causes the
+- [x] A PR that only touches `contracts/**` (and/or this workflow file) causes the
       **backend** workflow to run (path filter match).
-- [ ] `OpenApiContractTest` remains part of `:backend:test` and still resolves
+- [x] `OpenApiContractTest` remains part of `:backend:test` and still resolves
       `contracts/openapi.yaml` when tests run from the Gradle backend project.
-- [ ] No OpenAPI version bump; no product code changes in web/mobile/backend
+- [x] No OpenAPI version bump; no product code changes in web/mobile/backend
       modules beyond CI config (and a test-only fix if path resolution breaks).
-- [ ] Web and mobile workflow path filters are **unchanged** in this PR.
+- [x] Web and mobile workflow path filters are **unchanged** in this PR.
 
 ## Tasks
 
-- [ ] CI: Add `contracts/**` to `.github/workflows/backend.yml` path filters
+- [x] CI: Add `contracts/**` to `.github/workflows/backend.yml` path filters
       (push + pull_request).
-- [ ] Tests: Confirm `OpenApiContractTest` still finds the YAML locally via
+- [x] Tests: Confirm `OpenApiContractTest` still finds the YAML locally via
       `./gradlew :backend:test --tests OpenApiContractTest` (fix only if broken).
-- [ ] Contract: **none**.
-- [ ] Backend product: **none**.
-- [ ] Web: **none**.
-- [ ] iOS: **none**.
+- [x] Contract: **none**.
+- [x] Backend product: **none**.
+- [x] Web: **none**.
+- [x] iOS: **none**.
 
 ## Open questions
 
