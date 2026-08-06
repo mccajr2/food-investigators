@@ -191,12 +191,31 @@ class OpenApiContractTest {
         assertThat(text).doesNotContain("/api/greeting");
     }
 
+    @Test
+    void backendWorkflowPathFiltersIncludeContracts() throws IOException {
+        Path workflow = resolveBackendWorkflow();
+        assertThat(workflow).exists();
+        String yaml = Files.readString(workflow);
+
+        // push + pull_request each list contracts/** so contracts-only PRs run OpenAPI checks.
+        assertThat(yaml.split("contracts/\\*\\*", -1)).hasSize(3);
+    }
+
     private static Path resolveOpenApi() {
         Path fromBackend = Path.of("..", "contracts", "openapi.yaml").normalize().toAbsolutePath();
         if (Files.exists(fromBackend)) {
             return fromBackend;
         }
         return Path.of("contracts", "openapi.yaml").toAbsolutePath();
+    }
+
+    private static Path resolveBackendWorkflow() {
+        Path fromBackend =
+                Path.of("..", ".github", "workflows", "backend.yml").normalize().toAbsolutePath();
+        if (Files.exists(fromBackend)) {
+            return fromBackend;
+        }
+        return Path.of(".github", "workflows", "backend.yml").toAbsolutePath();
     }
 
     private static Path resolveReadme() {
