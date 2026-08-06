@@ -240,6 +240,8 @@ export type SuggestedSessionFood = {
   /** Shared object-store illustration URL when present; omit/null uses local art. */
   iconUrl?: string | null
   familiarity: Familiarity
+  /** Catalog presentation from matched household exposure when Suggest resolved one. */
+  variantNote?: string | null
   /** Required when `foodId` is null — invent name; materializes on Approve. */
   proposedName?: string | null
   /** Optional invent presentation/brand note. */

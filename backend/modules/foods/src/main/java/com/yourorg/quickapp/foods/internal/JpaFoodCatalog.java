@@ -1,6 +1,7 @@
 package com.yourorg.quickapp.foods.internal;
 
 import com.yourorg.quickapp.foods.CatalogFood;
+import com.yourorg.quickapp.foods.ExposureSnapshot;
 import com.yourorg.quickapp.foods.FoodCatalog;
 import com.yourorg.quickapp.foods.FoodFamiliarity;
 import com.yourorg.quickapp.foods.FoodIllustrationStore;
@@ -22,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 class JpaFoodCatalog implements FoodCatalog {
 
     static final int MAX_SAFE_EXPOSURES = 20;
+    static final int MAX_EXPOSURES = 40;
 
     private final FoodRepository foods;
     private final HouseholdFoodExposureRepository exposures;
@@ -88,24 +90,21 @@ class JpaFoodCatalog implements FoodCatalog {
 
     @Override
     @Transactional(readOnly = true)
-    public List<SafeExposureSnapshot> listSafeExposures(UUID householdId) {
-        List<HouseholdFoodExposure> safeRows =
-                exposures.findByHouseholdId(householdId).stream()
-                        .filter(row -> row.getFamiliarity() == FoodFamiliarity.safe)
-                        .toList();
-        if (safeRows.isEmpty()) {
+    public List<ExposureSnapshot> listExposures(UUID householdId) {
+        List<HouseholdFoodExposure> rows = exposures.findByHouseholdId(householdId);
+        if (rows.isEmpty()) {
             return List.of();
         }
         Map<UUID, Food> foodById =
                 foods.findAllById(
-                                safeRows.stream()
+                                rows.stream()
                                         .map(HouseholdFoodExposure::getFoodId)
                                         .distinct()
                                         .toList())
                         .stream()
                         .collect(Collectors.toMap(Food::getId, Function.identity()));
-        List<SafeExposureSnapshot> result = new ArrayList<>();
-        for (HouseholdFoodExposure row : safeRows) {
+        List<ExposureSnapshot> result = new ArrayList<>();
+        for (HouseholdFoodExposure row : rows) {
             Food food = foodById.get(row.getFoodId());
             if (food == null) {
                 continue;
@@ -114,11 +113,33 @@ class JpaFoodCatalog implements FoodCatalog {
                 continue;
             }
             result.add(
-                    new SafeExposureSnapshot(food.getId(), food.getName(), row.getVariantKey()));
+                    new ExposureSnapshot(
+                            food.getId(),
+                            food.getName(),
+                            row.getVariantKey(),
+                            row.getFamiliarity()));
         }
         result.sort(
-                Comparator.comparing(SafeExposureSnapshot::foodName, String.CASE_INSENSITIVE_ORDER)
-                        .thenComparing(SafeExposureSnapshot::variantKey));
+                Comparator.comparing(ExposureSnapshot::foodName, String.CASE_INSENSITIVE_ORDER)
+                        .thenComparing(ExposureSnapshot::variantKey)
+                        .thenComparing(e -> e.familiarity().name()));
+        if (result.size() > MAX_EXPOSURES) {
+            return List.copyOf(result.subList(0, MAX_EXPOSURES));
+        }
+        return List.copyOf(result);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<SafeExposureSnapshot> listSafeExposures(UUID householdId) {
+        List<SafeExposureSnapshot> result =
+                listExposures(householdId).stream()
+                        .filter(row -> row.familiarity() == FoodFamiliarity.safe)
+                        .map(
+                                row ->
+                                        new SafeExposureSnapshot(
+                                                row.foodId(), row.foodName(), row.variantKey()))
+                        .toList();
         if (result.size() > MAX_SAFE_EXPOSURES) {
             return List.copyOf(result.subList(0, MAX_SAFE_EXPOSURES));
         }

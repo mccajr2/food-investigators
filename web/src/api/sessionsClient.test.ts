@@ -171,6 +171,45 @@ describe("SessionsClient", () => {
     expect(new Headers(init.headers).get("Authorization")).toBe("Bearer tok")
   })
 
+  it("parses catalog variantNote on suggestion", async () => {
+    const suggestion = {
+      scheduledOn: "2026-07-16",
+      foods: [
+        {
+          foodId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa04",
+          name: "Apples",
+          iconKey: "apple",
+          familiarity: "safe" as const,
+          variantNote: "chips",
+        },
+        {
+          foodId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa05",
+          name: "Strawberries",
+          iconKey: "strawberry",
+          familiarity: "familiar_but_new" as const,
+        },
+      ],
+      source: "heuristic" as const,
+    }
+    const fetchFn = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify(suggestion), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    )
+    const client = new SessionsClient(
+      "http://localhost:8080",
+      fetchFn,
+      memoryStore(),
+    )
+
+    const result = await client.suggestNext()
+
+    expect(result.foods[0]?.variantNote).toBe("chips")
+    expect(result.foods[0]?.familiarity).toBe("safe")
+    expect(result.foods[1]?.variantNote).toBeUndefined()
+  })
+
   it("parses pacingNote and citations on suggestion", async () => {
     const suggestion = {
       scheduledOn: "2026-07-16",

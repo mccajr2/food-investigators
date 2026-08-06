@@ -14,4 +14,5 @@ public record SuggestedSessionFood(
         String iconUrl,
         Familiarity familiarity,
         String proposedName,
-        String proposedVariantNote) {}
+        String proposedVariantNote,
+        String variantNote) {}

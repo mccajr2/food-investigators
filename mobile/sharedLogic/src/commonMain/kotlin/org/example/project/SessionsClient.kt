@@ -99,6 +99,8 @@ data class SuggestedSessionFood(
     val iconKey: String,
     val iconUrl: String? = null,
     val familiarity: String,
+    /** Catalog presentation from matched household exposure when Suggest resolved one. */
+    val variantNote: String? = null,
     /** Required when `foodId` is null — invent name; materializes on Approve. */
     val proposedName: String? = null,
     /** Optional invent presentation/brand note. */

@@ -121,7 +121,8 @@ function suggestedFoodToSlot(food: SuggestedSessionFood): FoodSlot {
   return {
     foodId: food.foodId,
     familiarity: food.familiarity,
-    variantNote: food.proposedVariantNote?.trim() ?? "",
+    variantNote:
+      food.variantNote?.trim() || food.proposedVariantNote?.trim() || "",
     inventName: null,
   }
 }

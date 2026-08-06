@@ -109,7 +109,8 @@ class OpenApiContractTest {
         assertThat(yaml).contains("PacingCitation");
         assertThat(yaml).contains("calm pacing evidence");
         assertThat(yaml).contains("stretch-target path bias");
-        assertThat(yaml).contains("version: 0.17.0");
+        assertThat(yaml).contains("version: 0.18.0");
+        assertThat(yaml).contains("resolved from household");
         assertThat(yaml).contains("CreateSessionRequest");
         assertThat(yaml).contains("UpdateSessionRequest");
         assertThat(yaml).contains("CompleteSessionRequest");

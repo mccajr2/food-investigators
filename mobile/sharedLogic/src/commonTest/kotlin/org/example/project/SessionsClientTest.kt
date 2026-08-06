@@ -205,6 +205,44 @@ class SessionsClientTest {
         }
 
     @Test
+    fun suggestNextParsesCatalogVariantNote() =
+        runTest {
+            val store = InMemoryTokenStore()
+            store.saveToken("tok", rememberMe = true)
+            val engine =
+                MockEngine { request ->
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        content =
+                            """
+                            {"scheduledOn":"2026-07-16",
+                             "foods":[
+                               {"foodId":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa04",
+                                "name":"Apples",
+                                "iconKey":"apple",
+                                "familiarity":"safe",
+                                "variantNote":"chips"},
+                               {"foodId":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa05",
+                                "name":"Strawberries",
+                                "iconKey":"strawberry",
+                                "familiarity":"familiar_but_new"}
+                             ],
+                             "source":"heuristic"}
+                            """.trimIndent(),
+                        status = HttpStatusCode.OK,
+                        headers = headersOf(HttpHeaders.ContentType, "application/json"),
+                    )
+                }
+
+            val client = SessionsClient("http://localhost:8080", httpClient(engine), store)
+            val suggestion = client.suggestNext()
+
+            assertEquals("chips", suggestion.foods[0].variantNote)
+            assertEquals("safe", suggestion.foods[0].familiarity)
+            assertNull(suggestion.foods[1].variantNote)
+        }
+
+    @Test
     fun suggestNextParsesInventSlotWithNullFoodId() =
         runTest {
             val store = InMemoryTokenStore()

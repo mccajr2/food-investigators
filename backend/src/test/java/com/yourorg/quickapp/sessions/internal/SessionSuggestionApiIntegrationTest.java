@@ -230,6 +230,40 @@ class SessionSuggestionApiIntegrationTest {
     }
 
     @Test
+    void suggestOverridesAiFamiliarityFromHouseholdSafeExposure() throws Exception {
+        String token = register("suggest-safe-exp-" + System.nanoTime() + "@example.com");
+        mockMvc.perform(
+                        put("/api/foods/" + APPLES + "/exposures")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"variantKey\":\"\",\"familiarity\":\"safe\"}"))
+                .andExpect(status().isOk());
+        planAndComplete(token, day(0), APPLES, STRAWBERRIES);
+        planAndComplete(token, day(1), STRAWBERRIES, BLUEBERRIES);
+        planAndComplete(token, day(2), BLUEBERRIES, APPLES);
+
+        when(suggestionLlmPort.propose(any()))
+                .thenReturn(
+                        Optional.of(
+                                new LlmSuggestionChoice(
+                                        List.of(
+                                                new LlmFoodPick(
+                                                        UUID.fromString(APPLES),
+                                                        Familiarity.familiar_but_new),
+                                                new LlmFoodPick(
+                                                        UUID.fromString(STRAWBERRIES),
+                                                        Familiarity.truly_new)),
+                                        "Wrong labels")));
+
+        mockMvc.perform(get("/api/sessions/suggestions/next").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.source").value("ai"))
+                .andExpect(jsonPath("$.foods[0].foodId").value(APPLES))
+                .andExpect(jsonPath("$.foods[0].familiarity").value("safe"))
+                .andExpect(jsonPath("$.foods[1].foodId").value(STRAWBERRIES));
+    }
+
+    @Test
     void invalidAiPickFallsBackToHeuristic() throws Exception {
         String token = register("suggest-bad-ai-" + System.nanoTime() + "@example.com");
         planAndComplete(token, day(0), APPLES, STRAWBERRIES);

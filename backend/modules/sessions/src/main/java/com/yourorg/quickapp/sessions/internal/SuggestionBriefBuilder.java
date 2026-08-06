@@ -1,6 +1,8 @@
 package com.yourorg.quickapp.sessions.internal;
 
 import com.yourorg.quickapp.foods.CatalogFood;
+import com.yourorg.quickapp.foods.ExposureSnapshot;
+import com.yourorg.quickapp.foods.FoodFamiliarity;
 import com.yourorg.quickapp.foods.SafeExposureSnapshot;
 import com.yourorg.quickapp.foods.StretchTargetSnapshot;
 import com.yourorg.quickapp.sessions.Familiarity;
@@ -26,6 +28,22 @@ final class SuggestionBriefBuilder {
             InsightsResponse insights,
             List<SafeExposureSnapshot> safeExposures,
             List<StretchTargetSnapshot> stretchTargets) {
+        return build(
+                completedNewestFirst,
+                selectable,
+                insights,
+                safeExposures,
+                toExposuresFromSafes(safeExposures),
+                stretchTargets);
+    }
+
+    static SuggestionBrief build(
+            List<TastingSession> completedNewestFirst,
+            List<CatalogFood> selectable,
+            InsightsResponse insights,
+            List<SafeExposureSnapshot> safeExposures,
+            List<ExposureSnapshot> exposures,
+            List<StretchTargetSnapshot> stretchTargets) {
         Set<UUID> recentFoodIds = recentFoodIds(completedNewestFirst, 3);
         Set<UUID> likedNoFoodIds = likedNoFoodIds(completedNewestFirst);
 
@@ -47,6 +65,11 @@ final class SuggestionBriefBuilder {
                         : safeExposures.stream()
                                 .limit(SuggestionBrief.MAX_SAFE_EXPOSURES)
                                 .toList();
+
+        List<ExposureSnapshot> boundedExposures =
+                exposures == null
+                        ? toExposuresFromSafes(boundedSafes)
+                        : List.copyOf(exposures);
 
         List<SuggestionCandidate> shortlist = shortlistWithPinnedSafes(ranked, boundedSafes);
 
@@ -70,8 +93,26 @@ final class SuggestionBriefBuilder {
                 insights.ateEnoughNo(),
                 shortlist,
                 boundedSafes,
+                boundedExposures,
                 targets,
                 ready);
+    }
+
+    private static List<ExposureSnapshot> toExposuresFromSafes(
+            List<SafeExposureSnapshot> safeExposures) {
+        if (safeExposures == null || safeExposures.isEmpty()) {
+            return List.of();
+        }
+        List<ExposureSnapshot> result = new ArrayList<>(safeExposures.size());
+        for (SafeExposureSnapshot safe : safeExposures) {
+            result.add(
+                    new ExposureSnapshot(
+                            safe.foodId(),
+                            safe.foodName(),
+                            safe.variantKey(),
+                            FoodFamiliarity.safe));
+        }
+        return List.copyOf(result);
     }
 
     /**

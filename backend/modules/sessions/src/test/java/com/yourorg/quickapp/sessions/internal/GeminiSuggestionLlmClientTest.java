@@ -47,6 +47,7 @@ class GeminiSuggestionLlmClientTest {
                                                 "not_recent")),
                                 List.of(),
                                 List.of(),
+                                List.of(),
                                 List.of()));
 
         assertThat(result).isEmpty();
@@ -136,6 +137,7 @@ class GeminiSuggestionLlmClientTest {
                                         "not_recent")),
                         List.of(),
                         List.of(),
+                        List.of(),
                         List.of());
 
         String prompt = client.promptFor(brief);
@@ -148,6 +150,8 @@ class GeminiSuggestionLlmClientTest {
         }
         assertThat(prompt).containsIgnoringCase("clinical");
         assertThat(prompt).doesNotContain("ARFID");
+        assertThat(prompt).contains("exposures");
+        assertThat(prompt).containsIgnoringCase("safe exposure");
     }
 
     @Test
@@ -172,6 +176,12 @@ class GeminiSuggestionLlmClientTest {
                                 new SuggestionCandidate(apple, "Apples", "apple", null, "safe_anchor"),
                                 new SuggestionCandidate(beef, "Carrot", "carrot", null, "not_recent")),
                         List.of(new com.yourorg.quickapp.foods.SafeExposureSnapshot(apple, "Apples", "")),
+                        List.of(
+                                new com.yourorg.quickapp.foods.ExposureSnapshot(
+                                        apple,
+                                        "Apples",
+                                        "",
+                                        com.yourorg.quickapp.foods.FoodFamiliarity.safe)),
                         List.of(
                                 new com.yourorg.quickapp.foods.StretchTargetSnapshot(
                                         beef, "Ground beef", "taco")),

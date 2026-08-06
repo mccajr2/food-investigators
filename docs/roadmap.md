@@ -1,7 +1,7 @@
 # Product roadmap
 
 Status: active  
-Updated: 2026-08-05 · beta-web-hosting shipped
+Updated: 2026-08-05 · suggest-respect-exposure-familiarity shipped
 
 Living backlog for this product repo. **One roadmap ↔ many specs** (1:1 by
 kebab-case id). `/roadmap` updates and re-ranks; `/spec <id>` fleshes out the
@@ -188,6 +188,7 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Completed | Spec |
 |----|-----------|------|
+| suggest-respect-exposure-familiarity | 2026-08-05 | [archive](specs/archive/suggest-respect-exposure-familiarity.md) |
 | beta-web-hosting | 2026-08-05 | [archive](specs/archive/beta-web-hosting.md) |
 | beta-backend-hosting | 2026-08-05 | [archive](specs/archive/beta-backend-hosting.md) |
 | welcome-orientation | 2026-08-05 | [archive](specs/archive/welcome-orientation.md) |
@@ -334,3 +335,5 @@ Only notable events (first carve-up, major re-rank, cancelled theme) — not eve
 | 2026-08-05 | Soft→formal beta path: hosting → ritual polish → contracts CI → secrets scan; formal = badges → surprise → vuln/license CI → CI/CD → AuthShell → outcome contract. Park stretch-pathway + telemetry + outing spots. Next up: `beta-backend-hosting`. |
 | 2026-08-05 | beta-backend-hosting shipped (Actuator health, Docker/Render, Neon env docs, CORS allowlist). Operator checklist in docs/beta/backend-hosting.md. Next up: `beta-web-hosting`. |
 | 2026-08-05 | beta-web-hosting shipped (fail-closed VITE_API_BASE_URL, Static Site in render.yaml, docs/beta/web-hosting.md). Operator checklist for live site + CORS. Next up: `soft-beta-ritual-polish`. |
+| 2026-08-05 | Hotfix ahead of polish: `suggest-respect-exposure-familiarity` (Suggest must honor household exposure familiarity, esp. safe). |
+| 2026-08-05 | suggest-respect-exposure-familiarity shipped (Suggest familiarity from exposures; OpenAPI 0.18.0 `variantNote`). Next up: `soft-beta-ritual-polish`. |

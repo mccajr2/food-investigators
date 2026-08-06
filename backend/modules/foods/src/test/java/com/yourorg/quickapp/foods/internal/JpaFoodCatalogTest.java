@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import com.yourorg.quickapp.foods.CatalogFood;
+import com.yourorg.quickapp.foods.ExposureSnapshot;
 import com.yourorg.quickapp.foods.ExposureSource;
 import com.yourorg.quickapp.foods.FoodFamiliarity;
 import com.yourorg.quickapp.foods.FoodIllustrationStore;
@@ -162,6 +163,13 @@ class JpaFoodCatalogTest {
                 .containsExactly(
                         new SafeExposureSnapshot(appleId, "Apples", ""),
                         new SafeExposureSnapshot(bananaId, "Bananas", "chips"));
+        assertThat(catalog.listExposures(householdId))
+                .containsExactly(
+                        new ExposureSnapshot(appleId, "Apples", "", FoodFamiliarity.safe),
+                        new ExposureSnapshot(
+                                appleId, "Apples", "sauce", FoodFamiliarity.retrying),
+                        new ExposureSnapshot(
+                                bananaId, "Bananas", "chips", FoodFamiliarity.safe));
     }
 
     @Test
