@@ -132,7 +132,7 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
 | 1 | soft-beta-ritual-polish | planned | 2026-08-04 · enhancement | Soft-beta UX gate: safe+stretch coach, one-tap Approve, Exit warn, Insights→Suggest, hide demoted History |
-| 2 | contracts-ci-paths | planned | 2026-08-04 · enhancement | Path-filter CI so `contracts/**` changes run OpenAPI checks |
+| 2 | contracts-ci-paths | active | 2026-08-04 · enhancement | Path-filter CI so `contracts/**` changes run OpenAPI checks |
 | 3 | secrets-scan-ci | planned | 2026-08-05 · enhancement | CI secret scanning (e.g. gitleaks) so keys/passwords never land on GitHub |
 | 4 | milestone-badges | planned | 2026-07-28 · enhancement | Celebration badges (formal-beta progress signal) |
 | 5 | reward-surprise-nudge | planned | 2026-08-04 · enhancement | Cheap game variety: Surprise-first / avoid repeating last pick |
@@ -182,7 +182,7 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Branch | Spec |
 |----|--------|------|
-| — | — | — |
+| contracts-ci-paths | `contracts-ci-paths` | [active](specs/active/contracts-ci-paths.md) |
 
 ## Done
 
