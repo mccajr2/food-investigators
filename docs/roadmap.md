@@ -131,7 +131,7 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | soft-beta-ritual-polish | planned | 2026-08-04 · enhancement | Soft-beta UX gate: safe+stretch coach, one-tap Approve, Exit warn, Insights→Suggest, hide demoted History |
+| 1 | soft-beta-ritual-polish | active | 2026-08-04 · enhancement | Soft-beta UX gate: coach, one-tap Approve, Exit warn, Insights→Suggest, History hide, occupied-today calendar |
 | 2 | contracts-ci-paths | planned | 2026-08-04 · enhancement | Path-filter CI so `contracts/**` changes run OpenAPI checks |
 | 3 | secrets-scan-ci | planned | 2026-08-05 · enhancement | CI secret scanning (e.g. gitleaks) so keys/passwords never land on GitHub |
 | 4 | milestone-badges | planned | 2026-07-28 · enhancement | Celebration badges (formal-beta progress signal) |
@@ -155,6 +155,7 @@ Unranked ideas. Promote into **Upcoming** with `/roadmap` (re-rank).
 
 | Id | Added | Summary |
 |----|-------|---------|
+| run-exit-soft-save | 2026-08-05 · enhancement | Persist partial Run outcomes on Exit (API); after warn-only in `soft-beta-ritual-polish` if nights still get lost |
 | product-telemetry | 2026-08-05 · enhancement | Privacy-light usage signals (e.g. Suggest/Run/Insights funnels); skip soft beta — coached notes first |
 | outing-spot-recommendations | 2026-08-05 · enhancement | Plan a trip/outing: find/recommend spots friendly to picky eaters (maps/places; after core ritual sticks) |
 | staging-environment | 2026-08-05 · enhancement | Optional staging Render/Neon dress rehearsal before cold formal invites |
@@ -182,7 +183,7 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Branch | Spec |
 |----|--------|------|
-| — | — | — |
+| soft-beta-ritual-polish | `soft-beta-ritual-polish` | [active](specs/active/soft-beta-ritual-polish.md) |
 
 ## Done
 
@@ -337,3 +338,4 @@ Only notable events (first carve-up, major re-rank, cancelled theme) — not eve
 | 2026-08-05 | beta-web-hosting shipped (fail-closed VITE_API_BASE_URL, Static Site in render.yaml, docs/beta/web-hosting.md). Operator checklist for live site + CORS. Next up: `soft-beta-ritual-polish`. |
 | 2026-08-05 | Hotfix ahead of polish: `suggest-respect-exposure-familiarity` (Suggest must honor household exposure familiarity, esp. safe). |
 | 2026-08-05 | suggest-respect-exposure-familiarity shipped (Suggest familiarity from exposures; OpenAPI 0.18.0 `variantNote`). Next up: `soft-beta-ritual-polish`. |
+| 2026-08-06 | Specced `soft-beta-ritual-polish` (web UX gate; Exit **warn-only**). Parked soft-save as `run-exit-soft-save`. |
