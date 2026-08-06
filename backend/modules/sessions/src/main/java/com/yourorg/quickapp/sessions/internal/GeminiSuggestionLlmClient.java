@@ -118,6 +118,14 @@ class GeminiSuggestionLlmClient implements SuggestionLlmPort {
                 node.put("foodName", safe.foodName());
                 node.put("variantKey", safe.variantKey());
             }
+            ArrayNode exposures = payload.putArray("exposures");
+            for (var exposure : brief.exposures()) {
+                ObjectNode node = exposures.addObject();
+                node.put("foodId", exposure.foodId().toString());
+                node.put("foodName", exposure.foodName());
+                node.put("variantKey", exposure.variantKey());
+                node.put("familiarity", exposure.familiarity().name());
+            }
             ArrayNode stretchTargets = payload.putArray("stretchTargets");
             for (var target : brief.stretchTargets()) {
                 ObjectNode node = stretchTargets.addObject();
@@ -174,6 +182,10 @@ class GeminiSuggestionLlmClient implements SuggestionLlmPort {
                     %s
                     %s
                     Assign familiarity for each: safe, familiar_but_new, truly_new, or retrying.
+                    For catalog foods, if the foodId appears in exposures, you MUST use that row's \
+                    familiarity (exact variantKey when the pick has a presentation; otherwise the \
+                    blank or safe exposure for that food). Never label a safe exposure as \
+                    familiar_but_new or truly_new.
                     Respect paceHint: pull_back = stay gentle; gentle_stretch = one mild stretch OK; steady = balanced.
                     Reply with JSON only. Catalog pick: {"foodId":"...","familiarity":"..."}. \
                     Invent pick: {"proposedName":"...","proposedVariantNote":null,"familiarity":"..."}.

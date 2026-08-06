@@ -95,6 +95,7 @@ class StretchPathSupportTest {
                         0,
                         List.of(applesCand, beefCand, tacoCand),
                         List.of(new SafeExposureSnapshot(apples, "Apples", "")),
+                        List.of(),
                         List.of(new StretchTargetSnapshot(beef, "Ground beef", "")),
                         List.of());
 

@@ -1,6 +1,6 @@
 # Spec: suggest-respect-exposure-familiarity
 
-Status: in-progress  
+Status: done  
 Created: 2026-08-05  
 Added: 2026-08-05 · enhancement  
 Parent: [docs/roadmap.md](../../roadmap.md)
@@ -50,29 +50,29 @@ familiarity` (same ladder as Plan autofill).
 
 ## Acceptance criteria
 
-- [ ] Household marks food A safe (any variant); heuristic Suggest that includes
+- [x] Household marks food A safe (any variant); heuristic Suggest that includes
       A returns familiarity `safe` (and the matched `variantNote` when non-blank).
-- [ ] Same for AI Suggest path (mock LLM returns wrong familiarity → response
+- [x] Same for AI Suggest path (mock LLM returns wrong familiarity → response
       still `safe` after resolve).
-- [ ] Food with only `familiar_but_new` / `retrying` exposure → Suggest uses that
+- [x] Food with only `familiar_but_new` / `retrying` exposure → Suggest uses that
       familiarity when proposing the matching presentation.
-- [ ] Invent slot familiarity unchanged by exposure resolver.
-- [ ] OpenAPI 0.18.0 documents rules + `variantNote`; web + mobile parse
+- [x] Invent slot familiarity unchanged by exposure resolver.
+- [x] OpenAPI 0.18.0 documents rules + `variantNote`; web + mobile parse
       `variantNote`.
-- [ ] Unit + integration tests would fail if resolve were reverted.
-- [ ] `ModularityTests` pass.
+- [x] Unit + integration tests would fail if resolve were reverted.
+- [x] `ModularityTests` pass.
 
 ## Tasks
 
-- [ ] Backend foods: `ExposureSnapshot` + `FoodCatalog.listExposures` (+ tests).
-- [ ] Backend sessions: resolver; wire heuristic + `toSuggestedFood`; Gemini
+- [x] Backend foods: `ExposureSnapshot` + `FoodCatalog.listExposures` (+ tests).
+- [x] Backend sessions: resolver; wire heuristic + `toSuggestedFood`; Gemini
       prompt/payload; unit tests.
-- [ ] Backend: API integration coverage for safe → Suggest `safe`.
-- [ ] Contract: OpenAPI 0.18.0.
-- [ ] Web: types + Plan map `variantNote`; test Suggest→draft uses exposure
+- [x] Backend: API integration coverage for safe → Suggest `safe`.
+- [x] Contract: OpenAPI 0.18.0.
+- [x] Web: types + Plan map `variantNote`; test Suggest→draft uses exposure
       familiarity from API (mock).
-- [ ] Mobile: `SuggestedSessionFood.variantNote` parse test.
-- [ ] Roadmap: active → done when shipped; Next up remains polish.
+- [x] Mobile: `SuggestedSessionFood.variantNote` parse test.
+- [x] Roadmap: active → done when shipped; Next up remains polish.
 
 ## Open questions
 

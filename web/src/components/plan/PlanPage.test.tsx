@@ -927,6 +927,44 @@ describe("PlanPage", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("Not signed in");
   });
 
+  it("maps Suggest catalog variantNote into the draft slot", async () => {
+    const user = userEvent.setup();
+    const suggestNext = vi.fn().mockResolvedValue({
+      ...sampleSuggestion,
+      foods: [
+        {
+          foodId: foods[0].id,
+          name: "Apples",
+          iconKey: "apple",
+          familiarity: "safe" as const,
+          variantNote: "chips",
+        },
+        {
+          foodId: foods[1].id,
+          name: "Strawberries",
+          iconKey: "strawberry",
+          familiarity: "familiar_but_new" as const,
+        },
+      ],
+    });
+    renderPlan(mockSessionsClient({ suggestNext }));
+
+    await screen.findByRole("heading", { name: "Plan" });
+    await user.click(
+      screen.getByRole("button", { name: "Suggest next night" }),
+    );
+
+    const form = await screen.findByRole("form", {
+      name: "Suggested next night",
+    });
+    expect(within(form).getByLabelText("Food 1 familiarity")).toHaveValue(
+      "safe",
+    );
+    expect(within(form).getByLabelText("Food 1 variant note")).toHaveValue(
+      "chips",
+    );
+  });
+
   it("suggests a night, allows swap, and approves via create", async () => {
     const user = userEvent.setup();
     const suggestNext = vi.fn().mockResolvedValue(sampleSuggestion);

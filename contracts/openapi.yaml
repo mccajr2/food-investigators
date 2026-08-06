@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Quickapp API
-  version: 0.17.0
+  version: 0.18.0
   description: >
     Contract-first API for Food Investigators. Documents family-account auth
     (email/password register and login, Bearer session tokens, GET/PATCH
@@ -798,18 +798,24 @@ paths:
         `scheduledOn` (next UTC calendar day without a planned or completed
         session), optional short rationale, calm pacing evidence (`pacingNote` +
         optional `citations` from a curated pack keyed by pace hint), and
-        `source` of `ai` or `heuristic`. When the household has stretch targets,
-        Suggest prefers path-shaped invents/candidates toward those destinations
-        and may propose a destination itself only when a simple readiness gate
-        passes (never on pull_back; cool-down after recent hard reject). When AI
-        is used and the household has at least one safe exposure, at most one
-        slot may be an invent (`foodId` null + `proposedName`); the other must
-        be a catalog safe-anchor food. Invent does not create catalog foods —
-        Approve (client) match-or-creates then uses `POST /api/sessions`.
-        Heuristic never invents. AI is used when completed-session count is
-        Insights-ready (>= 3) and Gemini is configured; otherwise or on invalid
-        picks, heuristic fallback still returns 200. Requires at least two
-        selectable catalog foods.
+        `source` of `ai` or `heuristic`. For **catalog** foods, slot
+        `familiarity` (and optional `variantNote`) is resolved from household
+        exposure profiles when one applies: exact `(foodId, variant)` match;
+        blank presentation prefers the blank or any **safe** exposure for that
+        food; a new presentation of a safe food is `familiar_but_new`. Pace/LLM
+        familiarity is only a fallback when no exposure applies — the server
+        enforces this even if AI mislabels. When the household has stretch
+        targets, Suggest prefers path-shaped invents/candidates toward those
+        destinations and may propose a destination itself only when a simple
+        readiness gate passes (never on pull_back; cool-down after recent hard
+        reject). When AI is used and the household has at least one safe
+        exposure, at most one slot may be an invent (`foodId` null +
+        `proposedName`); the other must be a catalog safe-anchor food. Invent
+        does not create catalog foods — Approve (client) match-or-creates then
+        uses `POST /api/sessions`. Heuristic never invents. AI is used when
+        completed-session count is Insights-ready (>= 3) and Gemini is
+        configured; otherwise or on invalid picks, heuristic fallback still
+        returns 200. Requires at least two selectable catalog foods.
       security:
         - bearerAuth: []
       responses:
@@ -1930,6 +1936,14 @@ components:
             food's iconKey; null otherwise (typical for invent placeholders).
         familiarity:
           $ref: "#/components/schemas/Familiarity"
+        variantNote:
+          type: string
+          nullable: true
+          example: chips
+          description: >
+            Catalog presentation from the matched household exposure (normalized
+            key). Null when blank/unspecified or for invent slots (use
+            `proposedVariantNote` instead).
         proposedName:
           type: string
           nullable: true

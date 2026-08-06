@@ -1,6 +1,7 @@
 package com.yourorg.quickapp.sessions.internal;
 
 import com.yourorg.quickapp.foods.CatalogFood;
+import com.yourorg.quickapp.foods.ExposureSnapshot;
 import com.yourorg.quickapp.foods.FoodCatalog;
 import com.yourorg.quickapp.foods.SafeExposureSnapshot;
 import com.yourorg.quickapp.foods.SnackPreferenceSnapshot;
@@ -71,11 +72,17 @@ public class SessionSuggestionService {
         List<SnackPreferenceSnapshot> snacks = foodCatalog.listActiveSnackPreferences(householdId);
         InsightsResponse insights = InsightsCalculator.compute(completed, snacks, Set.of());
         List<CatalogFood> selectable = foodCatalog.listSelectable(householdId);
+        List<ExposureSnapshot> exposures = foodCatalog.listExposures(householdId);
         List<SafeExposureSnapshot> safeExposures = foodCatalog.listSafeExposures(householdId);
         List<StretchTargetSnapshot> stretchTargets = foodCatalog.listStretchTargets(householdId);
         SuggestionBrief brief =
                 SuggestionBriefBuilder.build(
-                        completed, selectable, insights, safeExposures, stretchTargets);
+                        completed,
+                        selectable,
+                        insights,
+                        safeExposures,
+                        exposures,
+                        stretchTargets);
         if (brief.candidates().size() < 2) {
             throw new InsufficientSuggestionCatalogException(
                     "Need at least two session-eligible foods to suggest a night");
@@ -122,8 +129,9 @@ public class SessionSuggestionService {
         if (StretchPathSupport.proposesUnreadyDestination(choice, brief)) {
             return Optional.empty();
         }
-        LlmFoodPick first = normalizePick(choice.foods().get(0), candidates);
-        LlmFoodPick second = normalizePick(choice.foods().get(1), candidates);
+        LlmFoodPick first = applyExposureFamiliarity(normalizePick(choice.foods().get(0), candidates), brief);
+        LlmFoodPick second =
+                applyExposureFamiliarity(normalizePick(choice.foods().get(1), candidates), brief);
         if (first == null || second == null) {
             return Optional.empty();
         }
@@ -204,6 +212,24 @@ public class SessionSuggestionService {
                 blankToNull(pick.proposedVariantNote()));
     }
 
+    /**
+     * Catalog picks: override familiarity (and presentation) from household exposures.
+     * Invent picks are unchanged.
+     */
+    private static LlmFoodPick applyExposureFamiliarity(LlmFoodPick pick, SuggestionBrief brief) {
+        if (pick == null || pick.isInvent()) {
+            return pick;
+        }
+        ExposureFamiliarityResolver.Resolved resolved =
+                ExposureFamiliarityResolver.resolve(
+                        pick.foodId(),
+                        pick.proposedVariantNote(),
+                        brief.exposures(),
+                        pick.familiarity());
+        return new LlmFoodPick(
+                pick.foodId(), resolved.familiarity(), null, resolved.variantNote());
+    }
+
     private static boolean isSafeAnchor(LlmFoodPick pick, SuggestionBrief brief) {
         if (pick.isInvent() || pick.foodId() == null) {
             return false;
@@ -230,7 +256,8 @@ public class SessionSuggestionService {
                     null,
                     pick.familiarity(),
                     name,
-                    blankToNull(pick.proposedVariantNote()));
+                    blankToNull(pick.proposedVariantNote()),
+                    null);
         }
         SuggestionCandidate candidate = candidates.get(pick.foodId());
         if (candidate == null) {
@@ -243,7 +270,8 @@ public class SessionSuggestionService {
                 candidate.iconUrl(),
                 pick.familiarity(),
                 null,
-                null);
+                null,
+                blankToNull(pick.proposedVariantNote()));
     }
 
     private static String slugIconKey(String name) {

@@ -9,7 +9,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.yourorg.quickapp.foods.CatalogFood;
+import com.yourorg.quickapp.foods.ExposureSnapshot;
 import com.yourorg.quickapp.foods.FoodCatalog;
+import com.yourorg.quickapp.foods.FoodFamiliarity;
 import com.yourorg.quickapp.foods.SafeExposureSnapshot;
 import com.yourorg.quickapp.foods.StretchTargetSnapshot;
 import com.yourorg.quickapp.sessions.Familiarity;
@@ -61,6 +63,7 @@ class SessionSuggestionServiceTest {
                         llm,
                         Clock.fixed(now, ZoneOffset.UTC));
         when(foodCatalog.listActiveSnackPreferences(householdId)).thenReturn(List.of());
+        when(foodCatalog.listExposures(householdId)).thenReturn(List.of());
         when(foodCatalog.listSafeExposures(householdId)).thenReturn(List.of());
         when(foodCatalog.listStretchTargets(householdId)).thenReturn(List.of());
         when(foodCatalog.listSelectable(householdId))
@@ -104,6 +107,74 @@ class SessionSuggestionServiceTest {
     }
 
     @Test
+    void aiOverridesMislabelledSafeExposureFamiliarity() {
+        stubReadyHistory();
+        when(foodCatalog.listExposures(householdId))
+                .thenReturn(
+                        List.of(
+                                new ExposureSnapshot(
+                                        foodB, "Strawberries", "", FoodFamiliarity.safe)));
+        when(foodCatalog.listSafeExposures(householdId))
+                .thenReturn(List.of(new SafeExposureSnapshot(foodB, "Strawberries", "")));
+        when(llm.propose(any()))
+                .thenReturn(
+                        Optional.of(
+                                new LlmSuggestionChoice(
+                                        List.of(
+                                                new LlmFoodPick(foodB, Familiarity.familiar_but_new),
+                                                new LlmFoodPick(foodC, Familiarity.truly_new)),
+                                        "Mislabelled")));
+
+        SessionSuggestionResponse response = service.suggestNext(householdId);
+
+        assertThat(response.source()).isEqualTo(SuggestionSource.ai);
+        assertThat(response.foods().get(0).foodId()).isEqualTo(foodB);
+        assertThat(response.foods().get(0).familiarity()).isEqualTo(Familiarity.safe);
+        assertThat(response.foods().get(0).variantNote()).isNull();
+        assertThat(response.foods().get(1).familiarity()).isEqualTo(Familiarity.truly_new);
+    }
+
+    @Test
+    void heuristicLabelsSafeExposureAsSafeNotFamiliarButNew() {
+        when(sessions.existsByHouseholdIdAndScheduledOnAndStatusIn(any(), any(), any()))
+                .thenReturn(false);
+        when(sessions.findByHouseholdIdAndStatusOrderByScheduledOnDescUpdatedAtDesc(
+                        householdId, SessionStatus.completed))
+                .thenReturn(List.of());
+        when(foodCatalog.listSelectable(householdId))
+                .thenReturn(
+                        List.of(
+                                new CatalogFood(foodA, "Apples", "apple", null),
+                                new CatalogFood(foodB, "Strawberries", "strawberry", null)));
+        when(foodCatalog.listExposures(householdId))
+                .thenReturn(
+                        List.of(
+                                new ExposureSnapshot(
+                                        foodA, "Apples", "", FoodFamiliarity.safe),
+                                new ExposureSnapshot(
+                                        foodB, "Strawberries", "fresh", FoodFamiliarity.safe)));
+        when(foodCatalog.listSafeExposures(householdId))
+                .thenReturn(
+                        List.of(
+                                new SafeExposureSnapshot(foodA, "Apples", ""),
+                                new SafeExposureSnapshot(foodB, "Strawberries", "fresh")));
+
+        SessionSuggestionResponse response = service.suggestNext(householdId);
+
+        assertThat(response.source()).isEqualTo(SuggestionSource.heuristic);
+        assertThat(response.foods()).hasSize(2);
+        assertThat(response.foods())
+                .allSatisfy(food -> assertThat(food.familiarity()).isEqualTo(Familiarity.safe));
+        assertThat(
+                        response.foods().stream()
+                                .filter(food -> foodB.equals(food.foodId()))
+                                .findFirst()
+                                .orElseThrow()
+                                .variantNote())
+                .isEqualTo("fresh");
+    }
+
+    @Test
     void readyHistoryUsesAiWhenLlmReturnsValidShortlistPicks() {
         stubReadyHistory();
         when(llm.propose(any()))
@@ -133,6 +204,11 @@ class SessionSuggestionServiceTest {
     @Test
     void aiInventWithSafeAnchorIsAccepted() {
         stubReadyHistory();
+        when(foodCatalog.listExposures(householdId))
+                .thenReturn(
+                        List.of(
+                                new ExposureSnapshot(
+                                        foodB, "Strawberries", "", FoodFamiliarity.safe)));
         when(foodCatalog.listSafeExposures(householdId))
                 .thenReturn(List.of(new SafeExposureSnapshot(foodB, "Strawberries", "")));
         when(llm.propose(any()))
@@ -153,12 +229,18 @@ class SessionSuggestionServiceTest {
         assertThat(response.foods().get(1).foodId()).isNull();
         assertThat(response.foods().get(1).proposedName()).isEqualTo("Pickles");
         assertThat(response.foods().get(1).proposedVariantNote()).isEqualTo("spears");
+        assertThat(response.foods().get(1).variantNote()).isNull();
         assertThat(response.foods().get(1).foodId()).isNull();
     }
 
     @Test
     void inventNameMatchingCandidateBecomesCatalogPick() {
         stubReadyHistory();
+        when(foodCatalog.listExposures(householdId))
+                .thenReturn(
+                        List.of(
+                                new ExposureSnapshot(
+                                        foodB, "Strawberries", "", FoodFamiliarity.safe)));
         when(foodCatalog.listSafeExposures(householdId))
                 .thenReturn(List.of(new SafeExposureSnapshot(foodB, "Strawberries", "")));
         when(llm.propose(any()))
@@ -181,6 +263,11 @@ class SessionSuggestionServiceTest {
     @Test
     void twoInventsFallsBackToHeuristic() {
         stubReadyHistory();
+        when(foodCatalog.listExposures(householdId))
+                .thenReturn(
+                        List.of(
+                                new ExposureSnapshot(
+                                        foodB, "Strawberries", "", FoodFamiliarity.safe)));
         when(foodCatalog.listSafeExposures(householdId))
                 .thenReturn(List.of(new SafeExposureSnapshot(foodB, "Strawberries", "")));
         when(llm.propose(any()))
@@ -224,6 +311,10 @@ class SessionSuggestionServiceTest {
         when(sessions.findByHouseholdIdAndStatusOrderByScheduledOnDescUpdatedAtDesc(
                         householdId, SessionStatus.completed))
                 .thenReturn(List.of(completedNight(LocalDate.of(2026, 7, 14), foodA)));
+        when(foodCatalog.listExposures(householdId))
+                .thenReturn(
+                        List.of(
+                                new ExposureSnapshot(foodA, "Apples", "", FoodFamiliarity.safe)));
         when(foodCatalog.listSafeExposures(householdId))
                 .thenReturn(List.of(new SafeExposureSnapshot(foodA, "Apples", "")));
 
@@ -256,6 +347,10 @@ class SessionSuggestionServiceTest {
     @Test
     void heuristicPrefersReadyStretchDestinationWithSafeAnchor() {
         stubReadyHistory();
+        when(foodCatalog.listExposures(householdId))
+                .thenReturn(
+                        List.of(
+                                new ExposureSnapshot(foodA, "Apples", "", FoodFamiliarity.safe)));
         when(foodCatalog.listSafeExposures(householdId))
                 .thenReturn(List.of(new SafeExposureSnapshot(foodA, "Apples", "")));
         when(foodCatalog.listStretchTargets(householdId))
@@ -269,6 +364,13 @@ class SessionSuggestionServiceTest {
                 .extracting(f -> f.foodId())
                 .containsExactlyInAnyOrder(foodA, foodC);
         assertThat(response.rationale()).containsIgnoringCase("Blueberries");
+        assertThat(
+                        response.foods().stream()
+                                .filter(f -> foodA.equals(f.foodId()))
+                                .findFirst()
+                                .orElseThrow()
+                                .familiarity())
+                .isEqualTo(Familiarity.safe);
     }
 
     @Test
@@ -296,6 +398,10 @@ class SessionSuggestionServiceTest {
                                 rejected,
                                 completedNight(LocalDate.of(2026, 7, 13), foodB),
                                 completedNight(LocalDate.of(2026, 7, 12), foodA)));
+        when(foodCatalog.listExposures(householdId))
+                .thenReturn(
+                        List.of(
+                                new ExposureSnapshot(foodA, "Apples", "", FoodFamiliarity.safe)));
         when(foodCatalog.listSafeExposures(householdId))
                 .thenReturn(List.of(new SafeExposureSnapshot(foodA, "Apples", "")));
         when(foodCatalog.listStretchTargets(householdId))

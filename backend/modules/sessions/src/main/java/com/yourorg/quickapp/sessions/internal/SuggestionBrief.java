@@ -1,5 +1,6 @@
 package com.yourorg.quickapp.sessions.internal;
 
+import com.yourorg.quickapp.foods.ExposureSnapshot;
 import com.yourorg.quickapp.foods.SafeExposureSnapshot;
 import com.yourorg.quickapp.foods.StretchTargetSnapshot;
 import java.util.List;
@@ -17,6 +18,7 @@ record SuggestionBrief(
         int ateEnoughNo,
         List<SuggestionCandidate> candidates,
         List<SafeExposureSnapshot> safeExposures,
+        List<ExposureSnapshot> exposures,
         List<StretchTargetSnapshot> stretchTargets,
         List<StretchTargetSnapshot> readyStretchDestinations) {
 
@@ -26,6 +28,7 @@ record SuggestionBrief(
     SuggestionBrief {
         candidates = List.copyOf(candidates);
         safeExposures = List.copyOf(safeExposures);
+        exposures = List.copyOf(exposures);
         stretchTargets = List.copyOf(stretchTargets);
         readyStretchDestinations = List.copyOf(readyStretchDestinations);
     }

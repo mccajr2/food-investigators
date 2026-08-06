@@ -26,6 +26,13 @@ public interface FoodCatalog {
     List<SnackPreferenceSnapshot> listActiveSnackPreferences(UUID householdId);
 
     /**
+     * Household exposure profiles (any familiarity), bounded for suggestion briefs.
+     * Includes food display name, normalized variant key (blank = unspecified), and
+     * familiarity. Used so Suggest can label catalog slots from the exposure ladder.
+     */
+    List<ExposureSnapshot> listExposures(UUID householdId);
+
+    /**
      * Household exposure profiles with {@code familiarity=safe}, bounded for suggestion
      * briefs. Includes food display name and normalized variant key (blank = unspecified).
      */
