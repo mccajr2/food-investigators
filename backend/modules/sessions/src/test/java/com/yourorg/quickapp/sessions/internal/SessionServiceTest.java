@@ -804,6 +804,9 @@ class SessionServiceTest {
         assertThat(fullText).contains("Sour");
         assertThat(fullText).doesNotContain("Likes");
         assertThat(fullText).doesNotContain("bbbbbbbb");
+        // Demoted temperature/smell stay off the therapist PDF when null (no "-" placeholders).
+        assertThat(fullText).doesNotContain("Temperature:");
+        assertThat(fullText).doesNotContain("Smell:");
         // No empty Parent notes line for the session without a note (only one occurrence).
         assertThat(fullText.split("Parent notes:", -1)).hasSize(2);
 

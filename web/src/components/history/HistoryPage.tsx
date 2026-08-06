@@ -337,11 +337,18 @@ function SessionDetail({ session, onClose }: SessionDetailProps) {
                 label="Texture"
                 value={labelOrSkipped(food.texture, TEXTURE_LABELS)}
               />
-              <DetailRow
-                label="Temperature"
-                value={labelOrSkipped(food.temperature, TEMPERATURE_LABELS)}
-              />
-              <DetailRow label="Smell" value={labelOrSkipped(food.smell, SMELL_LABELS)} />
+              {food.temperature != null ? (
+                <DetailRow
+                  label="Temperature"
+                  value={TEMPERATURE_LABELS[food.temperature] ?? food.temperature}
+                />
+              ) : null}
+              {food.smell != null ? (
+                <DetailRow
+                  label="Smell"
+                  value={SMELL_LABELS[food.smell] ?? food.smell}
+                />
+              ) : null}
               <DetailRow label="Tastes" value={tastesLabel(food.tastes)} />
               <DetailRow
                 label="Ate enough"

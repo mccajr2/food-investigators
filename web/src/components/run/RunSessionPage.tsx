@@ -90,6 +90,26 @@ type FoodOutcomeDraft = {
   ateEnough?: boolean
 }
 
+/** True when any outcome field was set (including explicit Skip → null). */
+export function isFoodOutcomeDraftDirty(draft: FoodOutcomeDraft): boolean {
+  return (
+    draft.liked !== undefined ||
+    draft.texture !== undefined ||
+    draft.tastes !== undefined ||
+    draft.whyNote !== undefined ||
+    draft.ateEnough !== undefined
+  )
+}
+
+/** True when either food has in-progress outcome answers. */
+export function areRunOutcomesDirty(
+  outcomes: readonly [FoodOutcomeDraft, FoodOutcomeDraft],
+): boolean {
+  return (
+    isFoodOutcomeDraftDirty(outcomes[0]) || isFoodOutcomeDraftDirty(outcomes[1])
+  )
+}
+
 type RunSessionPageProps = {
   session: SessionResponse
   sessionsClient?: SessionsClient
@@ -207,6 +227,7 @@ export function RunSessionPage({
   const [parentChangeDraft, setParentChangeDraft] = useState("")
   const [parentNoteError, setParentNoteError] = useState<string | null>(null)
   const [savingParentNote, setSavingParentNote] = useState(false)
+  const [exitConfirmOpen, setExitConfirmOpen] = useState(false)
   const speechSupported = isSpeechRecognitionSupported()
   const recognitionRef = useRef<ReturnType<typeof createSpeechRecognition>>(null)
   const onUnauthorizedRef = useRef(onUnauthorized)
@@ -409,6 +430,36 @@ export function RunSessionPage({
     advance()
   }
 
+  function hasUnsavedWhyDraft(): boolean {
+    return noteDraft.trim().length > 0 || whyChips.length > 0
+  }
+
+  /**
+   * Exit with no dialog when the survey is still empty (and why UI untouched),
+   * or when the night already completed (answers saved). Otherwise confirm —
+   * leave discards in-progress answers; session stays planned.
+   */
+  function requestExit() {
+    if (completedSession != null) {
+      onExit()
+      return
+    }
+    if (areRunOutcomesDirty(outcomes) || hasUnsavedWhyDraft()) {
+      setExitConfirmOpen(true)
+      return
+    }
+    onExit()
+  }
+
+  function confirmDiscardExit() {
+    setExitConfirmOpen(false)
+    onExit()
+  }
+
+  function cancelDiscardExit() {
+    setExitConfirmOpen(false)
+  }
+
   function toggleWhyChip(chip: string) {
     setWhyChips((current) =>
       current.includes(chip)
@@ -475,7 +526,7 @@ export function RunSessionPage({
             type="button"
             variant="ghost"
             size="sm"
-            onClick={onExit}
+            onClick={requestExit}
             disabled={busy || savingParentNote}
           >
             Exit
@@ -483,7 +534,40 @@ export function RunSessionPage({
         </div>
       </header>
 
+      {exitConfirmOpen ? (
+        <div
+          role="dialog"
+          aria-labelledby="run-exit-heading"
+          aria-describedby="run-exit-copy"
+          className="m-4 flex flex-col gap-3 rounded-lg border border-border bg-card p-4"
+          data-testid="run exit confirm"
+        >
+          <div className="flex flex-col gap-1">
+            <h3
+              id="run-exit-heading"
+              className="text-base font-semibold tracking-tight"
+            >
+              Leave this night?
+            </h3>
+            <p id="run-exit-copy" className="text-sm text-muted-foreground">
+              Tonight’s answers aren’t saved yet. Leaving discards them — the
+              night stays planned so you can run it again later.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" onClick={confirmDiscardExit}>
+              Leave and discard
+            </Button>
+            <Button type="button" variant="outline" onClick={cancelDiscardExit}>
+              Keep going
+            </Button>
+          </div>
+        </div>
+      ) : null}
+
       <main className="flex-1 overflow-y-auto">
+        {exitConfirmOpen ? null : (
+          <>
         {inParentNotes ? (
           <ParentNotesStep
             notes={parentNotesDraft}
@@ -603,6 +687,8 @@ export function RunSessionPage({
             Saving…
           </p>
         ) : null}
+          </>
+        )}
       </main>
     </div>
   )
