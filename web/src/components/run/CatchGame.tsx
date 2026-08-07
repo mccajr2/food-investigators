@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react"
 
 import type { SessionFoodResponse } from "@/api/types"
 import { FoodIcon } from "@/components/food/FoodIcon"
@@ -90,6 +90,7 @@ export function CatchGame({
   const [elapsedMs, setElapsedMs] = useState(0)
   const [finished, setFinished] = useState(false)
   const [finishBest, setFinishBest] = useState<RecordScoreResult | null>(null)
+  const [coarsePointer, setCoarsePointer] = useState(false)
   const nextId = useRef(1)
   const catcherXRef = useRef(catcherX)
   catcherXRef.current = catcherX
@@ -109,6 +110,17 @@ export function CatchGame({
       audio?.startBed()
     })
   }
+
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") {
+      return
+    }
+    const media = window.matchMedia("(pointer: coarse)")
+    const sync = () => setCoarsePointer(media.matches)
+    sync()
+    media.addEventListener("change", sync)
+    return () => media.removeEventListener("change", sync)
+  }, [])
 
   useEffect(() => {
     const audio = audioRef.current
@@ -223,6 +235,39 @@ export function CatchGame({
     )
   }
 
+  function onPlayAreaPointerDown(
+    event: ReactPointerEvent<HTMLDivElement>,
+  ) {
+    if (finished) {
+      return
+    }
+    event.currentTarget.setPointerCapture(event.pointerId)
+    event.preventDefault()
+    onPlayAreaPointer(event.clientX, event.currentTarget)
+  }
+
+  function onPlayAreaPointerMove(
+    event: ReactPointerEvent<HTMLDivElement>,
+  ) {
+    if (finished) {
+      return
+    }
+    if (
+      event.pointerType === "mouse" &&
+      event.buttons === 0 &&
+      !event.currentTarget.hasPointerCapture(event.pointerId)
+    ) {
+      return
+    }
+    onPlayAreaPointer(event.clientX, event.currentTarget)
+  }
+
+  function onPlayAreaPointerUp(event: ReactPointerEvent<HTMLDivElement>) {
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId)
+    }
+  }
+
   return (
     <div
       className="flex h-full flex-col gap-4 p-4"
@@ -279,15 +324,14 @@ export function CatchGame({
       ) : (
         <>
           <div
-            className="run-play-frame relative min-h-[280px] flex-1 overflow-hidden"
+            className="run-play-frame relative min-h-[280px] flex-1 touch-none overflow-hidden overscroll-none"
             role="application"
             aria-label="Catch play area"
-            onPointerMove={(event) =>
-              onPlayAreaPointer(event.clientX, event.currentTarget)
-            }
-            onPointerDown={(event) =>
-              onPlayAreaPointer(event.clientX, event.currentTarget)
-            }
+            style={{ touchAction: "none" }}
+            onPointerDown={onPlayAreaPointerDown}
+            onPointerMove={onPlayAreaPointerMove}
+            onPointerUp={onPlayAreaPointerUp}
+            onPointerCancel={onPlayAreaPointerUp}
           >
             {board.pieces.map((piece) => (
               <div
@@ -322,27 +366,35 @@ export function CatchGame({
             </div>
           </div>
 
+          <p className={`${RUN_GAME_THEME} text-center`}>
+            Drag to move the basket
+          </p>
+
           <div className="flex flex-wrap items-center justify-center gap-3">
-            <Button
-              type="button"
-              size="lg"
-              variant="outline"
-              className="min-h-14 min-w-28 text-lg"
-              onClick={() => moveCatcher(-12)}
-              aria-label="Move basket left"
-            >
-              Left
-            </Button>
-            <Button
-              type="button"
-              size="lg"
-              variant="outline"
-              className="min-h-14 min-w-28 text-lg"
-              onClick={() => moveCatcher(12)}
-              aria-label="Move basket right"
-            >
-              Right
-            </Button>
+            {coarsePointer ? null : (
+              <>
+                <Button
+                  type="button"
+                  size="lg"
+                  variant="outline"
+                  className="min-h-14 min-w-28 text-lg"
+                  onClick={() => moveCatcher(-12)}
+                  aria-label="Move basket left"
+                >
+                  Left
+                </Button>
+                <Button
+                  type="button"
+                  size="lg"
+                  variant="outline"
+                  className="min-h-14 min-w-28 text-lg"
+                  onClick={() => moveCatcher(12)}
+                  aria-label="Move basket right"
+                >
+                  Right
+                </Button>
+              </>
+            )}
             <Button
               type="button"
               size="lg"

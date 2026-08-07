@@ -1,7 +1,7 @@
 # Product roadmap
 
 Status: active  
-Updated: 2026-08-05 · suggest-respect-exposure-familiarity shipped
+Updated: 2026-08-07 · catch-ipad-drag shipped
 
 Living backlog for this product repo. **One roadmap ↔ many specs** (1:1 by
 kebab-case id). `/roadmap` updates and re-ranks; `/spec <id>` fleshes out the
@@ -85,6 +85,7 @@ do they keep Plan → Run ~2×/week?
    **shipped**  
 4. `contracts-ci-paths` — include `contracts/**` in CI — **shipped**  
 5. `secrets-scan-ci` — block accidental secrets (API keys, passwords) in PRs — **shipped**  
+6. `catch-ipad-drag` — Catch finger-drag works on iPad (soft-beta kid UX) — **shipped**  
 
 **Also before invite (ops, not a backlog id):** #52 stretch + #53 welcome are
 merged; enable GitHub Dependabot alerts (free; no spec required); coaching
@@ -187,6 +188,7 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Completed | Spec |
 |----|-----------|------|
+| catch-ipad-drag | 2026-08-07 | [archive](specs/archive/catch-ipad-drag.md) |
 | secrets-scan-ci | 2026-08-07 | [archive](specs/archive/secrets-scan-ci.md) |
 | contracts-ci-paths | 2026-08-06 | [archive](specs/archive/contracts-ci-paths.md) |
 | soft-beta-ritual-polish | 2026-08-06 | [archive](specs/archive/soft-beta-ritual-polish.md) |
@@ -343,3 +345,5 @@ Only notable events (first carve-up, major re-rank, cancelled theme) — not eve
 | 2026-08-06 | soft-beta-ritual-polish shipped (Plan coaching + one-tap Approve, Run Exit warn, Insights→Suggest, History/PDF hide demoted fields, occupied-today calendar). Next up: `contracts-ci-paths`. |
 | 2026-08-06 | contracts-ci-paths shipped (`contracts/**` on backend CI path filters + regression test). Next up: `secrets-scan-ci`. |
 | 2026-08-07 | secrets-scan-ci shipped (gitleaks CI workflow, no path filters; architecture + structural test). Next up: `milestone-badges`. |
+| 2026-08-07 | Added `catch-ipad-drag` as Next up (iPad Catch finger-drag broken by Safari scroll). Soft-beta ship-before-invite item 6. |
+| 2026-08-07 | catch-ipad-drag shipped (Catch touch-action + pointer capture; drag hint; hide Left/Right on coarse). Next up: `milestone-badges`. |

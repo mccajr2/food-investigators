@@ -1,4 +1,4 @@
-import { act, render, screen } from "@testing-library/react"
+import { act, fireEvent, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
@@ -57,6 +57,24 @@ describe("advanceBoard", () => {
   })
 })
 
+
+function mockPointerCoarse(coarse: boolean) {
+  Object.defineProperty(window, "matchMedia", {
+    writable: true,
+    configurable: true,
+    value: vi.fn().mockImplementation((query: string) => ({
+      matches: query === "(pointer: coarse)" ? coarse : false,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })),
+  })
+}
+
 describe("CatchGame", () => {
   afterEach(() => {
     vi.useRealTimers()
@@ -66,12 +84,14 @@ describe("CatchGame", () => {
   })
 
   it("shows food theme and large basket controls while playing", async () => {
+    mockPointerCoarse(false)
     const user = userEvent.setup()
     const onDone = vi.fn()
     render(<CatchGame food={food} onDone={onDone} roundMs={30_000} />)
 
     expect(screen.getByLabelText("Catch game: Apples")).toBeInTheDocument()
     expect(screen.getByText(/Theme: Apples \(Honeycrisp\)/)).toBeInTheDocument()
+    expect(screen.getByText("Drag to move the basket")).toBeInTheDocument()
     expect(screen.getByLabelText("Catch play area")).toBeInTheDocument()
     expect(screen.getByLabelText("Catch play area").className).toContain(
       "run-play-frame",
@@ -92,6 +112,66 @@ describe("CatchGame", () => {
     expect(onDone).toHaveBeenCalled()
   })
 
+  it("moves the basket with pointer drag on the play area", () => {
+    mockPointerCoarse(false)
+    const onDone = vi.fn()
+    render(<CatchGame food={food} onDone={onDone} roundMs={30_000} />)
+
+    const playArea = screen.getByLabelText("Catch play area")
+    expect(playArea.className).toContain("touch-none")
+    expect(playArea.style.touchAction).toBe("none")
+
+    vi.spyOn(playArea, "getBoundingClientRect").mockReturnValue({
+      x: 0,
+      y: 0,
+      top: 0,
+      left: 0,
+      bottom: 280,
+      right: 400,
+      width: 400,
+      height: 280,
+      toJSON: () => ({}),
+    })
+    const setPointerCapture = vi.fn()
+    const releasePointerCapture = vi.fn()
+    Object.assign(playArea, {
+      setPointerCapture,
+      releasePointerCapture,
+      hasPointerCapture: () => true,
+    })
+
+    fireEvent.pointerDown(playArea, {
+      pointerId: 1,
+      clientX: 80,
+      pointerType: "touch",
+    })
+    fireEvent.pointerMove(playArea, {
+      pointerId: 1,
+      clientX: 320,
+      pointerType: "touch",
+      buttons: 1,
+    })
+
+    // clientX 320 / 400 = 80% → basket left = 80 - CATCHER_WIDTH/2
+    const expectedLeft = 80 - CATCHER_WIDTH / 2
+    expect(screen.getByTestId("catcher").style.left).toBe(`${expectedLeft}%`)
+    expect(setPointerCapture).toHaveBeenCalledWith(1)
+  })
+
+  it("hides Left/Right on coarse pointers and keeps the drag hint", () => {
+    mockPointerCoarse(true)
+    render(<CatchGame food={food} onDone={vi.fn()} roundMs={30_000} />)
+
+    expect(screen.getByText("Drag to move the basket")).toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: "Move basket left" }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: "Move basket right" }),
+    ).not.toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Done" })).toBeInTheDocument()
+  })
+
   it("ends the round and shows Best on the finish screen", async () => {
     vi.useFakeTimers()
     const onDone = vi.fn()
@@ -104,6 +184,7 @@ describe("CatchGame", () => {
     })
 
     expect(screen.getByLabelText("Catch finished")).toBeInTheDocument()
+    expect(screen.queryByText("Drag to move the basket")).not.toBeInTheDocument()
     const finishTitle = screen.getByText(/Nice catching/)
     expect(finishTitle.className).toBe(RUN_GAME_FINISH_TITLE)
     expect(screen.getByText(/Best:/)).toBeInTheDocument()
