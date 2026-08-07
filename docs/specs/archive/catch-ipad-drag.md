@@ -1,6 +1,6 @@
 # Spec: catch-ipad-drag
 
-Status: in-progress  
+Status: archived  
 Created: 2026-08-07  
 Added: 2026-08-07 · enhancement  
 Parent: [docs/roadmap.md](../../roadmap.md)
@@ -33,27 +33,27 @@ demote or hide Left/Right so drag is the primary affordance; keep Done.
 
 ## Acceptance criteria
 
-- [ ] On a touch device (or pointer simulation), dragging horizontally on the
+- [x] On a touch device (or pointer simulation), dragging horizontally on the
       Catch play area moves the basket to follow finger X without scrolling the
       page.
-- [ ] Play area uses `touch-action: none` (or equivalent) and pointer capture
+- [x] Play area uses `touch-action: none` (or equivalent) and pointer capture
       for the active drag.
-- [ ] A short drag hint is visible while Catch is playing (not on the finish
+- [x] A short drag hint is visible while Catch is playing (not on the finish
       screen).
-- [ ] On coarse pointers, Left/Right are hidden or clearly secondary; Done
+- [x] On coarse pointers, Left/Right are hidden or clearly secondary; Done
       remains.
-- [ ] Left/Right still work when shown (desktop / fine pointer).
-- [ ] No OpenAPI version bump; backend/mobile product code unchanged.
+- [x] Left/Right still work when shown (desktop / fine pointer).
+- [x] No OpenAPI version bump; backend/mobile product code unchanged.
 
 ## Tasks
 
-- [ ] Web: Play-frame `touch-action: none` + `setPointerCapture` / release;
+- [x] Web: Play-frame `touch-action: none` + `setPointerCapture` / release;
       harden pointer handlers so drag moves the basket (Vitest pointer drag
       regression in the same pass).
-- [ ] Web: Drag hint while playing; demote/hide Left/Right on coarse pointer.
-- [ ] Contract: **none**.
-- [ ] Backend: **none**.
-- [ ] iOS: **none**.
+- [x] Web: Drag hint while playing; demote/hide Left/Right on coarse pointer.
+- [x] Contract: **none**.
+- [x] Backend: **none**.
+- [x] iOS: **none**.
 
 ## Open questions
 
