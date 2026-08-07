@@ -112,6 +112,9 @@ export function CatchGame({
   }
 
   useEffect(() => {
+    if (typeof window.matchMedia !== "function") {
+      return
+    }
     const media = window.matchMedia("(pointer: coarse)")
     const sync = () => setCoarsePointer(media.matches)
     sync()

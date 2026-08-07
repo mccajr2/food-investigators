@@ -16,6 +16,25 @@ globalThis.ResizeObserver =
 Element.prototype.scrollIntoView =
   Element.prototype.scrollIntoView ?? (() => {})
 
+// jsdom does not provide matchMedia (CatchGame coarse-pointer UI).
+if (typeof window.matchMedia !== "function") {
+  Object.defineProperty(window, "matchMedia", {
+    writable: true,
+    configurable: true,
+    value: (query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    }),
+  })
+}
+
+
 afterEach(() => {
   cleanup()
 })
