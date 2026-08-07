@@ -132,7 +132,7 @@ Reorder only via `/roadmap` re-rank. Rank **1** is **Next up** for `/spec`.
 
 | Rank | Id | Status | Added | Summary |
 |------|-----|--------|-------|---------|
-| 1 | secrets-scan-ci | planned | 2026-08-05 · enhancement | CI secret scanning (e.g. gitleaks) so keys/passwords never land on GitHub |
+| 1 | secrets-scan-ci | active | 2026-08-05 · enhancement | CI secret scanning (e.g. gitleaks) so keys/passwords never land on GitHub |
 | 2 | milestone-badges | planned | 2026-07-28 · enhancement | Celebration badges (formal-beta progress signal) |
 | 3 | reward-surprise-nudge | planned | 2026-08-04 · enhancement | Cheap game variety: Surprise-first / avoid repeating last pick |
 | 4 | dependency-vuln-ci | planned | 2026-08-05 · enhancement | Dependabot + CI vuln scan (npm/Gradle/Trivy) for known CVEs |
@@ -182,7 +182,7 @@ In-progress work (locked for re-rank — finish, amend, or abandon before reshuf
 
 | Id | Branch | Spec |
 |----|--------|------|
-| — | — | (none) |
+| secrets-scan-ci | `secrets-scan-ci` | [active](specs/active/secrets-scan-ci.md) |
 
 ## Done
 
