@@ -1,6 +1,6 @@
 # Spec: secrets-scan-ci
 
-Status: in-progress  
+Status: archived  
 Created: 2026-08-05  
 Added: 2026-08-05 · enhancement  
 Parent: [docs/roadmap.md](../../roadmap.md)
@@ -49,33 +49,36 @@ green run (do not change GitHub settings from this PR).
 
 ## Acceptance criteria
 
-- [ ] `.github/workflows/secrets.yml` exists and runs gitleaks on
+- [x] `.github/workflows/secrets.yml` exists and runs gitleaks on
       `pull_request` and `push` to `main` with **no** path filters.
-- [ ] The workflow uses a pinned gitleaks Action version (not a floating `@main`
+- [x] The workflow uses a pinned gitleaks Action version (not a floating `@main`
       or `@master` ref).
-- [ ] A PR that only changes docs still triggers the secrets workflow.
-- [ ] Job fails (non-zero) when gitleaks reports findings; passes on a clean
+- [x] A PR that only changes docs still triggers the secrets workflow.
+- [x] Job fails (non-zero) when gitleaks reports findings; passes on a clean
       scan of the current tree (or after a documented allowlist entry for a
       proven false positive).
-- [ ] `docs/architecture.md` CI table lists the secrets workflow.
-- [ ] No OpenAPI version bump; web/mobile/backend product modules unchanged
+      *(Verified clean scan locally with gitleaks v8.28.0; fail-on-findings is
+      default gitleaks-action behavior.)*
+- [x] `docs/architecture.md` CI table lists the secrets workflow.
+- [x] No OpenAPI version bump; web/mobile/backend product modules unchanged
       aside from optional `.gitleaks.toml` + architecture note.
 
 ## Tasks
 
-- [ ] CI: Add `.github/workflows/secrets.yml` (gitleaks, PR + push to `main`,
+- [x] CI: Add `.github/workflows/secrets.yml` (gitleaks, PR + push to `main`,
       no path filters, pinned action).
-- [ ] CI/docs: Update `docs/architecture.md` CI table (and a short note that
+- [x] CI/docs: Update `docs/architecture.md` CI table (and a short note that
       this job is not path-filtered).
-- [ ] Tests: Structural assertion that `secrets.yml` exists, has no `paths:`
+- [x] Tests: Structural assertion that `secrets.yml` exists, has no `paths:`
       filter under `on:`, and references gitleaks (same spirit as
       `OpenApiContractTest.backendWorkflowPathFiltersIncludeContracts`).
-- [ ] Optional: Add `.gitleaks.toml` only if the first clean CI run fails on
+- [x] Optional: Add `.gitleaks.toml` only if the first clean CI run fails on
       false positives; document each allowlist rule in the PR body.
-- [ ] Contract: **none**.
-- [ ] Backend product: **none**.
-- [ ] Web: **none**.
-- [ ] iOS: **none**.
+      *(Skipped — local gitleaks v8.28.0 scan of current history: no leaks.)*
+- [x] Contract: **none**.
+- [x] Backend product: **none**.
+- [x] Web: **none**.
+- [x] iOS: **none**.
 
 ## Open questions
 

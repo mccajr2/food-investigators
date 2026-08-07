@@ -263,14 +263,17 @@ Path-filtered GitHub Actions run on pull requests and pushes to `main`:
 | `.github/workflows/backend.yml` | `backend/**`, `build-logic/**`, `gradle/**`, root Gradle files, `contracts/**`, the workflow itself | `:backend:test` (JDK 25) on `ubuntu-latest` |
 | `.github/workflows/mobile.yml` | `mobile/**`, the workflow itself | `:sharedLogic:testAndroidHostTest` + `:androidApp:assembleDebug` (JDK 21 + Android SDK) on `ubuntu-latest` |
 | `.github/workflows/web.yml` | `web/**`, the workflow itself | Corepack-pinned npm + `npm ci` + lint + test + build (Node from `web/.nvmrc`) on `ubuntu-latest` |
+| `.github/workflows/secrets.yml` | **not path-filtered** (all PRs + pushes to `main`) | gitleaks (`gitleaks/gitleaks-action@v3.0.0`) on `ubuntu-latest` |
 
-Docs-only or unrelated-path changes do not start the irrelevant workflow.
+Docs-only or unrelated-path changes do not start the irrelevant **path-filtered**
+workflow. The **secrets** job still runs on every PR (and every push to `main`)
+because credentials can appear in any path.
 
 ### Operator setup (manual)
 
 Branch protection on `main` is in effect (classic rules: require a pull request,
 no force pushes, no deletions). Optionally require status checks `backend` /
-`mobile` / `web` once those jobs have run at least once.
+`mobile` / `web` / `secrets` once those jobs have run at least once.
 
 Land all work via feature branches and PRs. CI runs on the PR and again on push
 to `main` after merge. See **SDD workflow** above for the branch-per-spec rule.

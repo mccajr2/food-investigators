@@ -201,6 +201,22 @@ class OpenApiContractTest {
         assertThat(yaml.split("contracts/\\*\\*", -1)).hasSize(3);
     }
 
+    @Test
+    void secretsWorkflowIsNotPathFilteredAndRunsGitleaks() throws IOException {
+        Path workflow = resolveSecretsWorkflow();
+        assertThat(workflow).exists();
+        String yaml = Files.readString(workflow);
+
+        assertThat(yaml).contains("gitleaks/gitleaks-action@v3.0.0");
+        assertThat(yaml).contains("pull_request:");
+        assertThat(yaml).contains("push:");
+        // Secrets can land in any path — no path filters under on:.
+        String onBlock = yaml.split("jobs:", 2)[0];
+        assertThat(onBlock).doesNotContain("paths:");
+        assertThat(yaml).doesNotContain("@main");
+        assertThat(yaml).doesNotContain("@master");
+    }
+
     private static Path resolveOpenApi() {
         Path fromBackend = Path.of("..", "contracts", "openapi.yaml").normalize().toAbsolutePath();
         if (Files.exists(fromBackend)) {
@@ -216,6 +232,15 @@ class OpenApiContractTest {
             return fromBackend;
         }
         return Path.of(".github", "workflows", "backend.yml").toAbsolutePath();
+    }
+
+    private static Path resolveSecretsWorkflow() {
+        Path fromBackend =
+                Path.of("..", ".github", "workflows", "secrets.yml").normalize().toAbsolutePath();
+        if (Files.exists(fromBackend)) {
+            return fromBackend;
+        }
+        return Path.of(".github", "workflows", "secrets.yml").toAbsolutePath();
     }
 
     private static Path resolveReadme() {
